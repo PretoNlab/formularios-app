@@ -20,7 +20,18 @@
       "Bash(pnpm dev)",
       "Bash(npm run dev)",
       "Bash(pnpm build)",
-      "Bash(npx vercel --version)"
+      "Bash(npx vercel --version)",
+      "Bash(ls -la /Users/diegomachado/formulários/*.ts)",
+      "Bash(ls \"/Users/diegomachado/formulários/src/app/\\(auth-pages\\)/\")",
+      "Bash(gh auth status)",
+      "Bash(git add src/app/\\\\\\(auth-pages\\\\\\)/forgot-password/ src/components/renderer/fields/file-upload.tsx)",
+      "Bash(npx vercel --yes --name formularios-app)",
+      "Bash(npx vercel env add DATABASE_URL production --yes)",
+      "Bash(npx vercel env ls)",
+      "Bash(npx vercel env add NEXT_PUBLIC_APP_URL production --yes)",
+      "Bash(npx vercel --prod)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://formularios-app-cyan.vercel.app/login)",
+      "Bash(curl -s -o /dev/null -w \" %{http_code}\" https://formularios-app-cyan.vercel.app/dashboard)"
     ],
     "additionalDirectories": [
       "/Users/diegomachado/.claude/projects/-Users-diegomachado-formul-rios"
