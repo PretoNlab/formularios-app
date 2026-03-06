@@ -2,7 +2,7 @@ import { Metadata } from "next"
 import { Header } from "@/components/layout/header"
 
 export const metadata: Metadata = {
-    title: "Editor | formularios.app",
+    title: "Editor | formularios.ia",
     description: "Crie e edite seu formulário.",
 }
 

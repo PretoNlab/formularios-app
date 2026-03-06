@@ -38,7 +38,7 @@ function Nav() {
           <div className="flex bg-foreground text-background items-center justify-center p-1 rounded-sm">
             <Sparkles className="h-5 w-5" />
           </div>
-          <span className="font-bold text-lg tracking-tight">formularios.app</span>
+          <span className="font-bold text-lg tracking-tight">formularios.ia</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
@@ -117,7 +117,7 @@ function Hero() {
               <div className="h-3 w-3 rounded-full bg-red-400" />
               <div className="h-3 w-3 rounded-full bg-yellow-400" />
               <div className="h-3 w-3 rounded-full bg-green-400" />
-              <div className="mx-auto text-xs text-muted-foreground font-mono">formularios.app/f/pesquisa-nps</div>
+              <div className="mx-auto text-xs text-muted-foreground font-mono">formularios.ia/f/pesquisa-nps</div>
             </div>
             <div className="grid grid-cols-5 min-h-[340px]">
               {/* Sidebar preview */}
@@ -436,7 +436,7 @@ const PLANS = [
       "Faturamento em nota fiscal",
     ],
     cta: "Falar com vendas",
-    href: "mailto:contato@formularios.app",
+    href: "mailto:contato@formularios.ia",
     highlight: false,
   },
 ]
@@ -525,7 +525,7 @@ function FinalCTA() {
           Comece a coletar dados<br />que realmente importam
         </h2>
         <p className="text-xl text-background/70 mb-10 max-w-xl mx-auto">
-          Junte-se a centenas de times brasileiros que já usam o formularios.app para tomar decisões melhores.
+          Junte-se a centenas de times brasileiros que já usam o formularios.ia para tomar decisões melhores.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link href="/signup">
@@ -553,7 +553,7 @@ function Footer() {
           <div className="flex bg-foreground text-background items-center justify-center p-1 rounded-sm">
             <Sparkles className="h-4 w-4" />
           </div>
-          <span className="font-bold text-sm">formularios.app</span>
+          <span className="font-bold text-sm">formularios.ia</span>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
@@ -565,7 +565,7 @@ function Footer() {
         </div>
 
         <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} formularios.app
+          © {new Date().getFullYear()} formularios.ia
         </p>
       </div>
     </footer>

@@ -486,7 +486,7 @@ function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSettingsC
     }
   }
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://formularios.app"
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://formularios.ia"
 
   return (
     <div className="p-4 space-y-6">

@@ -5,7 +5,7 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-    title: 'formularios.app',
+    title: 'formularios.ia',
     description: 'Sistema de Formulários Inteligentes',
 };
 

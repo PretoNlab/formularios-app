@@ -14,7 +14,7 @@ export async function sendResponseNotification({
   responseId: string
   answers: Record<string, AnswerValue>
 }) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://formularios.app"
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://formularios.ia"
   const responsesUrl = `${appUrl}/responses/${formId}`
   const from = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"
 
@@ -29,7 +29,7 @@ export async function sendResponseNotification({
         <!-- Header -->
         <tr>
           <td style="background:#0f0f0f;padding:28px 32px;">
-            <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.3px;">formularios.app</p>
+            <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.3px;">formularios.ia</p>
           </td>
         </tr>
 

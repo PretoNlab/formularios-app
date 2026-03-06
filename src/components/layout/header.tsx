@@ -48,7 +48,7 @@ export async function Header() {
             <div className="flex bg-foreground text-background items-center justify-center p-1 rounded-sm">
               <Sparkles className="h-5 w-5" />
             </div>
-            <span className="font-heading text-xl font-bold tracking-tight">formularios.app</span>
+            <span className="font-heading text-xl font-bold tracking-tight">formularios.ia</span>
           </Link>
 
           <nav className="hidden lg:flex items-center gap-6 text-sm font-medium">

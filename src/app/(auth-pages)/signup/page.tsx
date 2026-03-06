@@ -76,7 +76,7 @@ export default function SignupPage() {
           <div className="flex bg-background text-foreground items-center justify-center p-1 rounded-sm">
             <Sparkles className="h-5 w-5" />
           </div>
-          <span className="font-bold text-xl tracking-tight">formularios.app</span>
+          <span className="font-bold text-xl tracking-tight">formularios.ia</span>
         </Link>
 
         <div className="space-y-6">
@@ -99,7 +99,7 @@ export default function SignupPage() {
         </div>
 
         <p className="text-background/40 text-sm">
-          © {new Date().getFullYear()} formularios.app
+          © {new Date().getFullYear()} formularios.ia
         </p>
       </div>
 
@@ -110,7 +110,7 @@ export default function SignupPage() {
             <div className="flex bg-foreground text-background items-center justify-center p-1 rounded-sm">
               <Sparkles className="h-4 w-4" />
             </div>
-            <span className="font-bold text-lg">formularios.app</span>
+            <span className="font-bold text-lg">formularios.ia</span>
           </Link>
 
           <div className="space-y-2">

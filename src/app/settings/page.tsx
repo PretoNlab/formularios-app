@@ -143,7 +143,7 @@ export default async function SettingsPage() {
               {[
                 "Perguntas ilimitadas por formulário",
                 "Respostas ilimitadas",
-                "Remoção do branding formularios.app",
+                "Remoção do branding formularios.ia",
                 "Webhooks e integrações avançadas",
                 "Analytics detalhado",
               ].map((item) => (

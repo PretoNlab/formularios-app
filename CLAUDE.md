@@ -1,8 +1,8 @@
-# formularios.app - Sistema de Formulários Inteligentes
+# formularios.ia - Sistema de Formulários Inteligentes
 
 ## Visão do Projeto
 
-formularios.app é um form builder SaaS que compete com Typeform, Tally e Google Forms, focado no mercado brasileiro com diferenciais em WhatsApp, IA e analytics avançados.
+formularios.ia é um form builder SaaS que compete com Typeform, Tally e Google Forms, focado no mercado brasileiro com diferenciais em WhatsApp, IA e analytics avançados.
 
 ---
 

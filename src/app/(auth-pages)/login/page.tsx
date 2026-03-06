@@ -29,7 +29,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <div className="flex bg-background text-foreground items-center justify-center p-1 rounded-sm">
             <Sparkles className="h-5 w-5" />
           </div>
-          <span className="font-bold text-xl tracking-tight">formularios.app</span>
+          <span className="font-bold text-xl tracking-tight">formularios.ia</span>
         </Link>
         <div className="space-y-6">
           <blockquote className="text-4xl font-bold leading-tight">
@@ -39,7 +39,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             Crie formulários inteligentes e descubra insights que importam.
           </p>
         </div>
-        <p className="text-background/40 text-sm">© {new Date().getFullYear()} formularios.app</p>
+        <p className="text-background/40 text-sm">© {new Date().getFullYear()} formularios.ia</p>
       </div>
 
       {/* Right — form panel */}
@@ -49,7 +49,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <div className="flex bg-foreground text-background items-center justify-center p-1 rounded-sm">
               <Sparkles className="h-4 w-4" />
             </div>
-            <span className="font-bold text-lg">formularios.app</span>
+            <span className="font-bold text-lg">formularios.ia</span>
           </Link>
 
           <div className="space-y-2">
