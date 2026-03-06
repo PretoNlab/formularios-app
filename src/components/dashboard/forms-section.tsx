@@ -217,21 +217,21 @@ function FormCard({ form, onDelete, onPublish }: { form: FormListItem; onDelete:
       <div className="flex flex-1 flex-col p-5 bg-card">
         <h3 className="font-heading text-xl font-bold line-clamp-1">{form.title}</h3>
         {form.description && <p className="mt-1 flex-1 text-sm text-muted-foreground line-clamp-2">{form.description}</p>}
-        <div className="mt-6 flex items-center justify-between">
+        <div className="mt-6 flex items-center justify-between relative z-20">
           <span className="flex h-7 items-center rounded-md bg-muted px-2.5 text-sm font-medium">{form.responseCount} respostas</span>
           <div className="flex items-center gap-1">
             {form.status === "draft" && (
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-green-600" onClick={(e) => { e.preventDefault(); onPublish() }} title="Publicar">
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-green-600" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPublish(); }} title="Publicar">
                 <Globe className="h-4 w-4" />
               </Button>
             )}
-            <Link href={`/responses/${form.id}`} className="relative z-20 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Ver respostas">
+            <Link href={`/responses/${form.id}`} onClick={(e) => e.stopPropagation()} className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Ver respostas">
               <BarChart3 className="h-4 w-4" />
             </Link>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={(e) => { e.preventDefault(); navigator.clipboard.writeText(`${window.location.origin}/f/${form.slug}`) }} title="Copiar link">
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/f/${form.slug}`); }} title="Copiar link">
               <Link2 className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={(e) => { e.preventDefault(); onDelete() }} title="Excluir">
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }} title="Excluir">
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
