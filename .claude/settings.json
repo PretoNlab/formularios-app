@@ -31,7 +31,9 @@
       "Bash(npx vercel env add NEXT_PUBLIC_APP_URL production --yes)",
       "Bash(npx vercel --prod)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://formularios-app-cyan.vercel.app/login)",
-      "Bash(curl -s -o /dev/null -w \" %{http_code}\" https://formularios-app-cyan.vercel.app/dashboard)"
+      "Bash(curl -s -o /dev/null -w \" %{http_code}\" https://formularios-app-cyan.vercel.app/dashboard)",
+      "Bash(pnpm db:push)",
+      "Bash(npx vercel env pull .env.vercel.tmp)"
     ],
     "additionalDirectories": [
       "/Users/diegomachado/.claude/projects/-Users-diegomachado-formul-rios"

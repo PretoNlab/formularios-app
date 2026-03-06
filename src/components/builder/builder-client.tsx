@@ -165,14 +165,14 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
     <div className="flex h-full w-full">
 
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────── */}
-      <aside className="w-80 flex-shrink-0 border-r bg-card flex flex-col">
+      <aside className="w-96 flex-shrink-0 border-r bg-card flex flex-col overflow-hidden">
         <div className="p-3 border-b">
           <Tabs value={sidebarTab} onValueChange={(v) => setSidebarTab(v as typeof sidebarTab)}>
-            <TabsList className="grid w-full grid-cols-4 h-9">
-              <TabsTrigger value="fields" className="text-[10px]">Campos</TabsTrigger>
-              <TabsTrigger value="theme" className="text-[10px]">Tema</TabsTrigger>
-              <TabsTrigger value="config" className="text-[10px]">Config</TabsTrigger>
-              <TabsTrigger value="webhooks" className="text-[10px]">Hooks</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4 h-10">
+              <TabsTrigger value="fields" className="text-xs px-1">Campos</TabsTrigger>
+              <TabsTrigger value="theme" className="text-xs px-1">Tema</TabsTrigger>
+              <TabsTrigger value="config" className="text-xs px-1">Config</TabsTrigger>
+              <TabsTrigger value="webhooks" className="text-xs px-1">Hooks</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -360,7 +360,7 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
       </main>
 
       {/* ── RIGHT SIDEBAR ────────────────────────────────────────────── */}
-      <aside className="w-80 flex-shrink-0 border-l bg-card flex flex-col">
+      <aside className="w-80 lg:w-96 flex-shrink-0 border-l bg-card flex flex-col overflow-hidden">
         <div className="flex h-14 items-center border-b px-4">
           {builderMode === "logic" ? (
             <><Zap className="mr-2 h-4 w-4 text-muted-foreground" /><h3 className="font-semibold text-sm">Lógica</h3></>
