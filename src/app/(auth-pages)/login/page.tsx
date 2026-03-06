@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { loginAction } from "@/app/actions/auth"
-import { GoogleLoginButton } from "./google-button"
 
 interface LoginPageProps {
   searchParams: Promise<{ error?: string; next?: string }>
@@ -99,15 +98,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               Entrar <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">ou continue com</span>
-            </div>
-          </div>
-
-          <GoogleLoginButton next={next} />
         </div>
       </div>
     </div>
