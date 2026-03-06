@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>formularios.app — Design Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;700&family=DM+Sans:wght@400;500;600;700&family=Sora:wght@400;700&family=Outfit:wght@400;700&family=Space+Grotesk:wght@400;700&family=Orbitron:wght@700&family=Rajdhani:wght@400;600&display=swap"
+    rel="stylesheet" />
+  <style>
+    /* ─── Reset & Root ─── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #0a0a12;
+      color: #fff;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ─── Theme Switcher Bar ─── */
+    .theme-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: rgba(10, 10, 18, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      flex-wrap: wrap;
+    }
+
+    .theme-bar h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #e8e8f0;
+      margin-right: 8px;
+      white-space: nowrap;
+    }
+
+    .theme-chip {
+      padding: 5px 14px;
+      border-radius: 100px;
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      background: transparent;
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .theme-chip:hover {
+      border-color: rgba(255, 255, 255, 0.4);
+      color: #fff;
+    }
+
+    .theme-chip.active {
+      border-color: var(--preview-accent, #6c63ff);
+      color: var(--preview-accent, #6c63ff);
+      background: rgba(108, 99, 255, 0.12);
+    }
+
+    /* ─── Main Layout ─── */
+    .preview-root {
+      padding-top: 64px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      min-height: 100vh;
+    }
+
+    @media (max-width: 900px) {
+      .preview-root {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ─── Left: Live Renderer ─── */
+    .renderer-pane {
+      min-height: calc(100vh - 64px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      background: var(--ff-bg, #0f0f1a);
+      transition: background 0.4s;
+      border-right: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    /* ─── Right: Component Showcase ─── */
+    .showcase-pane {
+      padding: 40px 32px;
+      overflow-y: auto;
+      background: #0d0d18;
+    }
+
+    .showcase-pane h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.4);
+      font-weight: 400;
+      margin-bottom: 24px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ─── Section labels ─── */
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.25);
+      margin: 28px 0 12px;
+    }
+
+    .section-label:first-of-type {
+      margin-top: 0;
+    }
+
+    /* ─── Component Demo Card ─── */
+    .demo-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 12px;
+    }
+
+    .demo-card-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.3);
+      margin-bottom: 10px;
+      letter-spacing: 0.8px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       FF COMPONENT STYLES (matches form-renderer.tsx)
+    ═══════════════════════════════════════════════ */
+
+    .ff-root {
+      width: 100%;
+      max-width: 580px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: var(--ff-font-body, 'DM Sans'), system-ui, sans-serif;
+      color: var(--ff-text, #e8e8f0);
+    }
+
+    .ff-screen {
+      width: 100%;
+      animation: ff-slide-up 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes ff-slide-up {
+      from {
+        opacity: 0;
+        transform: translateY(32px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .ff-card {
+      width: 100%;
+      padding: 36px 44px;
+      background: var(--ff-card, #1a1a2e);
+      border-radius: var(--ff-radius, 12px);
+      box-shadow: 0 8px 48px rgba(0, 0, 0, 0.28);
+      transition: background 0.4s, box-shadow 0.4s;
+    }
+
+    @media (max-width: 600px) {
+      .ff-card {
+        padding: 24px 20px;
+      }
+    }
+
+    .ff-question-number {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ff-accent, #6c63ff);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .ff-question-title {
+      font-family: var(--ff-font-heading, 'Fraunces'), system-ui, sans-serif;
+      font-size: clamp(1.2rem, 3vw, 1.6rem);
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--ff-text, #e8e8f0);
+      margin-bottom: 6px;
+    }
+
+    .ff-required {
+      color: var(--ff-accent, #6c63ff);
+      margin-left: 4px;
+    }
+
+    .ff-question-desc {
+      font-size: 0.92rem;
+      color: var(--ff-muted, #6b6b8d);
+      margin-bottom: 20px;
+      line-height: 1.55;
+    }
+
+    .ff-answer-area {
+      margin: 20px 0;
+    }
+
+    .ff-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid var(--ff-muted, #6b6b8d);
+      color: var(--ff-text, #e8e8f0);
+      font-family: var(--ff-font-body, 'DM Sans'), system-ui, sans-serif;
+      font-size: 1rem;
+      padding: 10px 4px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .ff-input:focus {
+      border-bottom-color: var(--ff-accent, #6c63ff);
+    }
+
+    .ff-textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    .ff-select {
+      cursor: pointer;
+      border-radius: var(--ff-radius, 12px);
+      padding: 10px 14px;
+      border: 2px solid var(--ff-muted, #6b6b8d);
+      background: var(--ff-input-bg, #12122a);
+    }
+
+    .ff-select:focus {
+      border-color: var(--ff-accent, #6c63ff);
+    }
+
+    /* Options */
+    .ff-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ff-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: transparent;
+      border: 1.5px solid var(--ff-muted, #6b6b8d);
+      border-radius: var(--ff-radius, 12px);
+      color: var(--ff-text, #e8e8f0);
+      font-size: 0.92rem;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.15s, background 0.15s;
+      width: 100%;
+    }
+
+    .ff-option:hover {
+      border-color: var(--ff-accent, #6c63ff);
+    }
+
+    .ff-option--selected {
+      border-color: var(--ff-accent, #6c63ff);
+      background: color-mix(in srgb, var(--ff-accent, #6c63ff) 12%, transparent);
+    }
+
+    .ff-option-letter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border: 1.5px solid currentColor;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+      opacity: 0.66;
+    }
+
+    .ff-option-check {
+      margin-left: auto;
+      color: var(--ff-accent, #6c63ff);
+      font-weight: 700;
+    }
+
+    /* Yes/No */
+    .ff-yesno {
+      display: flex;
+      gap: 14px;
+    }
+
+    .ff-yesno-btn {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      border: 1.5px solid var(--ff-muted, #6b6b8d);
+      border-radius: var(--ff-radius, 12px);
+      background: transparent;
+      color: var(--ff-text, #e8e8f0);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .ff-yesno-btn:hover {
+      border-color: var(--ff-accent, #6c63ff);
+      background: color-mix(in srgb, var(--ff-accent, #6c63ff) 10%, transparent);
+    }
+
+    .ff-yesno-icon {
+      font-size: 1.7rem;
+    }
+
+    /* Rating */
+    .ff-rating {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .ff-rating-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.8rem;
+      cursor: pointer;
+      color: var(--ff-muted, #6b6b8d);
+      transition: color 0.15s, transform 0.12s;
+      padding: 0;
+    }
+
+    .ff-rating-btn:hover,
+    .ff-rating-btn.active {
+      color: var(--ff-accent, #6c63ff);
+      transform: scale(1.2);
+    }
+
+    /* Scale */
+    .ff-scale {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .ff-scale-buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .ff-scale-btn {
+      min-width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid var(--ff-muted, #6b6b8d);
+      border-radius: calc(var(--ff-radius, 12px) / 2);
+      background: transparent;
+      color: var(--ff-text, #e8e8f0);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+
+    .ff-scale-btn:hover {
+      border-color: var(--ff-accent, #6c63ff);
+    }
+
+    .ff-scale-btn.active {
+      border-color: var(--ff-accent, #6c63ff);
+      background: var(--ff-accent, #6c63ff);
+      color: var(--ff-bg, #0f0f1a);
+    }
+
+    .ff-scale-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.76rem;
+      color: var(--ff-muted, #6b6b8d);
+    }
+
+    /* CTA */
+    .ff-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      background: var(--ff-accent, #6c63ff);
+      color: var(--ff-bg, #0f0f1a);
+      border: none;
+      border-radius: var(--ff-radius, 12px);
+      font-family: var(--ff-font-body, 'DM Sans'), system-ui, sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      box-shadow: 0 4px 20px color-mix(in srgb, var(--ff-accent, #6c63ff) 35%, transparent);
+    }
+
+    .ff-cta-btn:hover {
+      opacity: 0.88;
+      transform: translateY(-2px);
+    }
+
+    /* Navigation */
+    .ff-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .ff-nav-back {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1.5px solid var(--ff-muted, #6b6b8d);
+      border-radius: calc(var(--ff-radius, 12px) / 2);
+      color: var(--ff-muted, #6b6b8d);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+      font-size: 1rem;
+    }
+
+    .ff-nav-back:hover {
+      border-color: var(--ff-accent, #6c63ff);
+      color: var(--ff-accent, #6c63ff);
+    }
+
+    .ff-nav-ok {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--ff-accent, #6c63ff);
+      border: none;
+      border-radius: calc(var(--ff-radius, 12px) / 1.5);
+      color: var(--ff-bg, #0f0f1a);
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .ff-nav-ok:hover {
+      opacity: 0.88;
+      transform: translateY(-1px);
+    }
+
+    .ff-nav-enter {
+      font-size: 0.72rem;
+      opacity: 0.7;
+      background: rgba(0, 0, 0, 0.18);
+      border-radius: 3px;
+      padding: 1px 5px;
+    }
+
+    .ff-hint {
+      font-size: 0.74rem;
+      color: var(--ff-muted, #6b6b8d);
+      margin-top: 10px;
+    }
+
+    kbd {
+      font-size: 0.7rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      padding: 1px 5px;
+    }
+
+    /* Progress */
+    .ff-progress {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .ff-progress-track {
+      flex: 1;
+      height: 3px;
+      background: color-mix(in srgb, var(--ff-muted, #6b6b8d) 30%, transparent);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .ff-progress-fill {
+      height: 100%;
+      background: var(--ff-accent, #6c63ff);
+      border-radius: 999px;
+      transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .ff-progress-label {
+      font-size: 0.7rem;
+      color: var(--ff-muted, #6b6b8d);
+      min-width: 28px;
+      text-align: right;
+    }
+
+    /* File upload */
+    .ff-upload {
+      border: 2px dashed var(--ff-muted, #6b6b8d);
+      border-radius: var(--ff-radius, 12px);
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      color: var(--ff-muted, #6b6b8d);
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .ff-upload:hover {
+      border-color: var(--ff-accent, #6c63ff);
+      color: var(--ff-text, #e8e8f0);
+    }
+
+    .ff-upload-icon {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+
+    .ff-upload p {
+      font-size: 0.9rem;
+    }
+
+    /* Signature */
+    .ff-signature {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .ff-signature-canvas {
+      border: 1.5px solid var(--ff-muted, #6b6b8d);
+      border-radius: var(--ff-radius, 12px);
+      background: var(--ff-input-bg, #12122a);
+      cursor: crosshair;
+      width: 100%;
+    }
+
+    .ff-signature-footer {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .ff-signature-clear {
+      background: transparent;
+      border: 1px solid var(--ff-muted, #6b6b8d);
+      color: var(--ff-muted, #6b6b8d);
+      border-radius: 4px;
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .ff-signature-clear:hover {
+      border-color: var(--ff-accent, #6c63ff);
+      color: var(--ff-accent, #6c63ff);
+    }
+
+    /* Thank you */
+    .ff-thankyou {
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .ff-thankyou-icon {
+      font-size: 2.8rem;
+      margin-bottom: 14px;
+    }
+
+    .ff-thankyou-text {
+      color: var(--ff-muted, #6b6b8d);
+      font-size: 1rem;
+    }
+
+    /* Showcase-only dark mini card */
+    .mini-ff-card {
+      background: var(--ff-card, #1a1a2e);
+      border-radius: var(--ff-radius, 12px);
+      padding: 16px 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Theme switcher ─────────────────────────────────── -->
+  <div class="theme-bar" id="themeBar">
+    <h1>🎨 formularios.app</h1>
+    <button class="theme-chip active" onclick="setTheme('midnight')">Midnight</button>
+    <button class="theme-chip" onclick="setTheme('ocean')">Ocean</button>
+    <button class="theme-chip" onclick="setTheme('sunset')">Sunset</button>
+    <button class="theme-chip" onclick="setTheme('forest')">Forest</button>
+    <button class="theme-chip" onclick="setTheme('cream')">Cream</button>
+    <button class="theme-chip" onclick="setTheme('lavender')">Lavender</button>
+    <button class="theme-chip" onclick="setTheme('minimal')">Minimal</button>
+    <button class="theme-chip" onclick="setTheme('neon')">Neon</button>
+  </div>
+
+  <!-- ── Two-pane preview ───────────────────────────────── -->
+  <div class="preview-root">
+
+    <!-- LEFT: Live one-question-at-a-time renderer -->
+    <div class="renderer-pane" id="rendererPane">
+      <div class="ff-root" id="rendererRoot">
+        <!-- Progress -->
+        <div class="ff-progress">
+          <div class="ff-progress-track">
+            <div class="ff-progress-fill" id="progressFill" style="width:20%"></div>
+          </div>
+          <span class="ff-progress-label" id="progressLabel">20%</span>
+        </div>
+
+        <!-- Question card — rendered by JS -->
+        <div class="ff-screen">
+          <div class="ff-card" id="questionCard"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: All components showcase -->
+    <div class="showcase-pane" id="showcasePane">
+      <h2>Todos os componentes</h2>
+
+      <div class="section-label">Input</div>
+
+      <div class="demo-card">
+        <div class="demo-card-label">SHORT TEXT</div>
+        <div class="mini-ff-card"><input class="ff-input" type="text" placeholder="Digite sua resposta..."
+            style="width:100%"></div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-card-label">LONG TEXT</div>
+        <div class="mini-ff-card"><textarea class="ff-input ff-textarea" placeholder="Digite sua resposta..."
+            style="width:100%"></textarea></div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-card-label">EMAIL</div>
+        <div class="mini-ff-card"><input class="ff-input" type="email" placeholder="nome@exemplo.com"
+            style="width:100%"></div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-card-label">NUMBER</div>
+        <div class="mini-ff-card"><input class="ff-input" type="number" placeholder="0" style="width:100%"></div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-card-label">PHONE</div>
+        <div class="mini-ff-card"><input class="ff-input" type="tel" placeholder="(00) 00000-0000" style="width:100%">
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-card-label">DATE</div>
+        <div class="mini-ff-card"><input class="ff-input" type="date" style="width:100%"></div>
+      </div>
+
+      <div class="section-label">Seleção</div>
+
+      <div class="demo-card">
+        <div class="demo-card-label">MULTIPLE CHOICE</div>
+        <div class="mini-ff-card">
+          <div class="ff-options">
+            <button class="ff-option ff-option--selected"><span class="ff-option-letter">A</span><span>Opção
+                selecionada</span><span class="ff-option-check">✓</span></button>
+            <button class="ff-option"><span class="ff-option-letter">B</span><span>Outra opção</span></button>
+            <button class="ff-option"><span class="ff-option-letter">C</span><span>Mais uma opção</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-card-label">CHECKBOX</div>
+        <div class="mini-ff-card">
+          <div class="ff-options">
+            <button class="ff-option ff-option--selected"><span class="ff-option-letter">A</span><span>Opção
+                1</span><span class="ff-option-check">✓</span></button>
+            <button class="ff-option ff-option--selected"><span class="ff-option-letter">B</span><span>Opção
+                2</span><span class="ff-option-check">✓</span></button>
+            <button class="ff-option"><span class="ff-option-letter">C</span><span>Opção 3</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-card-label">YES / NO</div>
+        <div class="mini-ff-card">
+          <div class="ff-yesno">
+            <button class="ff-yesno-btn"><span class="ff-yesno-icon">👍</span><span>Sim</span></button>
+            <button class="ff-yesno-btn"><span class="ff-yesno-icon">👎</span><span>Não</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Avaliação</div>
+
+      <div class="demo-card">
+        <div class="demo-card-label">RATING — STARS</div>
+        <div class="mini-ff-card">
+          <div class="ff-rating">
+            <button class="ff-rating-btn active">★</button>
+            <button class="ff-rating-btn active">★</button>
+            <button class="ff-rating-btn active">★</button>
+            <button class="ff-rating-btn">☆</button>
+            <button class="ff-rating-btn">☆</button>
+          </div>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-card-label">NPS / SCALE (0–10)</div>
+        <div class="mini-ff-card">
+          <div class="ff-scale">
+            <div class="ff-scale-buttons">
+              <button class="ff-scale-btn">0</button><button class="ff-scale-btn">1</button>
+              <button class="ff-scale-btn">2</button><button class="ff-scale-btn">3</button>
+              <button class="ff-scale-btn">4</button><button class="ff-scale-btn">5</button>
+              <button class="ff-scale-btn active">6</button><button class="ff-scale-btn">7</button>
+              <button class="ff-scale-btn">8</button><button class="ff-scale-btn">9</button>
+              <button class="ff-scale-btn">10</button>
+            </div>
+            <div class="ff-scale-labels"><span>Nada provável</span><span>Muito provável</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Layout</div>
+
+      <div class="demo-card">
+        <div class="demo-card-label">WELCOME</div>
+        <div class="mini-ff-card"><button class="ff-cta-btn">Começar →</button></div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-card-label">THANK YOU</div>
+        <div class="mini-ff-card">
+          <div class="ff-thankyou">
+            <div class="ff-thankyou-icon">🎉</div>
+            <p class="ff-thankyou-text">Obrigado por responder!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Avançado</div>
+
+      <div class="demo-card">
+        <div class="demo-card-label">FILE UPLOAD</div>
+        <div class="mini-ff-card">
+          <div class="ff-upload">
+            <div class="ff-upload-icon">📁</div>
+            <p>Clique ou arraste um arquivo aqui</p>
+          </div>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-card-label">SIGNATURE</div>
+        <div class="mini-ff-card">
+          <div class="ff-signature">
+            <canvas class="ff-signature-canvas" width="400" height="100" id="sigCanvas"></canvas>
+            <div class="ff-signature-footer"><button class="ff-signature-clear">Limpar</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:40px"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Theme Definitions ──────────────────────────────────────────────────────
+    const THEMES = {
+      midnight: {
+        bg: '#0f0f1a', card: '#1a1a2e', accent: '#6c63ff',
+        text: '#e8e8f0', muted: '#6b6b8d', inputBg: '#12122a',
+        radius: '12px', heading: "'Fraunces', serif", body: "'DM Sans', sans-serif"
+      },
+      ocean: {
+        bg: '#0a192f', card: '#112240', accent: '#64ffda',
+        text: '#ccd6f6', muted: '#8892b0', inputBg: '#0d1f3c',
+        radius: '12px', heading: "'DM Sans', sans-serif", body: "'DM Sans', sans-serif"
+      },
+      sunset: {
+        bg: '#1a1a2e', card: '#25253e', accent: '#ff6b6b',
+        text: '#f0e6e6', muted: '#8b7e7e', inputBg: '#1e1e32',
+        radius: '16px', heading: "'Sora', sans-serif", body: "'DM Sans', sans-serif"
+      },
+      forest: {
+        bg: '#1a2e1a', card: '#1e3a1e', accent: '#69db7c',
+        text: '#d4e8d4', muted: '#7a9f7a', inputBg: '#162e16',
+        radius: '8px', heading: "'DM Sans', sans-serif", body: "'DM Sans', sans-serif"
+      },
+      cream: {
+        bg: '#faf8f5', card: '#ffffff', accent: '#d4622b',
+        text: '#2d2d2d', muted: '#8a8a8a', inputBg: '#f5f0ea',
+        radius: '12px', heading: "'Fraunces', serif", body: "'DM Sans', sans-serif"
+      },
+      lavender: {
+        bg: '#f5f0ff', card: '#ffffff', accent: '#7c3aed',
+        text: '#2e1065', muted: '#9381b5', inputBg: '#ede5ff',
+        radius: '14px', heading: "'Outfit', sans-serif", body: "'DM Sans', sans-serif"
+      },
+      minimal: {
+        bg: '#ffffff', card: '#fafafa', accent: '#000000',
+        text: '#111111', muted: '#888888', inputBg: '#f5f5f5',
+        radius: '4px', heading: "'Space Grotesk', sans-serif", body: "'Space Grotesk', sans-serif"
+      },
+      neon: {
+        bg: '#0a0a0a', card: '#141414', accent: '#00ff88',
+        text: '#ffffff', muted: '#666666', inputBg: '#111111',
+        radius: '2px', heading: "'Orbitron', sans-serif", body: "'Rajdhani', sans-serif"
+      }
+    }
+
+    let currentTheme = 'midnight'
+    let currentQ = 0
+
+    function applyTheme(id) {
+      const t = THEMES[id]
+      if (!t) return
+      const root = document.documentElement
+      root.style.setProperty('--ff-bg', t.bg)
+      root.style.setProperty('--ff-card', t.card)
+      root.style.setProperty('--ff-accent', t.accent)
+      root.style.setProperty('--ff-text', t.text)
+      root.style.setProperty('--ff-muted', t.muted)
+      root.style.setProperty('--ff-input-bg', t.inputBg)
+      root.style.setProperty('--ff-radius', t.radius)
+      root.style.setProperty('--ff-font-heading', t.heading)
+      root.style.setProperty('--ff-font-body', t.body)
+      root.style.setProperty('--preview-accent', t.accent)
+      document.getElementById('rendererPane').style.background = t.bg
+      document.getElementById('showcasePane').style.background =
+        t.bg === '#ffffff' || t.bg === '#faf8f5' || t.bg === '#f5f0ff' ? '#f0edf9' : '#0d0d18'
+    }
+
+    function setTheme(id) {
+      currentTheme = id
+      applyTheme(id)
+      document.querySelectorAll('.theme-chip').forEach(b => {
+        b.classList.toggle('active', b.textContent.toLowerCase() === id)
+      })
+    }
+
+    // ─── Question Deck ───────────────────────────────────────────────────────────
+    const questions = [
+      {
+        type: 'welcome',
+        number: null,
+        title: 'Bem-vindo à pesquisa 👋',
+        desc: 'Leva menos de 2 minutos. Suas respostas são anônimas.',
+        render: () => `<button class="ff-cta-btn" onclick="next()">Começar <span>→</span></button>`
+      },
+      {
+        type: 'text',
+        number: 1,
+        title: 'Qual é o seu nome completo?',
+        desc: 'Como você prefere ser chamado.',
+        render: () => `
+      <input class="ff-input" type="text" id="ans" placeholder="Ex: Maria Silva" onkeydown="if(event.key==='Enter')next()" autofocus style="width:100%">
+      ${navHTML()}`
+      },
+      {
+        type: 'choice',
+        number: 2,
+        title: 'Como prefere nos contatar?',
+        desc: 'Escolha o canal ideal para você.',
+        render: () => `
+      <div class="ff-options">
+        ${['📧  E-mail', '💬  WhatsApp', '📞  Telefone', '🐦  Redes sociais'].map((o, i) =>
+          `<button class="ff-option" onclick="selectOption(this); setTimeout(next, 280)">
+            <span class="ff-option-letter">${String.fromCharCode(65 + i)}</span>
+            <span>${o}</span>
+          </button>`).join('')}
+      </div>`
+      },
+      {
+        type: 'rating',
+        number: 3,
+        title: 'Como avalia nosso serviço?',
+        desc: 'De 1 a 5 estrelas.',
+        render: () => `
+      <div class="ff-rating" id="ratingGroup">
+        ${[1, 2, 3, 4, 5].map(n => `<button class="ff-rating-btn" onclick="setRating(${n})" data-n="${n}">☆</button>`).join('')}
+      </div>
+      ${navHTML()}`
+      },
+      {
+        type: 'nps',
+        number: 4,
+        title: 'Qual a probabilidade de nos recomendar?',
+        desc: 'Em uma escala de 0 a 10.',
+        render: () => `
+      <div class="ff-scale">
+        <div class="ff-scale-buttons">
+          ${Array.from({ length: 11 }, (_, i) =>
+          `<button class="ff-scale-btn" onclick="setScale(this)">${i}</button>`).join('')}
+        </div>
+        <div class="ff-scale-labels"><span>Nada provável</span><span>Muito provável</span></div>
+      </div>
+      ${navHTML()}`
+      },
+      {
+        type: 'thankyou',
+        number: null,
+        title: 'Muito obrigado! 🎉',
+        desc: 'Sua resposta foi registrada com sucesso.',
+        render: () => `
+      <div class="ff-thankyou">
+        <div class="ff-thankyou-icon">🎉</div>
+        <p class="ff-thankyou-text">Sua resposta foi registrada!</p>
+      </div>`
+      }
+    ]
+
+    function navHTML() {
+      return `
+    <div class="ff-nav">
+      ${currentQ > 0 ? `<button class="ff-nav-back" onclick="prev()">↑</button>` : ''}
+      <button class="ff-nav-ok" onclick="next()">OK <span class="ff-nav-enter">↵</span></button>
+    </div>
+    <p class="ff-hint">Pressione <kbd>Enter</kbd> ↵ para confirmar</p>`
+    }
+
+    function renderQuestion() {
+      const q = questions[currentQ]
+      const pct = Math.round((currentQ / (questions.length - 1)) * 100)
+      document.getElementById('progressFill').style.width = pct + '%'
+      document.getElementById('progressLabel').textContent = pct + '%'
+
+      const card = document.getElementById('questionCard')
+      card.style.animation = 'none'
+      card.offsetHeight // reflow
+      card.style.animation = ''
+      card.style.setProperty('animation', 'ff-slide-up 0.3s cubic-bezier(0.22,1,0.36,1)')
+
+      card.innerHTML = `
+    ${q.number ? `<div class="ff-question-number">${q.number} <span style="opacity:.5">→</span></div>` : ''}
+    <h2 class="ff-question-title">${q.title}</h2>
+    ${q.desc ? `<p class="ff-question-desc">${q.desc}</p>` : ''}
+    <div class="ff-answer-area">${q.render()}</div>
+  `
+    }
+
+    function next() { if (currentQ < questions.length - 1) { currentQ++; renderQuestion() } }
+    function prev() { if (currentQ > 0) { currentQ--; renderQuestion() } }
+    function selectOption(el) {
+      el.closest('.ff-options').querySelectorAll('.ff-option').forEach(b => {
+        b.classList.remove('ff-option--selected')
+        b.querySelector('.ff-option-check')?.remove()
+      })
+      el.classList.add('ff-option--selected')
+      const check = document.createElement('span')
+      check.className = 'ff-option-check'
+      check.textContent = '✓'
+      el.appendChild(check)
+    }
+    function setRating(n) {
+      document.querySelectorAll('.ff-rating-btn').forEach((b, i) => {
+        const active = i < n
+        b.classList.toggle('active', active)
+        b.textContent = active ? '★' : '☆'
+      })
+      setTimeout(next, 350)
+    }
+    function setScale(el) {
+      document.querySelectorAll('.ff-scale-btn').forEach(b => b.classList.remove('active'))
+      el.classList.add('active')
+      setTimeout(next, 300)
+    }
+
+    // Keyboard
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') next()
+    })
+
+      // Signature canvas
+      ; (function () {
+        const canvas = document.getElementById('sigCanvas')
+        if (!canvas) return
+        const ctx = canvas.getContext('2d')
+        ctx.strokeStyle = '#6c63ff'; ctx.lineWidth = 2; ctx.lineCap = 'round'
+        let drawing = false
+        canvas.addEventListener('mousedown', e => { drawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY) })
+        canvas.addEventListener('mousemove', e => { if (!drawing) return; ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke() })
+        canvas.addEventListener('mouseup', () => drawing = false)
+        document.querySelector('.ff-signature-clear')?.addEventListener('click', () => ctx.clearRect(0, 0, canvas.width, canvas.height))
+      })()
+
+    // Init
+    applyTheme('midnight')
+    renderQuestion()
+  </script>
+
+</body>
+
+</html>

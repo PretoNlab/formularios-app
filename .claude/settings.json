@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /Users/diegomachado/formulários/.env*)",
+      "Bash(npm install postgres --save)",
+      "Bash(npx drizzle-kit generate)",
+      "Bash(npm run db:push)",
+      "Bash(nslookup db.lqdeyiwacjjzlraeqpgj.supabase.co)",
+      "Bash(npm run build)",
+      "Bash(ls /Users/diegomachado/formulários/src/lib/utils*)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx next build)",
+      "Bash(ls /Users/diegomachado/formulários/src/app/f/[slug]/)",
+      "Bash(pnpm typecheck)",
+      "Bash(lsof -ti:3000)",
+      "Bash(node -e \"console.log\\(require\\(''/Users/diegomachado/formulários/.env.local'' ? ''/Users/diegomachado/formulários/.env.local'' : ''''\\)\\)\")",
+      "Bash(ls /Users/diegomachado/formulários/.env*)",
+      "Read(//private/tmp/**)",
+      "Bash(node_modules/.bin/next dev --help)",
+      "Bash(pnpm dev)",
+      "Bash(npm run dev)",
+      "Bash(pnpm build)",
+      "Bash(npx vercel --version)"
+    ],
+    "additionalDirectories": [
+      "/Users/diegomachado/.claude/projects/-Users-diegomachado-formul-rios"
+    ]
+  }
+}
