@@ -32,31 +32,31 @@ export default async function HomePage() {
 
 function Nav() {
   return (
-    <div className="absolute top-0 left-0 right-0 z-50 p-4 sm:p-6">
-      <header className="mx-auto max-w-6xl w-full rounded-full bg-white px-6 py-4 flex items-center justify-between shadow-sm">
-        <Link href="/" className="flex items-center gap-2 text-[#254f1a]">
-          <Sparkles className="h-6 w-6" />
-          <span className="font-bold text-xl tracking-tight">formularios.ia</span>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
+      <div className="container flex h-16 items-center justify-between">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="flex bg-foreground text-background items-center justify-center p-1 rounded-sm">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <span className="font-bold text-lg tracking-tight">formularios.ia</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-[#254f1a]/80">
-          <Link href="#features" className="hover:text-[#254f1a] transition-colors">Recursos</Link>
-          <Link href="#how" className="hover:text-[#254f1a] transition-colors">Templates</Link>
-          <Link href="#pricing" className="hover:text-[#254f1a] transition-colors">Preços</Link>
+        <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
+          <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Recursos</Link>
+          <Link href="#how" className="text-muted-foreground hover:text-foreground transition-colors">Como funciona</Link>
+          <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Preços</Link>
         </nav>
 
         <div className="flex items-center gap-3">
           <Link href="/login">
-            <Button variant="ghost" className="text-[#254f1a] hover:bg-black/5 font-semibold">Log in</Button>
+            <Button variant="ghost" size="sm">Entrar</Button>
           </Link>
           <Link href="/signup">
-            <Button className="rounded-full bg-[#254f1a] hover:bg-[#1a3a12] text-white px-6 font-semibold">
-              Sign up free
-            </Button>
+            <Button size="sm" className="rounded-full px-5">Começar grátis</Button>
           </Link>
         </div>
-      </header>
-    </div>
+      </div>
+    </header>
   )
 }
 
@@ -64,73 +64,118 @@ function Nav() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden bg-[#d2e823] pt-32 pb-20 lg:pt-48 lg:pb-32 px-4 sm:px-6">
-      <div className="container max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-          
-          {/* Left Column: Text & CTA */}
-          <div className="flex flex-col gap-6 max-w-2xl mt-8">
-            <h1 className="text-6xl sm:text-7xl lg:text-[6rem] font-black tracking-[-0.04em] text-[#254f1a] leading-[0.95]">
-              Um form feito pra você.
-            </h1>
-            <p className="text-lg sm:text-xl text-[#254f1a]/80 font-medium leading-relaxed max-w-lg">
-              Junte-se a milhares de pessoas usando formularios.ia para coletar dados, 
-              pesquisas e leads. Tudo que você cria, curte e vende a partir do Instagram, TikTok, Twitter e YouTube.
-            </p>
-            
-            <div className="mt-4 flex flex-col sm:flex-row items-center gap-4">
-              <div className="flex w-full max-w-md items-center rounded-lg bg-white p-2 focus-within:ring-2 focus-within:ring-[#254f1a]">
-                <span className="pl-4 text-muted-foreground font-medium">form.ia/</span>
-                <input 
-                  type="text" 
-                  placeholder="sua-marca" 
-                  className="flex-1 bg-transparent px-2 py-3 text-black outline-none w-full placeholder:text-muted-foreground/50"
-                />
+    <section className="relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 -z-10 [background:radial-gradient(125%_125%_at_50%_10%,#fff_40%,#ede9fe_100%)]" />
+      <div className="absolute -top-40 left-1/2 -translate-x-1/2 -z-10 h-[600px] w-[600px] rounded-full bg-violet-100/60 blur-3xl" />
+
+      <div className="container flex flex-col items-center text-center pt-24 pb-20 gap-8">
+        <Badge variant="secondary" className="rounded-full px-4 py-1.5 text-sm gap-1.5">
+          <Zap className="h-3.5 w-3.5 text-violet-600" />
+          Formulários inteligentes para o Brasil
+        </Badge>
+
+        <h1 className="max-w-4xl text-5xl font-bold tracking-tight sm:text-7xl leading-[1.1]">
+          Formulários que{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-blue-600">
+            convertem
+          </span>
+          .<br />Dados que{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">
+            inspiram
+          </span>
+          .
+        </h1>
+
+        <p className="max-w-2xl text-xl text-muted-foreground leading-relaxed">
+          Crie formulários bonitos em minutos, colete respostas e descubra insights com IA.
+          A alternativa brasileira ao Typeform, com WhatsApp, analytics avançado e muito mais.
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <Link href="/signup">
+            <Button size="lg" className="rounded-full px-8 text-base h-12 gap-2">
+              Começar grátis
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+          <Link href="/login">
+            <Button variant="outline" size="lg" className="rounded-full px-8 text-base h-12">
+              Ver demonstração
+            </Button>
+          </Link>
+        </div>
+
+        <p className="text-sm text-muted-foreground">
+          Grátis para sempre · Sem cartão de crédito · Setup em 2 minutos
+        </p>
+
+        {/* Mock UI */}
+        <div className="relative w-full max-w-5xl mt-8">
+          <div className="rounded-2xl border bg-card shadow-2xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b bg-muted/30">
+              <div className="h-3 w-3 rounded-full bg-red-400" />
+              <div className="h-3 w-3 rounded-full bg-yellow-400" />
+              <div className="h-3 w-3 rounded-full bg-green-400" />
+              <div className="mx-auto text-xs text-muted-foreground font-mono">formularios.ia/f/pesquisa-nps</div>
+            </div>
+            <div className="grid grid-cols-5 min-h-[340px]">
+              {/* Sidebar preview */}
+              <div className="col-span-1 border-r bg-muted/20 p-3 space-y-1 hidden md:block">
+                {["Boas-vindas", "Nome", "E-mail", "NPS", "Detalhar", "Obrigado"].map((item, i) => (
+                  <div key={item} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${i === 3 ? "bg-violet-100 text-violet-700 font-medium" : "text-muted-foreground"}`}>
+                    <span className="w-4 text-center">{i + 1}</span>
+                    {item}
+                  </div>
+                ))}
               </div>
-              <Link href="/signup" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto rounded-full bg-[#254f1a] hover:bg-[#1a3a12] text-white h-[60px] px-8 text-base font-semibold">
-                  Get started for free
-                </Button>
-              </Link>
+              {/* Form preview */}
+              <div className="col-span-5 md:col-span-4 flex items-center justify-center p-8 bg-[#0f0f1a]">
+                <div className="w-full max-w-sm space-y-6 text-white">
+                  <div className="space-y-2">
+                    <p className="text-xs text-violet-400 font-medium tracking-wider uppercase">Pergunta 4 de 5</p>
+                    <h3 className="text-2xl font-bold">
+                      De 0 a 10, qual a probabilidade de você recomendar nossa empresa a um amigo?
+                    </h3>
+                  </div>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {Array.from({ length: 11 }, (_, i) => (
+                      <button
+                        key={i}
+                        className={`h-10 w-10 rounded-lg text-sm font-medium transition-colors ${i === 9 ? "bg-violet-600 text-white" : "bg-white/10 text-white/70 hover:bg-white/20"}`}
+                      >
+                        {i}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-white/40">
+                    <span>Improvável</span>
+                    <span>Muito provável</span>
+                  </div>
+                  <button className="flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 transition-colors">
+                    OK <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-
-          {/* Right Column: Imagery mockups */}
-          <div className="relative h-[600px] lg:h-[700px] w-full flex items-center justify-center">
-             <div className="absolute right-0 top-0 bottom-0 w-full max-w-lg z-10">
-                <div className="grid grid-rows-2 gap-6 h-full">
-                  <div className="rounded-[48px] bg-[#a97148] shadow-2xl relative overflow-hidden flex items-end justify-center pb-8 border-4 border-black/5">
-                    {/* Fake phone mockup content */}
-                    <div className="w-[280px] h-[580px] bg-[#d9a05b] rounded-[38px] shadow-2xl border-8 border-[#eccd93] relative flex flex-col items-center p-6 top-16">
-                      <div className="w-1/3 h-5 bg-[#eccd93] rounded-full absolute top-0 -translate-y-1/2"></div>
-                      <h2 className="text-[#643415] font-black text-4xl mb-4 text-center leading-tight mt-6" style={{ fontFamily: "serif" }}>
-                        Perfect<br/>Person
-                      </h2>
-                      <div className="w-full space-y-3 mt-4">
-                        <div className="bg-[#f0d8a8] h-12 rounded-xl w-full flex items-center px-4 shadow-sm">
-                          <div className="h-4 w-4 bg-[#643415] rounded-full mr-3"></div>
-                          <div className="h-2 w-24 bg-[#643415]/50 rounded-full"></div>
-                        </div>
-                        <div className="bg-[#f0d8a8] h-12 rounded-xl w-full flex items-center px-4 shadow-sm">
-                          <div className="h-4 w-4 bg-[#643415] rounded-full mr-3"></div>
-                          <div className="h-2 w-32 bg-[#643415]/50 rounded-full"></div>
-                        </div>
-                        <div className="bg-[#643415] h-32 rounded-xl w-full mt-4 flex items-center justify-center relative overflow-hidden">
-                          <div className="w-12 h-12 rounded-full border-4 border-[#f0d8a8] flex items-center justify-center">
-                             <div className="w-0 h-0 border-t-6 border-b-6 border-l-8 border-t-transparent border-b-transparent border-l-[#f0d8a8] ml-1"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="rounded-[40px] bg-[#2a44c5] shadow-2xl relative overflow-hidden hidden sm:block">
-                     {/* Blue styled bottom block */}
-                     <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(0,0,0,0.5) 10px, rgba(0,0,0,0.5) 20px)' }}></div>
-                  </div>
-                </div>
-             </div>
+          {/* Floating cards */}
+          <div className="absolute -right-4 top-8 hidden lg:block">
+            <div className="rounded-xl border bg-card shadow-lg px-4 py-3 text-sm w-48">
+              <div className="flex items-center gap-2 text-green-600 font-medium mb-1">
+                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                127 respostas hoje
+              </div>
+              <div className="text-xs text-muted-foreground">Taxa de conclusão: 84%</div>
+            </div>
           </div>
-
+          <div className="absolute -left-4 bottom-8 hidden lg:block">
+            <div className="rounded-xl border bg-card shadow-lg px-4 py-3 text-sm w-44">
+              <div className="font-semibold mb-1">NPS Score</div>
+              <div className="text-3xl font-bold text-violet-600">72</div>
+              <div className="text-xs text-muted-foreground">↑ 8 pts este mês</div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
