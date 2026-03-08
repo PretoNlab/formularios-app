@@ -3,6 +3,7 @@ import { getFormBySlug, incrementViewCount } from "@/lib/db/queries/forms"
 import { FormRendererPage } from "@/components/renderer/form-renderer-page"
 import type { Form, Question, QuestionType } from "@/lib/types/form"
 import type { FormWithQuestions } from "@/lib/db/queries/forms"
+import type { Metadata, ResolvingMetadata } from "next"
 
 // ─── DB → domain type mapper ──────────────────────────────────────────────────
 
@@ -51,6 +52,53 @@ function mapDbForm(dbForm: FormWithQuestions): Form {
     updatedAt: dbForm.updatedAt.toISOString(),
     publishedAt: dbForm.publishedAt?.toISOString(),
   }
+}
+
+// ─── Metadata ──────────────────────────────────────────────────────────────────
+
+export async function generateMetadata(
+  { params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ preview?: string }> },
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const [{ slug }, sp] = await Promise.all([params, searchParams])
+  const isPreview = sp.preview === "1"
+  const { data: dbForm } = await getFormBySlug(slug)
+
+  if (!dbForm || (!isPreview && dbForm.status !== "published")) {
+    return { title: "Formulário não encontrado" }
+  }
+
+  const title = dbForm.title || "Formulário"
+  const description = dbForm.description || "Responda a este formulário construído com formularios.ia"
+  
+  // Customizações de tema
+  const theme = dbForm.theme as Form["theme"] | undefined
+  const logoUrl = theme?.logo?.url
+
+  const metadata: Metadata = {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      siteName: "formularios.ia",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  }
+
+  if (logoUrl) {
+    metadata.icons = {
+      icon: logoUrl, // Usar o logo como favicon
+      apple: logoUrl,
+    }
+  }
+
+  return metadata
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
