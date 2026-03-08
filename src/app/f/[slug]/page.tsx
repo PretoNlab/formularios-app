@@ -5,6 +5,8 @@ import type { Form, Question, QuestionType } from "@/lib/types/form"
 import type { FormWithQuestions } from "@/lib/db/queries/forms"
 import type { Metadata, ResolvingMetadata } from "next"
 
+export const dynamic = "force-dynamic"
+
 // ─── DB → domain type mapper ──────────────────────────────────────────────────
 
 function mapDbForm(dbForm: FormWithQuestions): Form {
