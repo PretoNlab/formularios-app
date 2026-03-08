@@ -5,8 +5,19 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-    title: 'formularios.ia',
-    description: 'Sistema de Formulários Inteligentes',
+    title: 'formularios.ia — Formulários Inteligentes',
+    description: 'Crie formulários conversacionais incríveis em segundos. Ferramenta no-code definitiva para pesquisa e engajamento.',
+    openGraph: {
+        title: 'formularios.ia — Formulários Inteligentes',
+        description: 'Crie formulários conversacionais incríveis em segundos. Potencialize suas pesquisas e leads com a nossa IA.',
+        type: 'website',
+        siteName: 'formularios.ia',
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'formularios.ia — Formulários Inteligentes',
+        description: 'Crie formulários conversacionais incríveis em segundos.',
+    },
 };
 
 export default function RootLayout({
