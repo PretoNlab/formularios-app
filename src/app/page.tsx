@@ -17,7 +17,6 @@ export default async function HomePage() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <Nav />
       <Hero />
-      <LogoCloud />
       <Features />
       <HowItWorks />
       <Testimonials />
@@ -89,7 +88,7 @@ function Hero() {
 
         <p className="max-w-2xl text-xl text-muted-foreground leading-relaxed">
           Crie formulários bonitos em minutos, colete respostas e descubra insights com IA.
-          A alternativa brasileira ao Typeform, com WhatsApp, analytics avançado e muito mais.
+          A alternativa brasileira ao Typeform, com analytics avançado, lógica condicional e muito mais.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -182,25 +181,6 @@ function Hero() {
   )
 }
 
-// ─── Logo Cloud ───────────────────────────────────────────────────────────────
-
-function LogoCloud() {
-  const companies = ["Nubank", "iFood", "Hotmart", "RD Station", "Conta Azul", "Pipefy", "Gympass", "Loft"]
-  return (
-    <section className="border-y bg-muted/30 py-10">
-      <div className="container">
-        <p className="text-center text-sm text-muted-foreground mb-8">
-          Usado por times de produto e marketing das melhores empresas brasileiras
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-4">
-          {companies.map((name) => (
-            <span key={name} className="text-lg font-bold text-muted-foreground/40 tracking-tight">{name}</span>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
 
 // ─── Features ─────────────────────────────────────────────────────────────────
 
@@ -211,6 +191,7 @@ const FEATURES = [
     description: "Texto, NPS, escala, múltipla escolha, upload de arquivo, assinatura e muito mais. Tudo que você precisa num só lugar.",
     color: "text-violet-600",
     bg: "bg-violet-50",
+    comingSoon: false,
   },
   {
     icon: MessageCircle,
@@ -218,6 +199,7 @@ const FEATURES = [
     description: "Envie notificações automáticas no WhatsApp quando alguém preencher seu formulário. Integração com Evolution API.",
     color: "text-green-600",
     bg: "bg-green-50",
+    comingSoon: true,
   },
   {
     icon: BarChart3,
@@ -264,7 +246,12 @@ function Features() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {FEATURES.map((f) => (
-          <div key={f.title} className="rounded-2xl border bg-card p-6 hover:shadow-lg transition-shadow">
+          <div key={f.title} className="relative rounded-2xl border bg-card p-6 hover:shadow-lg transition-shadow">
+            {f.comingSoon && (
+              <span className="absolute top-4 right-4 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                Em breve
+              </span>
+            )}
             <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${f.bg} mb-4`}>
               <f.icon className={`h-5 w-5 ${f.color}`} />
             </div>
@@ -346,7 +333,7 @@ const TESTIMONIALS = [
   {
     name: "Fernanda Costa",
     role: "CX Manager · E-commerce",
-    text: "A integração com WhatsApp é um diferencial enorme. Agora recebo notificação em tempo real quando um cliente preenche o NPS.",
+    text: "A exportação de respostas em CSV salvou horas de trabalho manual toda semana. Agora minha equipe analisa os dados diretamente no Excel.",
     stars: 5,
   },
 ]
@@ -412,7 +399,8 @@ const PLANS = [
       "Respostas ilimitadas",
       "Analytics com IA",
       "Lógica condicional avançada",
-      "WhatsApp + Webhooks",
+      "Webhooks (Zapier, Make, n8n)",
+      "WhatsApp (em breve)",
       "Remoção do branding",
       "Exportação CSV / JSON",
       "Suporte prioritário",

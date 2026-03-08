@@ -1,14 +1,39 @@
 "use server"
 
 import { z } from "zod"
-import { eq, asc } from "drizzle-orm"
+import { eq, asc, and, gte, sql } from "drizzle-orm"
 import { headers } from "next/headers"
+import { createHash } from "crypto"
 import { db } from "@/lib/db/client"
 import { forms, questions, responses } from "@/lib/db/schema"
 import { createResponse, saveAnswers, completeResponse } from "@/lib/db/queries/responses"
 import { getIntegrationsByForm } from "@/lib/db/queries/integrations"
 import { sendResponseNotification } from "@/lib/email"
 import type { AnswerValue, FormSettings } from "@/lib/db/schema"
+
+// ─── Rate limiting ────────────────────────────────────────────────────────────
+
+const RATE_LIMIT_MAX = 5          // max submissions per IP per form
+const RATE_LIMIT_WINDOW_MIN = 60  // within this many minutes
+
+function hashIp(ip: string): string {
+  return createHash("sha256").update(ip + process.env.NEXT_PUBLIC_SUPABASE_URL).digest("hex").slice(0, 32)
+}
+
+async function isRateLimited(formId: string, ipHash: string): Promise<boolean> {
+  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MIN * 60 * 1000)
+  const [result] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(responses)
+    .where(
+      and(
+        eq(responses.formId, formId),
+        gte(responses.startedAt, windowStart),
+        sql`${responses.metadata}->>'ipHash' = ${ipHash}`
+      )
+    )
+  return (result?.count ?? 0) >= RATE_LIMIT_MAX
+}
 
 // ─── Validation schema ────────────────────────────────────────────────────────
 
@@ -92,14 +117,24 @@ export async function submitResponseAction(
     Object.entries(parsedAnswers).filter(([qId]) => validQuestionIds.has(qId))
   ) as Record<string, AnswerValue>
 
-  // 7. Create the response session
+  // 7. Extract client IP, hash it, check rate limit
   const headersList = await headers()
   const userAgent = headersList.get("user-agent")
+  const rawIp =
+    headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    headersList.get("x-real-ip") ??
+    "unknown"
+  const ipHash = hashIp(rawIp)
 
-  const { data: response, success } = await createResponse(formId, { userAgent })
+  if (await isRateLimited(formId, ipHash)) {
+    throw new Error("Muitas respostas enviadas. Aguarde um momento e tente novamente.")
+  }
+
+  // 8. Create the response session
+  const { data: response, success } = await createResponse(formId, { userAgent, ipHash })
   if (!success || !response) throw new Error("Falha ao registrar resposta.")
 
-  // 8. Save answers
+  // 9. Save answers
   const answerList = Object.entries(sanitizedAnswers).map(([questionId, value]) => ({
     questionId,
     value,
@@ -108,10 +143,10 @@ export async function submitResponseAction(
     await saveAnswers(response.id, answerList)
   }
 
-  // 9. Mark complete (also increments form.responseCount)
+  // 10. Mark complete (also increments form.responseCount)
   await completeResponse(response.id)
 
-  // 10. Send email notification (fire-and-forget)
+  // 11. Send email notification (fire-and-forget)
   if (settings.notifyOnResponse && settings.notificationEmail) {
     sendResponseNotification({
       toEmail: settings.notificationEmail,
@@ -124,7 +159,7 @@ export async function submitResponseAction(
     })
   }
 
-  // 11. Fire webhooks (fire-and-forget — never block the respondent)
+  // 12. Fire webhooks (fire-and-forget — never block the respondent)
   const { data: integrationsList } = await getIntegrationsByForm(formId, "webhook")
   if (integrationsList && integrationsList.length > 0) {
     const payload = JSON.stringify({
