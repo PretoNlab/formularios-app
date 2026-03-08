@@ -130,6 +130,10 @@ export interface ThemeConfig {
   borderRadius: string
   backgroundImage?: string
   customCSS?: string
+  logo?: {
+    url: string
+    position: "left" | "center" | "right"
+  }
 }
 
 export interface ThemeColors {

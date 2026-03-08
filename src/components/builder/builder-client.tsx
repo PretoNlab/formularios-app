@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useTransition, useState } from "react"
+import { useEffect, useTransition, useState, useRef } from "react"
 import Link from "next/link"
 import {
   Type, AlignLeft, Hash, Phone, TextCursorInput, Calendar, Link2 as LinkIcon,
@@ -8,7 +8,8 @@ import {
   Star, TrendingUp, Presentation, MessageSquare,
   PartyPopper, Paperclip, PenTool, GripVertical, Settings2, Eye, Plus,
   Loader2, Globe, Trash2, Copy, CheckCircle2, AlertCircle, BarChart3,
-  Webhook, Zap, MessageCircle, CreditCard, Building2,
+  Webhook, Zap, MessageCircle, CreditCard, Building2, Share2,
+  Image as ImageIcon, AlignLeft as AlignLeftIcon, AlignCenter, AlignRight, X
 } from "lucide-react"
 import {
   DndContext,
@@ -34,6 +35,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 import { useBuilderStore } from "@/stores/builder-store"
 import { useAutoSave } from "@/lib/hooks/use-auto-save"
@@ -134,6 +136,8 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
 
   const [sidebarTab, setSidebarTab] = useState<"fields" | "config" | "webhooks" | "theme">("fields")
   const [builderMode, setBuilderMode] = useState<"editor" | "logic">("editor")
+  const [showShareDialog, setShowShareDialog] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [isPublishing, startPublishTransition] = useTransition()
   const selectedQuestion = form.questions.find((q) => q.id === selectedQuestionId) ?? null
 
@@ -158,8 +162,18 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
     startPublishTransition(async () => {
       await publishFormAction(form.id)
       updateFormStatus("published")
+      setShowShareDialog(true)
     })
   }
+
+  function handleCopyLink() {
+    const link = `${typeof window !== "undefined" ? window.location.origin : "https://formularios.ia"}/f/${form.slug}`
+    navigator.clipboard.writeText(link)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const shareLink = `${typeof window !== "undefined" ? window.location.origin : "https://formularios.ia"}/f/${form.slug}`
 
   return (
     <div className="flex h-full w-full">
@@ -227,8 +241,9 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
 
           {sidebarTab === "theme" && (
             <ThemePickerPanel
-              currentThemeId={form.theme.id}
+              form={form}
               onSelect={updateFormTheme}
+              onUpdateLogo={(logo) => updateFormTheme({ ...form.theme, logo })}
             />
           )}
 
@@ -303,12 +318,35 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
               <Badge variant="secondary" className="rounded-full px-3 h-8 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
                 <CheckCircle2 className="mr-1.5 h-3 w-3" />Publicado
               </Badge>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="rounded-full px-3 h-8 text-xs font-medium ml-2 border-primary/20 hover:bg-primary/5"
+                onClick={() => setShowShareDialog(true)}
+              >
+                <Share2 className="mr-1.5 h-3 w-3" />
+                Compartilhar
+              </Button>
             </>
           )}
         </div>
 
         <ScrollArea className="flex-1 p-8 pt-24">
           <div className="mx-auto max-w-2xl space-y-4">
+            {/* Logotipo do formulário */}
+            {form.theme.logo?.url && (
+              <div 
+                className={cn(
+                  "mb-8 flex",
+                  form.theme.logo.position === "left" ? "justify-start" : 
+                  form.theme.logo.position === "right" ? "justify-end" : "justify-center"
+                )}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={form.theme.logo.url} alt="Logo do formulário" className="max-h-20 object-contain" />
+              </div>
+            )}
+
             {/* Editable form title */}
             <div className="mb-8 pb-6 border-b">
               <input
@@ -390,6 +428,80 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
           )}
         </ScrollArea>
       </aside>
+
+      {/* ── SHARE DIALOG ────────────────────────────────────────────── */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-muted/10 border-muted">
+          <div className="flex flex-col md:flex-row h-[80vh] max-h-[600px]">
+            {/* Esquerda: Preview */}
+            <div className="flex-1 bg-background relative hidden md:block border-r">
+              <div className="absolute top-4 left-4 z-10">
+                <Badge variant="secondary" className="bg-background/80 backdrop-blur-md shadow-sm border text-[10px] font-medium px-2.5 py-1">
+                  <Eye className="mr-1.5 h-3 w-3 text-muted-foreground" /> Pré-visualização
+                </Badge>
+              </div>
+              <div className="absolute top-4 right-4 z-10">
+                 <Link href={`${shareLink}?preview=1`} target="_blank" className="flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur-md shadow-sm border text-muted-foreground hover:text-foreground transition-colors">
+                   <Globe className="h-3.5 w-3.5" />
+                 </Link>
+              </div>
+              <iframe 
+                src={`${shareLink}?preview=1`} 
+                className="w-full h-full border-0 rounded-l-lg"
+                title="Pré-visualização do formulário"
+              />
+            </div>
+            
+            {/* Direita: Opções */}
+            <div className="w-full md:w-[380px] bg-card p-8 flex flex-col shrink-0">
+              <DialogHeader className="mb-8 text-left space-y-3">
+                <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-2">
+                  <PartyPopper className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <DialogTitle className="text-2xl font-bold tracking-tight">Publicado!</DialogTitle>
+                <DialogDescription className="text-sm">
+                  Seu formulário agora está no ar e pronto para receber respostas.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6 flex-1">
+                <div className="space-y-3">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Link de compartilhamento</label>
+                  <div className="flex items-center space-x-2">
+                    <Input 
+                      readOnly 
+                      value={shareLink} 
+                      className="text-sm h-10 bg-muted/50 font-medium"
+                    />
+                  </div>
+                  <Button 
+                    className="w-full h-10 font-medium"
+                    variant={copied ? "secondary" : "default"}
+                    onClick={handleCopyLink}
+                  >
+                    {copied ? (
+                      <><CheckCircle2 className="mr-2 h-4 w-4 text-green-500" /> Link copiado!</>
+                    ) : (
+                      <><Copy className="mr-2 h-4 w-4" /> Copiar link</>
+                    )}
+                  </Button>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <Button variant="outline" className="w-full h-10" asChild>
+                    <a href={shareLink} target="_blank" rel="noopener noreferrer">
+                      <Globe className="mr-2 h-4 w-4" />
+                      Abrir formulário em nova aba
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -397,14 +509,106 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
 // ─── Theme Picker Panel ────────────────────────────────────────────────────────
 
 function ThemePickerPanel({
-  currentThemeId,
+  form,
   onSelect,
+  onUpdateLogo,
 }: {
-  currentThemeId: string
+  form: Form
   onSelect: (theme: ThemeConfig) => void
+  onUpdateLogo: (logo: ThemeConfig["logo"] | undefined) => void
 }) {
+  const currentThemeId = form.theme.id
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 1024 * 1024) {
+      alert("A imagem não pode exceder 1MB.")
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string
+      onUpdateLogo({
+        url: base64,
+        position: form.theme.logo?.position ?? "center"
+      })
+    }
+    reader.readAsDataURL(file)
+  }
+
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-8">
+      {/* Marca / Logotipo */}
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+          Marca
+        </p>
+        <div className="space-y-3">
+          {form.theme.logo?.url ? (
+            <div className="relative rounded-xl border bg-card p-4 flex flex-col items-center justify-center gap-4">
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute top-2 right-2 h-6 w-6 rounded-full opacity-60 hover:opacity-100"
+                onClick={() => onUpdateLogo(undefined)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={form.theme.logo.url} alt="Logo" className="max-h-16 object-contain" />
+              
+              <div className="w-full">
+                <p className="text-[10px] text-muted-foreground mb-1.5 font-medium uppercase text-center">Alinhamento</p>
+                <div className="flex bg-muted p-1 rounded-lg gap-1">
+                  {(["left", "center", "right"] as const).map((pos) => {
+                    const Icon = pos === "left" ? AlignLeftIcon : pos === "center" ? AlignCenter : AlignRight
+                    return (
+                      <button
+                        key={pos}
+                        className={cn(
+                          "flex-1 flex justify-center items-center py-1.5 rounded-md text-muted-foreground hover:text-foreground transition-all",
+                          form.theme.logo?.position === pos ? "bg-background text-foreground shadow-sm" : ""
+                        )}
+                        onClick={() => onUpdateLogo({ ...form.theme.logo!, position: pos })}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div 
+              className="border-2 border-dashed rounded-xl p-6 text-center hover:bg-muted/50 transition-colors cursor-pointer flex flex-col items-center gap-2"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                <ImageIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Fazer upload do logo</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">JPG ou PNG, máx 1MB</p>
+              </div>
+            </div>
+          )}
+          <input
+            type="file"
+            accept="image/png, image/jpeg, image/jpg"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleLogoUpload}
+          />
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Temas Predefinidos */}
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
           Aparência

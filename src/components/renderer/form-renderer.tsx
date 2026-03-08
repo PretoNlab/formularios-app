@@ -800,6 +800,19 @@ export function FormRenderer({
                 />
             )}
 
+            {/* Logotipo da Marca */}
+            {theme.logo?.url && (
+                <div 
+                    className={`ff-logo-container ${
+                        theme.logo.position === "left" ? "ff-logo-left" : 
+                        theme.logo.position === "right" ? "ff-logo-right" : "ff-logo-center"
+                    }`}
+                >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={theme.logo.url} alt="Logo" className="ff-logo-img" />
+                </div>
+            )}
+
             <div className={`ff-screen ${slideClass}`}>
                 <div className="ff-card">
                     {questionNumber != null && (
@@ -986,6 +999,22 @@ const FF_CSS = `
   object-fit: cover;
   border-radius: calc(var(--ff-radius) / 2);
   margin-bottom: 20px;
+}
+
+/* ── Logo ── */
+.ff-logo-container {
+  width: 100%;
+  max-width: 640px;
+  margin-bottom: 32px;
+  display: flex;
+}
+.ff-logo-left { justify-content: flex-start; }
+.ff-logo-center { justify-content: center; }
+.ff-logo-right { justify-content: flex-end; }
+
+.ff-logo-img {
+  max-height: 80px;
+  object-fit: contain;
 }
 
 /* ── Answer area ── */
