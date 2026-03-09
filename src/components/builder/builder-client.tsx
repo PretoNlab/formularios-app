@@ -36,6 +36,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { FormRenderer } from "@/components/renderer/form-renderer"
 
 import { useBuilderStore } from "@/stores/builder-store"
 import { useAutoSave } from "@/lib/hooks/use-auto-save"
@@ -135,7 +136,7 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
   const reorderQuestions = useBuilderStore((s) => s.reorderQuestions)
 
   const [sidebarTab, setSidebarTab] = useState<"fields" | "config" | "webhooks" | "theme">("fields")
-  const [builderMode, setBuilderMode] = useState<"editor" | "logic">("editor")
+  const [builderMode, setBuilderMode] = useState<"editor" | "logic" | "preview">("editor")
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [copied, setCopied] = useState(false)
   const [isPublishing, startPublishTransition] = useTransition()
@@ -267,21 +268,37 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
       <main className="flex-1 flex flex-col bg-muted/10 relative">
         {/* Floating toolbar */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full border bg-background/80 backdrop-blur-md p-1.5 shadow-sm z-10 whitespace-nowrap">
-          <Button variant="ghost" size="sm" className="rounded-full px-4 h-8 text-xs font-medium bg-accent text-accent-foreground">Editor</Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={`rounded-full px-4 h-8 text-xs font-medium transition-all ${builderMode === "editor" ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`}
+            onClick={() => setBuilderMode("editor")}
+          >
+            Editor
+          </Button>
           <Button
             variant="ghost"
             size="sm"
             className={`rounded-full px-4 h-8 text-xs font-medium transition-all ${builderMode === "logic" ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`}
-            onClick={() => setBuilderMode((m) => m === "logic" ? "editor" : "logic")}
+            onClick={() => setBuilderMode("logic")}
           >
             Lógica
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`rounded-full px-4 h-8 text-xs font-medium transition-all ${builderMode === "preview" ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`}
+            onClick={() => setBuilderMode("preview")}
+            title="Pré-visualizar Tema"
+          >
+            <Eye className="mr-1.5 h-4 w-4" /> Preview
           </Button>
           <Separator orientation="vertical" className="h-4" />
           <Link
             href={`/f/${form.slug}?preview=1`}
             target="_blank"
             className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            title="Pré-visualizar"
+            title="Abrir em Nova Guia"
           >
             <Eye className="h-4 w-4" />
           </Link>
@@ -331,9 +348,20 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
           )}
         </div>
 
-        <ScrollArea className="flex-1 p-8 pt-24">
-          <div className="mx-auto max-w-2xl space-y-4">
-            {/* Logotipo do formulário */}
+        {builderMode === "preview" ? (
+          <div className="flex-1 w-full h-full overflow-hidden relative pt-16 mt-8">
+            {/* O FormRenderer toma 100% de width e height baseados no parent. */}
+            <FormRenderer 
+              form={form} 
+              onSubmit={async () => {
+                alert("Em modo preview as respostas não são salvas.")
+              }} 
+            />
+          </div>
+        ) : (
+          <ScrollArea className="flex-1 p-8 pt-24">
+            <div className="mx-auto max-w-2xl space-y-4">
+              {/* Logotipo do formulário */}
             {form.theme.logo?.url && (
               <div 
                 className={cn(
@@ -395,6 +423,7 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
             </Button>
           </div>
         </ScrollArea>
+        )}
       </main>
 
       {/* ── RIGHT SIDEBAR ────────────────────────────────────────────── */}
@@ -402,6 +431,8 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
         <div className="flex h-14 items-center border-b px-4">
           {builderMode === "logic" ? (
             <><Zap className="mr-2 h-4 w-4 text-muted-foreground" /><h3 className="font-semibold text-sm">Lógica</h3></>
+          ) : builderMode === "preview" ? (
+            <><Eye className="mr-2 h-4 w-4 text-muted-foreground" /><h3 className="font-semibold text-sm">Visualização</h3></>
           ) : (
             <><Settings2 className="mr-2 h-4 w-4 text-muted-foreground" /><h3 className="font-semibold text-sm">Propriedades</h3></>
           )}
@@ -416,6 +447,12 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
                 <p className="text-sm">Selecione uma pergunta para definir sua lógica.</p>
               </div>
             )
+          ) : builderMode === "preview" ? (
+            <div className="flex h-full flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                <Eye className="h-8 w-8 mb-4 opacity-20" />
+                <p className="text-sm">Você está no <strong className="text-foreground">Modo Preview</strong>.</p>
+                <p className="text-xs mt-2">Altere o <b>Tema</b> na barra esquerda para ver as mudanças refletirem na hora.</p>
+              </div>
           ) : (
             selectedQuestion ? (
               <PropertiesPanel question={selectedQuestion} />
