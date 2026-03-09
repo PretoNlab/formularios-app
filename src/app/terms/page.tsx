@@ -157,8 +157,8 @@ export default function TermsPage() {
             <h2 className="text-xl font-semibold text-foreground">13. Contato</h2>
             <p>
               Dúvidas sobre estes Termos? Entre em contato:{" "}
-              <a href="mailto:contato@formularios.ia" className="text-foreground underline underline-offset-4">
-                contato@formularios.ia
+              <a href="mailto:contato@formularios.ia.br" className="text-foreground underline underline-offset-4">
+                contato@formularios.ia.br
               </a>
             </p>
           </section>

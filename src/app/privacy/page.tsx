@@ -44,8 +44,8 @@ export default function PrivacyPage() {
               O formularios.ia é responsável pelo tratamento dos dados pessoais coletados por meio
               da plataforma. Para exercer seus direitos ou tirar dúvidas, entre em contato pelo
               e-mail{" "}
-              <a href="mailto:privacidade@formularios.ia" className="text-foreground underline underline-offset-4">
-                privacidade@formularios.ia
+              <a href="mailto:privacidade@formularios.ia.br" className="text-foreground underline underline-offset-4">
+                privacidade@formularios.ia.br
               </a>.
             </p>
           </section>
@@ -123,8 +123,8 @@ export default function PrivacyPage() {
             </ul>
             <p className="mt-2">
               Para exercer seus direitos, entre em contato:{" "}
-              <a href="mailto:privacidade@formularios.ia" className="text-foreground underline underline-offset-4">
-                privacidade@formularios.ia
+              <a href="mailto:privacidade@formularios.ia.br" className="text-foreground underline underline-offset-4">
+                privacidade@formularios.ia.br
               </a>. Responderemos em até 15 dias úteis.
             </p>
           </section>
@@ -191,8 +191,8 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-foreground">13. Encarregado (DPO)</h2>
             <p>
               Nosso Encarregado de Proteção de Dados pode ser contatado pelo e-mail{" "}
-              <a href="mailto:privacidade@formularios.ia" className="text-foreground underline underline-offset-4">
-                privacidade@formularios.ia
+              <a href="mailto:privacidade@formularios.ia.br" className="text-foreground underline underline-offset-4">
+                privacidade@formularios.ia.br
               </a>.
             </p>
           </section>
