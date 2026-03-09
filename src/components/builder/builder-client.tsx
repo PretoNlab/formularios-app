@@ -556,6 +556,53 @@ function ThemePickerPanel({
 }) {
   const currentThemeId = form.theme.id
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Custom Themes State
+  const [savedThemes, setSavedThemes] = useState<ThemeConfig[]>([])
+  const [isSavingTheme, setIsSavingTheme] = useState(false)
+  const [newThemeName, setNewThemeName] = useState("")
+
+  useEffect(() => {
+    const stored = localStorage.getItem("formularios.ia_saved_themes")
+    if (stored) {
+      try {
+        setSavedThemes(JSON.parse(stored))
+      } catch (e) {
+        console.error("Failed to parse saved themes", e)
+      }
+    }
+  }, [])
+
+  function saveThemesToStorage(themes: ThemeConfig[]) {
+    setSavedThemes(themes)
+    localStorage.setItem("formularios.ia_saved_themes", JSON.stringify(themes))
+  }
+
+  function handleSaveCurrentTheme() {
+    if (!newThemeName.trim()) return
+    const newTheme: ThemeConfig = {
+      ...form.theme,
+      id: `custom-${Date.now()}`,
+      logo: undefined // usually we don't save per-form logo in the generic theme unless requested, but let's keep it clean
+    }
+    // store the name somewhere, maybe in a custom field or just map it.
+    // the ThemeConfig type doesn't have a "name" field, but we can override the ID to be the name or use ID as name.
+    // For our purposes, the ID acts as the display name in the list.
+    newTheme.id = newThemeName.trim()
+    
+    saveThemesToStorage([...savedThemes, newTheme])
+    setIsSavingTheme(false)
+    setNewThemeName("")
+    onSelect(newTheme) // Switch to it
+  }
+
+  function handleDeleteSavedTheme(e: React.MouseEvent, idToRemove: string) {
+    e.stopPropagation()
+    saveThemesToStorage(savedThemes.filter(t => t.id !== idToRemove))
+    if (currentThemeId === idToRemove) {
+      onSelect(PRESET_THEMES[0])
+    }
+  }
 
   function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -681,49 +728,119 @@ function ThemePickerPanel({
             <TabsTrigger value="custom" className="text-xs">Personalizar</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="presets" className="space-y-2 mt-0">
-            {PRESET_THEMES.map((theme) => {
-              const isActive = theme.id === currentThemeId
-              return (
-                <button
-                  key={theme.id}
-                  onClick={() => onSelect(theme)}
-                  className={cn(
-                    "w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all hover:border-primary/60 hover:shadow-sm",
-                    isActive
-                      ? "border-primary ring-1 ring-primary bg-accent/5"
-                      : "border-border bg-card"
-                  )}
-                >
-                  <div
-                    className="h-10 w-10 rounded-lg shrink-0 flex items-center justify-center border border-black/10 dark:border-white/10"
-                    style={{ backgroundColor: theme.colors.bg }}
-                  >
-                    <div
-                      className="h-6 w-6 rounded-md shadow-sm"
-                      style={{ backgroundColor: theme.colors.accent }}
-                    />
-                  </div>
+          <TabsContent value="presets" className="space-y-6 mt-0">
+            {savedThemes.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 pt-1">
+                  Seus Temas Salvos
+                </h4>
+                <div className="space-y-2">
+                  {savedThemes.map((theme) => {
+                    const isActive = theme.id === currentThemeId
+                    return (
+                      <div key={theme.id} className="relative group">
+                        <button
+                          onClick={() => onSelect(theme)}
+                          className={cn(
+                            "w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all hover:border-primary/60 hover:shadow-sm",
+                            isActive
+                              ? "border-primary ring-1 ring-primary bg-accent/5"
+                              : "border-border bg-card"
+                          )}
+                        >
+                          <div
+                            className="h-10 w-10 rounded-lg shrink-0 flex items-center justify-center border border-black/10 dark:border-white/10"
+                            style={{ backgroundColor: theme.colors.bg }}
+                          >
+                            <div
+                              className="h-6 w-6 rounded-md shadow-sm"
+                              style={{ backgroundColor: theme.colors.accent }}
+                            />
+                          </div>
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold capitalize">{theme.id}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">
-                      {theme.font.heading} · {theme.font.body}
-                    </p>
-                  </div>
+                          <div className="flex-1 min-w-0 pr-8">
+                            <p className="text-sm font-semibold truncate">{theme.id}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {theme.font.heading} · {theme.font.body}
+                            </p>
+                          </div>
 
-                  <div className="flex gap-1 shrink-0">
-                    {[theme.colors.bg, theme.colors.card, theme.colors.accent, theme.colors.text].map((c, i) => (
+                          <div className="flex gap-1 shrink-0">
+                            {[theme.colors.bg, theme.colors.card, theme.colors.accent, theme.colors.text].map((c, i) => (
+                              <div
+                                key={i}
+                                className="h-3 w-3 rounded-full border border-black/10 dark:border-white/10"
+                                style={{ backgroundColor: c }}
+                              />
+                            ))}
+                          </div>
+                        </button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => handleDeleteSavedTheme(e, theme.id)}
+                          title="Excluir tema"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )
+                  })}
+                </div>
+                <Separator className="mt-4 mb-2" />
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                Modelos Prontos
+              </h4>
+              <div className="space-y-2">
+                {PRESET_THEMES.map((theme) => {
+                  const isActive = theme.id === currentThemeId
+                  return (
+                    <button
+                      key={theme.id}
+                      onClick={() => onSelect(theme)}
+                      className={cn(
+                        "w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all hover:border-primary/60 hover:shadow-sm",
+                        isActive
+                          ? "border-primary ring-1 ring-primary bg-accent/5"
+                          : "border-border bg-card"
+                      )}
+                    >
                       <div
-                        key={i}
-                        className="h-3 w-3 rounded-full border border-black/10 dark:border-white/10"
-                        style={{ backgroundColor: c }}
-                      />
-                    ))}
-                  </div>
-                </button>
-              )
-            })}
+                        className="h-10 w-10 rounded-lg shrink-0 flex items-center justify-center border border-black/10 dark:border-white/10"
+                        style={{ backgroundColor: theme.colors.bg }}
+                      >
+                        <div
+                          className="h-6 w-6 rounded-md shadow-sm"
+                          style={{ backgroundColor: theme.colors.accent }}
+                        />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold capitalize">{theme.id}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {theme.font.heading} · {theme.font.body}
+                        </p>
+                      </div>
+
+                      <div className="flex gap-1 shrink-0">
+                        {[theme.colors.bg, theme.colors.card, theme.colors.accent, theme.colors.text].map((c, i) => (
+                          <div
+                            key={i}
+                            className="h-3 w-3 rounded-full border border-black/10 dark:border-white/10"
+                            style={{ backgroundColor: c }}
+                          />
+                        ))}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="custom" className="space-y-6 mt-0">
@@ -841,6 +958,59 @@ function ThemePickerPanel({
                   />
                 </div>
               </div>
+            </div>
+
+            <Separator />
+            
+            {/* Salvar Tema */}
+            <div className="space-y-3 pt-2">
+              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Salvar Tema
+              </h4>
+              {!isSavingTheme ? (
+                <Button 
+                  variant="outline" 
+                  className="w-full text-xs h-9 border-primary/20 hover:bg-primary/5 hover:text-primary"
+                  onClick={() => setIsSavingTheme(true)}
+                >
+                  <Plus className="mr-2 h-3.5 w-3.5" /> Salvar tema atual
+                </Button>
+              ) : (
+                <div className="space-y-2 p-3 bg-muted/30 rounded-lg border">
+                  <Input
+                    placeholder="Nome do tema..."
+                    value={newThemeName}
+                    onChange={(e) => setNewThemeName(e.target.value)}
+                    className="text-xs h-8 bg-background"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveCurrentTheme()
+                      if (e.key === "Escape") setIsSavingTheme(false)
+                    }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      size="sm" 
+                      className="text-[11px] h-7 flex-1" 
+                      onClick={handleSaveCurrentTheme}
+                      disabled={!newThemeName.trim()}
+                    >
+                      Salvar
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-[11px] h-7 px-2 text-muted-foreground" 
+                      onClick={() => {
+                        setIsSavingTheme(false)
+                        setNewThemeName("")
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
           </TabsContent>
