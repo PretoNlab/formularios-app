@@ -33,7 +33,12 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://formularios-app-cyan.vercel.app/login)",
       "Bash(curl -s -o /dev/null -w \" %{http_code}\" https://formularios-app-cyan.vercel.app/dashboard)",
       "Bash(pnpm db:push)",
-      "Bash(npx vercel env pull .env.vercel.tmp)"
+      "Bash(npx vercel env pull .env.vercel.tmp)",
+      "Bash(ls -la /Users/diegomachado/formulários/src/app/\\\\\\(auth-pages\\\\\\)/signup/)",
+      "Bash(git add src/app/actions/responses.ts src/app/page.tsx src/app/\\\\\\(auth-pages\\\\\\)/reset-password/ src/app/error.tsx src/app/not-found.tsx src/app/privacy/ src/app/terms/)",
+      "Bash(git commit:*)",
+      "Bash(git push origin main)",
+      "Bash(npx vercel env add NEXT_PUBLIC_APP_URL production --force)"
     ],
     "additionalDirectories": [
       "/Users/diegomachado/.claude/projects/-Users-diegomachado-formul-rios"

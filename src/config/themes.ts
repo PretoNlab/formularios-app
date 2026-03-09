@@ -1,4 +1,33 @@
 import type { ThemeConfig } from "@/lib/types/form"
+export const AVAILABLE_FONTS = [
+  "Inter",
+  "Roboto",
+  "Open Sans",
+  "Lato",
+  "Poppins",
+  "Montserrat",
+  "Oswald",
+  "Source Sans 3",
+  "Nunito",
+  "Raleway",
+  "Playfair Display",
+  "Merriweather",
+  "Rubik",
+  "Work Sans",
+  "Lora",
+  "Fira Sans",
+  "Outfit",
+  "DM Sans",
+  "Space Grotesk",
+  "Syne",
+  "Outfit",
+  "Plus Jakarta Sans",
+  "Fraunces",
+  "Sora",
+  "Bitter",
+  "Orbitron",
+  "Rajdhani"
+]
 
 export const PRESET_THEMES: ThemeConfig[] = [
   {

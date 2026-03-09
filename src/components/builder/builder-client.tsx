@@ -9,7 +9,7 @@ import {
   PartyPopper, Paperclip, PenTool, GripVertical, Settings2, Eye, Plus,
   Loader2, Globe, Trash2, Copy, CheckCircle2, AlertCircle, BarChart3,
   Webhook, Zap, MessageCircle, CreditCard, Building2, Share2,
-  Image as ImageIcon, AlignLeft as AlignLeftIcon, AlignCenter, AlignRight, X
+  Image as ImageIcon, AlignLeft as AlignLeftIcon, AlignCenter, AlignRight, X, PaintBucket, Palette, Type as TypeIcon
 } from "lucide-react"
 import {
   DndContext,
@@ -31,7 +31,7 @@ import { CSS } from "@dnd-kit/utilities"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
@@ -50,7 +50,7 @@ import {
 import type { Form, Question, QuestionType, ThemeConfig, LogicRule, LogicOperator } from "@/lib/types/form"
 import { QUESTION_TYPES } from "@/lib/types/form"
 import type { IntegrationRow } from "@/lib/db/queries/integrations"
-import { PRESET_THEMES } from "@/config/themes"
+import { PRESET_THEMES, AVAILABLE_FONTS } from "@/config/themes"
 import { cn } from "@/lib/utils"
 
 // ─── Icon map ─────────────────────────────────────────────────────────────────
@@ -577,6 +577,30 @@ function ThemePickerPanel({
     reader.readAsDataURL(file)
   }
 
+  function handleCustomColorChange(key: keyof ThemeConfig["colors"], value: string) {
+    onSelect({
+      ...form.theme,
+      id: "custom",
+      colors: { ...form.theme.colors, [key]: value }
+    })
+  }
+
+  function handleCustomFontChange(key: keyof ThemeConfig["font"], value: string) {
+    onSelect({
+      ...form.theme,
+      id: "custom",
+      font: { ...form.theme.font, [key]: value }
+    })
+  }
+
+  function handleCustomBorderChange(value: string) {
+    onSelect({
+      ...form.theme,
+      id: "custom",
+      borderRadius: value
+    })
+  }
+
   return (
     <div className="p-4 space-y-8">
       {/* Marca / Logotipo */}
@@ -645,57 +669,182 @@ function ThemePickerPanel({
 
       <Separator />
 
-      {/* Temas Predefinidos */}
+      {/* Aparência */}
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
           Aparência
         </p>
-        <div className="space-y-2">
-          {PRESET_THEMES.map((theme) => {
-            const isActive = theme.id === currentThemeId
-            return (
-              <button
-                key={theme.id}
-                onClick={() => onSelect(theme)}
-                className={cn(
-                  "w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all hover:border-primary/60 hover:shadow-sm",
-                  isActive
-                    ? "border-primary ring-1 ring-primary bg-accent/5"
-                    : "border-border bg-card"
-                )}
-              >
-                {/* Color swatches */}
-                <div
-                  className="h-10 w-10 rounded-lg shrink-0 flex items-center justify-center"
-                  style={{ backgroundColor: theme.colors.bg }}
+
+        <Tabs defaultValue={currentThemeId === "custom" ? "custom" : "presets"} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="presets" className="text-xs">Prontos</TabsTrigger>
+            <TabsTrigger value="custom" className="text-xs">Personalizar</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="presets" className="space-y-2 mt-0">
+            {PRESET_THEMES.map((theme) => {
+              const isActive = theme.id === currentThemeId
+              return (
+                <button
+                  key={theme.id}
+                  onClick={() => onSelect(theme)}
+                  className={cn(
+                    "w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all hover:border-primary/60 hover:shadow-sm",
+                    isActive
+                      ? "border-primary ring-1 ring-primary bg-accent/5"
+                      : "border-border bg-card"
+                  )}
                 >
                   <div
-                    className="h-6 w-6 rounded-md"
-                    style={{ backgroundColor: theme.colors.accent }}
-                  />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold capitalize">{theme.id}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    {theme.font.heading} · {theme.font.body}
-                  </p>
-                </div>
-
-                {/* Palette dots */}
-                <div className="flex gap-1 shrink-0">
-                  {[theme.colors.bg, theme.colors.card, theme.colors.accent, theme.colors.text].map((c, i) => (
+                    className="h-10 w-10 rounded-lg shrink-0 flex items-center justify-center border border-black/10 dark:border-white/10"
+                    style={{ backgroundColor: theme.colors.bg }}
+                  >
                     <div
-                      key={i}
-                      className="h-3 w-3 rounded-full border border-white/20"
-                      style={{ backgroundColor: c }}
+                      className="h-6 w-6 rounded-md shadow-sm"
+                      style={{ backgroundColor: theme.colors.accent }}
                     />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold capitalize">{theme.id}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {theme.font.heading} · {theme.font.body}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-1 shrink-0">
+                    {[theme.colors.bg, theme.colors.card, theme.colors.accent, theme.colors.text].map((c, i) => (
+                      <div
+                        key={i}
+                        className="h-3 w-3 rounded-full border border-black/10 dark:border-white/10"
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                </button>
+              )
+            })}
+          </TabsContent>
+
+          <TabsContent value="custom" className="space-y-6 mt-0">
+            {/* Cores */}
+            <div className="space-y-4">
+              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Palette className="h-3.5 w-3.5" /> Cores
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { key: "bg", label: "Fundo Geral" },
+                  { key: "card", label: "Cartão / Form" },
+                  { key: "accent", label: "Destaque (Botões)" },
+                  { key: "text", label: "Texto Principal" },
+                  { key: "muted", label: "Texto Secundário" },
+                  { key: "inputBg", label: "Fundo Inputs" },
+                ].map((c) => (
+                  <div key={c.key} className="space-y-1.5">
+                    <label className="text-xs font-medium text-foreground">{c.label}</label>
+                    <div className="flex items-center gap-2">
+                      <div className="relative h-8 w-8 rounded-md overflow-hidden border shadow-sm shrink-0">
+                        <input
+                          type="color"
+                          value={form.theme.colors[c.key as keyof ThemeConfig["colors"]] || "#ffffff"}
+                          onChange={(e) => handleCustomColorChange(c.key as keyof ThemeConfig["colors"], e.target.value)}
+                          className="absolute -top-2 -left-2 h-12 w-12 cursor-pointer appearance-none border-0 bg-transparent p-0"
+                        />
+                      </div>
+                      <Input
+                        type="text"
+                        value={form.theme.colors[c.key as keyof ThemeConfig["colors"]] || ""}
+                        onChange={(e) => handleCustomColorChange(c.key as keyof ThemeConfig["colors"], e.target.value)}
+                        className="h-8 text-xs font-mono px-2 uppercase"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Tipografia */}
+            <div className="space-y-4">
+              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <TypeIcon className="h-3.5 w-3.5" /> Tipografia
+              </h4>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Títulos</label>
+                  <select
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    value={form.theme.font.heading}
+                    onChange={(e) => handleCustomFontChange("heading", e.target.value)}
+                  >
+                    {AVAILABLE_FONTS.map(font => (
+                      <option key={font} value={font} style={{ fontFamily: font }}>{font}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Corpo do Texto</label>
+                  <select
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    value={form.theme.font.body}
+                    onChange={(e) => handleCustomFontChange("body", e.target.value)}
+                  >
+                     {AVAILABLE_FONTS.map(font => (
+                      <option key={font} value={font} style={{ fontFamily: font }}>{font}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Bordas */}
+            <div className="space-y-4">
+              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <PaintBucket className="h-3.5 w-3.5" /> Estilo (Bordas)
+              </h4>
+              <div className="space-y-3">
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { label: "0px", value: "0px" },
+                    { label: "4px", value: "4px" },
+                    { label: "8px", value: "8px" },
+                    { label: "12px", value: "12px" },
+                    { label: "16px", value: "16px" },
+                    { label: "24px", value: "24px" },
+                    { label: "Pílula", value: "99px" },
+                  ].map((border) => (
+                    <button
+                      key={border.value}
+                      className={cn(
+                        "h-8 text-[11px] font-medium rounded-md border transition-colors",
+                        form.theme.borderRadius === border.value 
+                          ? "bg-primary text-primary-foreground border-primary" 
+                          : "bg-card text-foreground hover:bg-muted"
+                      )}
+                      onClick={() => handleCustomBorderChange(border.value)}
+                    >
+                      {border.label}
+                    </button>
                   ))}
                 </div>
-              </button>
-            )
-          })}
-        </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Valor customizado:</span>
+                  <Input 
+                    type="text" 
+                    value={form.theme.borderRadius} 
+                    onChange={(e) => handleCustomBorderChange(e.target.value)}
+                    className="h-7 w-20 text-xs px-2"
+                  />
+                </div>
+              </div>
+            </div>
+
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )
