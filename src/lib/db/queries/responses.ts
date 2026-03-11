@@ -1,8 +1,8 @@
-import { eq, and, desc, asc, sql, isNotNull, count } from "drizzle-orm"
+import { eq, and, desc, asc, sql, inArray } from "drizzle-orm"
 import { db } from "../client"
 import { forms, questions, responses, answers } from "../schema"
 import type { ResponseMetadata, AnswerValue } from "../schema"
-import type { ApiResponse, PaginatedResponse, FormAnalytics } from "../../types/form"
+import type { ApiResponse, PaginatedResponse, FormAnalytics, QuestionAnalytics, QuestionType } from "../../types/form"
 
 // ─── Inferred row types ───────────────────────────────────────────────────────
 
@@ -220,12 +220,19 @@ export async function getResponseCount(formId: string): Promise<ApiResponse<numb
   }
 }
 
+const LAYOUT_TYPES = new Set(["welcome", "statement", "thank_you"])
+const SELECTION_TYPES = new Set(["multiple_choice", "dropdown", "yes_no"])
+const CHECKBOX_TYPES = new Set(["checkbox"])
+const NUMERIC_TYPES = new Set(["rating", "scale", "nps", "number"])
+
 /**
  * Computes analytics for a form:
  *  - Total views, total responses, completion rate
  *  - Average completion time (seconds)
  *  - Responses by day (last 30 days)
  *  - Dropoff rate per question
+ *  - Per-question answer distributions + NPS score
+ *  - Mobile percentage from user agents
  */
 export async function getFormAnalytics(
   formId: string
@@ -241,13 +248,20 @@ export async function getFormAnalytics(
       return { success: false, error: { code: "NOT_FOUND", message: "Form not found" } }
     }
 
-    // ── 2. Response completion stats ─────────────────────────────────────────
+    // ── 2. Response completion stats + mobile detection ───────────────────────
     const [stats] = await db
       .select({
         total: sql<number>`count(*)::int`,
         completed: sql<number>`count(case when ${responses.completedAt} is not null then 1 end)::int`,
         avgSeconds: sql<number | null>`
           avg(extract(epoch from (${responses.completedAt} - ${responses.startedAt})))
+        `,
+        mobileCount: sql<number>`
+          count(case when
+            lower(${responses.metadata}->>'userAgent') like '%mobile%' or
+            lower(${responses.metadata}->>'userAgent') like '%android%' or
+            lower(${responses.metadata}->>'userAgent') like '%iphone%'
+          then 1 end)::int
         `,
       })
       .from(responses)
@@ -257,6 +271,7 @@ export async function getFormAnalytics(
     const completed = stats?.completed ?? 0
     const completionRate = total > 0 ? completed / total : 0
     const averageCompletionTime = Math.round(stats?.avgSeconds ?? 0)
+    const mobilePercentage = total > 0 ? (stats?.mobileCount ?? 0) / total : 0
 
     // ── 3. Responses per day — last 30 days ──────────────────────────────────
     const responsesByDay = await db
@@ -274,13 +289,14 @@ export async function getFormAnalytics(
       .groupBy(sql`date(${responses.startedAt})`)
       .orderBy(sql`date(${responses.startedAt})`)
 
-    // ── 4. Dropoff by question ────────────────────────────────────────────────
+    // ── 4. Questions metadata ─────────────────────────────────────────────────
     const formQuestions = await db
-      .select({ id: questions.id })
+      .select({ id: questions.id, title: questions.title, type: questions.type })
       .from(questions)
       .where(eq(questions.formId, formId))
       .orderBy(asc(questions.order))
 
+    // ── 5. Dropoff by question ────────────────────────────────────────────────
     const answerCounts = await db
       .select({
         questionId: answers.questionId,
@@ -300,6 +316,134 @@ export async function getFormAnalytics(
       dropoffRate: total > 0 ? 1 - (answerCountMap.get(q.id) ?? 0) / total : 0,
     }))
 
+    // ── 6. Per-question answer distributions ─────────────────────────────────
+    const inputQuestions = formQuestions.filter((q) => !LAYOUT_TYPES.has(q.type))
+
+    const questionStats: QuestionAnalytics[] = []
+
+    if (inputQuestions.length > 0) {
+      const allAnswers = await db
+        .select({ questionId: answers.questionId, value: answers.value })
+        .from(answers)
+        .innerJoin(responses, eq(answers.responseId, responses.id))
+        .where(
+          and(
+            eq(responses.formId, formId),
+            inArray(answers.questionId, inputQuestions.map((q) => q.id))
+          )
+        )
+
+      // Group raw answers by questionId
+      const byQuestion = new Map<string, unknown[]>()
+      for (const a of allAnswers) {
+        const arr = byQuestion.get(a.questionId) ?? []
+        arr.push(a.value)
+        byQuestion.set(a.questionId, arr)
+      }
+
+      for (const q of inputQuestions) {
+        const qAnswers = byQuestion.get(q.id) ?? []
+        const totalAnswers = qAnswers.length
+        const skipRate = total > 0 ? 1 - totalAnswers / total : 0
+        const base = {
+          questionId: q.id,
+          questionTitle: q.title,
+          questionType: q.type as QuestionType,
+          totalAnswers,
+          skipRate,
+        }
+
+        // Selection (multiple_choice, dropdown, yes_no)
+        if (SELECTION_TYPES.has(q.type)) {
+          const counts = new Map<string, number>()
+          for (const v of qAnswers) {
+            const key = String(v ?? "")
+            if (key) counts.set(key, (counts.get(key) ?? 0) + 1)
+          }
+          const optionCounts = Array.from(counts.entries())
+            .map(([option, count]) => ({
+              option,
+              count,
+              percentage: totalAnswers > 0 ? count / totalAnswers : 0,
+            }))
+            .sort((a, b) => b.count - a.count)
+          questionStats.push({ ...base, optionCounts })
+          continue
+        }
+
+        // Checkbox (value is string[])
+        if (CHECKBOX_TYPES.has(q.type)) {
+          const counts = new Map<string, number>()
+          for (const v of qAnswers) {
+            const items = Array.isArray(v) ? v : [String(v ?? "")]
+            for (const item of items) {
+              if (item) counts.set(item, (counts.get(item) ?? 0) + 1)
+            }
+          }
+          const optionCounts = Array.from(counts.entries())
+            .map(([option, count]) => ({
+              option,
+              count,
+              percentage: totalAnswers > 0 ? count / totalAnswers : 0,
+            }))
+            .sort((a, b) => b.count - a.count)
+          questionStats.push({ ...base, optionCounts })
+          continue
+        }
+
+        // Numeric (rating, scale, nps, number)
+        if (NUMERIC_TYPES.has(q.type)) {
+          const nums = qAnswers
+            .map((v) => (typeof v === "number" ? v : parseFloat(String(v ?? ""))))
+            .filter((n) => !isNaN(n))
+
+          if (nums.length === 0) { questionStats.push(base); continue }
+
+          const avg = nums.reduce((a, b) => a + b, 0) / nums.length
+          const distMap = new Map<number, number>()
+          for (const n of nums) distMap.set(n, (distMap.get(n) ?? 0) + 1)
+          const distribution = Array.from(distMap.entries())
+            .map(([value, count]) => ({ value, count }))
+            .sort((a, b) => a.value - b.value)
+
+          let npsScore: number | undefined
+          let npsPromoters: number | undefined
+          let npsPassives: number | undefined
+          let npsDetractors: number | undefined
+
+          if (q.type === "nps") {
+            const promoters = nums.filter((n) => n >= 9).length
+            const passives = nums.filter((n) => n >= 7 && n <= 8).length
+            const detractors = nums.filter((n) => n <= 6).length
+            npsScore = Math.round(((promoters - detractors) / nums.length) * 100)
+            npsPromoters = Math.round((promoters / nums.length) * 100)
+            npsPassives = Math.round((passives / nums.length) * 100)
+            npsDetractors = Math.round((detractors / nums.length) * 100)
+          }
+
+          questionStats.push({
+            ...base,
+            average: Math.round(avg * 10) / 10,
+            min: Math.min(...nums),
+            max: Math.max(...nums),
+            distribution,
+            npsScore,
+            npsPromoters,
+            npsPassives,
+            npsDetractors,
+          })
+          continue
+        }
+
+        // Text types — store last 5 non-empty samples
+        const textSamples = qAnswers
+          .filter((v) => typeof v === "string" && (v as string).trim().length > 0)
+          .slice(-5)
+          .reverse() as string[]
+        questionStats.push({ ...base, textSamples })
+      }
+    }
+
     return {
       success: true,
       data: {
@@ -309,7 +453,8 @@ export async function getFormAnalytics(
         averageCompletionTime,
         responsesByDay,
         dropoffByQuestion,
-        questionStats: [], // Detailed per-question stats computed on demand
+        questionStats,
+        mobilePercentage,
       },
     }
   } catch (error) {

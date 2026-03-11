@@ -182,6 +182,7 @@ export interface FormAnalytics {
   responsesByDay: { date: string; count: number }[]
   dropoffByQuestion: { questionId: string; dropoffRate: number }[]
   questionStats: QuestionAnalytics[]
+  mobilePercentage: number
 }
 
 export interface QuestionAnalytics {
@@ -190,12 +191,20 @@ export interface QuestionAnalytics {
   questionType: QuestionType
   totalAnswers: number
   skipRate: number
+  // Selection types (multiple_choice, checkbox, dropdown, yes_no)
   optionCounts?: { option: string; count: number; percentage: number }[]
+  // Numeric types (rating, scale, nps, number)
   average?: number
-  median?: number
   min?: number
   max?: number
   distribution?: { value: number; count: number }[]
+  // NPS specific
+  npsScore?: number
+  npsPromoters?: number
+  npsPassives?: number
+  npsDetractors?: number
+  // Text types
+  textSamples?: string[]
 }
 
 export type IntegrationType =
