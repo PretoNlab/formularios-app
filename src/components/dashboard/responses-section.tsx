@@ -5,7 +5,7 @@ import Link from "next/link"
 import {
   ArrowLeft, Eye, Users, TrendingUp, Clock,
   CheckCircle2, Circle, Copy, ExternalLink, Download,
-  Smartphone, AlertTriangle, BarChart2,
+  Smartphone, AlertTriangle, BarChart2, Sparkles, Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { FormAnalytics, QuestionAnalytics, QuestionType } from "@/lib/types/form"
 import type { ResponseWithAnswers } from "@/lib/db/queries/responses"
 import { exportResponsesAction } from "@/app/actions/responses"
+import { analyzeTextResponsesAction, type TextAnalysisResult } from "@/app/actions/ai-analysis"
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -261,20 +262,145 @@ function ChoiceViz({ stat }: { stat: QuestionAnalytics }) {
   )
 }
 
-// ─── Text Visualization ───────────────────────────────────────────────────────
+// ─── Text Visualization with AI ───────────────────────────────────────────────
 
-function TextViz({ stat }: { stat: QuestionAnalytics }) {
+const AI_TEXT_TYPES = new Set(["short_text", "long_text", "email", "url", "phone", "whatsapp", "cpf", "cnpj"])
+
+function TextViz({ stat, formId }: { stat: QuestionAnalytics; formId: string }) {
+  const [aiResult, setAiResult] = useState<TextAnalysisResult | null>(null)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
+  const canAnalyze = AI_TEXT_TYPES.has(stat.questionType) && stat.totalAnswers >= 3
+
+  async function handleAnalyze() {
+    setIsAnalyzing(true)
+    setAiError(null)
+    const res = await analyzeTextResponsesAction(formId, stat.questionId)
+    if (res.success) {
+      setAiResult(res.data)
+    } else {
+      setAiError(res.error)
+    }
+    setIsAnalyzing(false)
+  }
+
   return (
-    <div className="space-y-2">
-      {(stat.textSamples ?? []).map((text, i) => (
-        <div key={i} className="rounded-lg bg-muted/40 px-3 py-2">
-          <p className="text-sm text-foreground/80 line-clamp-2">{text}</p>
+    <div className="space-y-3">
+      {/* Sample responses */}
+      <div className="space-y-2">
+        {(stat.textSamples ?? []).map((text, i) => (
+          <div key={i} className="rounded-lg bg-muted/40 px-3 py-2">
+            <p className="text-sm text-foreground/80 line-clamp-2">{text}</p>
+          </div>
+        ))}
+        {stat.totalAnswers > 5 && (
+          <p className="text-xs text-muted-foreground text-right">
+            +{stat.totalAnswers - 5} respostas adicionais
+          </p>
+        )}
+      </div>
+
+      {/* AI Analysis */}
+      {!aiResult && canAnalyze && (
+        <div className="pt-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 w-full text-xs border-dashed"
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+          >
+            {isAnalyzing ? (
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" />Analisando com IA...</>
+            ) : (
+              <><Sparkles className="h-3.5 w-3.5 text-violet-500" />Analisar respostas com IA</>
+            )}
+          </Button>
+          {aiError && <p className="text-xs text-red-500 mt-2">{aiError}</p>}
         </div>
-      ))}
-      {stat.totalAnswers > 5 && (
-        <p className="text-xs text-muted-foreground text-right pt-1">
-          +{stat.totalAnswers - 5} respostas — veja a lista completa na aba Respostas
-        </p>
+      )}
+
+      {aiResult && <AIAnalysisView result={aiResult} />}
+    </div>
+  )
+}
+
+// ─── AI Analysis Result View ──────────────────────────────────────────────────
+
+function AIAnalysisView({ result }: { result: TextAnalysisResult }) {
+  const { positive, neutral, negative } = result.sentiment
+
+  return (
+    <div className="space-y-4 pt-2 border-t mt-2">
+      {/* Header */}
+      <div className="flex items-center gap-1.5 text-xs text-violet-600 font-medium">
+        <Sparkles className="h-3.5 w-3.5" />
+        Análise com IA · {result.totalAnswers} respostas
+      </div>
+
+      {/* Summary */}
+      <p className="text-sm text-foreground/80 leading-relaxed italic">"{result.summary}"</p>
+
+      {/* Sentiment bar */}
+      <div>
+        <p className="text-xs text-muted-foreground mb-1.5 font-medium">Sentimento</p>
+        <div className="flex h-2.5 rounded-full overflow-hidden gap-0.5">
+          {positive > 0 && <div className="bg-green-500 transition-all" style={{ width: `${positive * 100}%` }} title={`Positivo: ${pct(positive)}`} />}
+          {neutral > 0 && <div className="bg-slate-300 transition-all" style={{ width: `${neutral * 100}%` }} title={`Neutro: ${pct(neutral)}`} />}
+          {negative > 0 && <div className="bg-red-400 transition-all" style={{ width: `${negative * 100}%` }} title={`Negativo: ${pct(negative)}`} />}
+        </div>
+        <div className="flex gap-3 mt-1.5 text-xs text-muted-foreground">
+          {positive > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500 inline-block" />Positivo {pct(positive)}</span>}
+          {neutral > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-slate-300 inline-block" />Neutro {pct(neutral)}</span>}
+          {negative > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-400 inline-block" />Negativo {pct(negative)}</span>}
+        </div>
+      </div>
+
+      {/* Themes */}
+      <div>
+        <p className="text-xs text-muted-foreground mb-2 font-medium">Temas identificados</p>
+        <div className="space-y-2.5">
+          {result.themes.map((theme) => (
+            <div key={theme.label}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-medium truncate max-w-[65%]">{theme.label}</span>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
+                  <span className="font-medium text-foreground">{pct(theme.percentage)}</span>
+                  <span>{theme.count}</span>
+                </div>
+              </div>
+              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-violet-500/70 transition-all duration-500"
+                  style={{ width: `${theme.percentage * 100}%` }}
+                />
+              </div>
+              {theme.examples.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-1 italic">
+                  ex: "{theme.examples[0]}"
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Keywords */}
+      {result.keywords.length > 0 && (
+        <div>
+          <p className="text-xs text-muted-foreground mb-2 font-medium">Palavras-chave</p>
+          <div className="flex flex-wrap gap-1.5">
+            {result.keywords.map((kw, i) => (
+              <span
+                key={kw}
+                className="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                style={{ opacity: 1 - i * 0.08, backgroundColor: "hsl(var(--muted))" }}
+              >
+                {kw}
+              </span>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )
@@ -282,7 +408,7 @@ function TextViz({ stat }: { stat: QuestionAnalytics }) {
 
 // ─── Question Card ────────────────────────────────────────────────────────────
 
-function QuestionCard({ stat, order }: { stat: QuestionAnalytics; order: number | string }) {
+function QuestionCard({ stat, order, formId }: { stat: QuestionAnalytics; order: number | string; formId: string }) {
   return (
     <div className="rounded-xl border bg-card p-6">
       <div className="flex items-start justify-between gap-4 mb-5">
@@ -308,10 +434,8 @@ function QuestionCard({ stat, order }: { stat: QuestionAnalytics; order: number 
         <NumericViz stat={stat} />
       ) : stat.optionCounts && stat.optionCounts.length > 0 ? (
         <ChoiceViz stat={stat} />
-      ) : stat.textSamples && stat.textSamples.length > 0 ? (
-        <TextViz stat={stat} />
       ) : (
-        <p className="text-sm text-muted-foreground">Sem dados para exibir.</p>
+        <TextViz stat={stat} formId={formId} />
       )}
     </div>
   )
@@ -319,9 +443,10 @@ function QuestionCard({ stat, order }: { stat: QuestionAnalytics; order: number 
 
 // ─── Question Intelligence Tab ────────────────────────────────────────────────
 
-function QuestionIntelligence({ questionStats, questions }: {
+function QuestionIntelligence({ questionStats, questions, formId }: {
   questionStats: QuestionAnalytics[]
   questions: QuestionSummary[]
+  formId: string
 }) {
   if (questionStats.length === 0) {
     return (
@@ -336,7 +461,7 @@ function QuestionIntelligence({ questionStats, questions }: {
       {questionStats.map((stat) => {
         const q = questions.find((x) => x.id === stat.questionId)
         const order = q?.order !== undefined ? q.order + 1 : "?"
-        return <QuestionCard key={stat.questionId} stat={stat} order={order} />
+        return <QuestionCard key={stat.questionId} stat={stat} order={order} formId={formId} />
       })}
     </div>
   )
@@ -822,7 +947,7 @@ export function ResponsesSection({
         <ResponsesTable responses={responses} questions={questions} />
       )}
       {tab === "questions" && (
-        <QuestionIntelligence questionStats={questionStats} questions={questions} />
+        <QuestionIntelligence questionStats={questionStats} questions={questions} formId={formId} />
       )}
       {tab === "analytics" && (
         <AnalyticsView analytics={analytics} questions={questions} completionRate={completionRate} />
