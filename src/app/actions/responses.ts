@@ -51,6 +51,14 @@ const submitResponseSchema = z.object({
   answers: z.record(z.string(), answerValueSchema),
 })
 
+const clientMetaSchema = z.object({
+  utmSource: z.string().max(200).optional(),
+  utmMedium: z.string().max(200).optional(),
+  utmCampaign: z.string().max(200).optional(),
+  referrer: z.string().max(500).optional(),
+  deviceType: z.enum(["desktop", "mobile", "tablet"]).optional(),
+})
+
 function isAnswerEmpty(value: AnswerValue | undefined): boolean {
   if (value === null || value === undefined) return true
   if (typeof value === "string") return value.trim() === ""
@@ -69,12 +77,17 @@ const NON_INPUT_TYPES = new Set(["welcome", "thank_you", "statement"])
  */
 export async function submitResponseAction(
   formId: string,
-  rawAnswers: Record<string, AnswerValue>
+  rawAnswers: Record<string, AnswerValue>,
+  rawClientMeta?: unknown
 ) {
   // 1. Parse + sanitize input with Zod
   const parsed = submitResponseSchema.safeParse({ formId, answers: rawAnswers })
   if (!parsed.success) throw new Error("Dados de envio inválidos.")
   const { answers: parsedAnswers } = parsed.data
+
+  const clientMeta = rawClientMeta
+    ? (clientMetaSchema.safeParse(rawClientMeta).data ?? {})
+    : {}
 
   // 2. Fetch form for status + settings validation
   const form = await db.query.forms.findFirst({
@@ -131,7 +144,15 @@ export async function submitResponseAction(
   }
 
   // 8. Create the response session
-  const { data: response, success } = await createResponse(formId, { userAgent, ipHash })
+  const { data: response, success } = await createResponse(formId, {
+    userAgent,
+    ipHash,
+    utmSource: clientMeta.utmSource ?? null,
+    utmMedium: clientMeta.utmMedium ?? null,
+    utmCampaign: clientMeta.utmCampaign ?? null,
+    referrer: clientMeta.referrer ?? null,
+    deviceType: clientMeta.deviceType ?? null,
+  })
   if (!success || !response) throw new Error("Falha ao registrar resposta.")
 
   // 9. Save answers

@@ -342,6 +342,97 @@ function QuestionIntelligence({ questionStats, questions }: {
   )
 }
 
+// ─── Source Breakdown ─────────────────────────────────────────────────────────
+
+function SourceBreakdown({ data }: { data: FormAnalytics["sourceBreakdown"] }) {
+  const max = Math.max(...data.map((d) => d.count), 1)
+
+  function trimSource(source: string): string {
+    try {
+      const url = new URL(source.startsWith("http") ? source : `https://${source}`)
+      return url.hostname.replace(/^www\./, "")
+    } catch {
+      return source.length > 32 ? source.slice(0, 32) + "…" : source
+    }
+  }
+
+  if (data.length === 0) {
+    return <p className="text-sm text-muted-foreground">Sem dados de origem ainda.</p>
+  }
+
+  return (
+    <div className="space-y-2.5">
+      {data.slice(0, 6).map((row) => (
+        <div key={row.source}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm truncate max-w-[60%]">{trimSource(row.source)}</span>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground tabular-nums shrink-0">
+              <span className="font-medium text-foreground">{pct(row.percentage)}</span>
+              <span>{row.count}</span>
+            </div>
+          </div>
+          <div className="h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full bg-primary/70 transition-all duration-500"
+              style={{ width: `${(row.count / max) * 100}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── Device Breakdown ─────────────────────────────────────────────────────────
+
+const DEVICE_LABELS: Record<string, string> = {
+  desktop: "Desktop",
+  mobile: "Mobile",
+  tablet: "Tablet",
+  unknown: "Desconhecido",
+}
+
+const DEVICE_COLORS: Record<string, string> = {
+  desktop: "bg-blue-500",
+  mobile: "bg-emerald-500",
+  tablet: "bg-violet-500",
+  unknown: "bg-muted-foreground/40",
+}
+
+function DeviceBreakdown({ data }: { data: FormAnalytics["deviceBreakdown"] }) {
+  if (data.length === 0) {
+    return <p className="text-sm text-muted-foreground">Sem dados de dispositivo ainda.</p>
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
+        {data.map((row) => (
+          <div
+            key={row.device}
+            className={`transition-all ${DEVICE_COLORS[row.device] ?? "bg-muted"}`}
+            style={{ width: `${row.percentage * 100}%` }}
+            title={`${DEVICE_LABELS[row.device] ?? row.device}: ${pct(row.percentage)}`}
+          />
+        ))}
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {data.map((row) => (
+          <div key={row.device} className="flex items-center justify-between text-sm">
+            <span className="flex items-center gap-2">
+              <span className={`h-2.5 w-2.5 rounded-full inline-block ${DEVICE_COLORS[row.device] ?? "bg-muted"}`} />
+              {DEVICE_LABELS[row.device] ?? row.device}
+            </span>
+            <span className="text-muted-foreground tabular-nums text-xs">
+              {pct(row.percentage)} · {row.count}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Mini Bar Chart ───────────────────────────────────────────────────────────
 
 function MiniBarChart({ data }: { data: { date: string; count: number }[] }) {
@@ -491,6 +582,18 @@ function AnalyticsView({ analytics, questions, completionRate }: {
           ) : (
             <p className="text-sm text-muted-foreground">Sem dados suficientes para calcular.</p>
           )}
+        </div>
+
+        {/* Source breakdown */}
+        <div className="rounded-xl border bg-card p-6">
+          <h3 className="font-semibold mb-4">Origem dos respondentes</h3>
+          <SourceBreakdown data={analytics.sourceBreakdown} />
+        </div>
+
+        {/* Device breakdown */}
+        <div className="rounded-xl border bg-card p-6">
+          <h3 className="font-semibold mb-4">Dispositivos</h3>
+          <DeviceBreakdown data={analytics.deviceBreakdown} />
         </div>
       </div>
     </div>

@@ -444,6 +444,40 @@ export async function getFormAnalytics(
       }
     }
 
+    // ── 7. Source breakdown (UTM source or referrer) ──────────────────────────
+    const sourceRows = await db
+      .select({
+        source: sql<string>`coalesce(nullif(${responses.metadata}->>'utmSource', ''), nullif(${responses.metadata}->>'referrer', ''), 'Direto')`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(responses)
+      .where(eq(responses.formId, formId))
+      .groupBy(sql`coalesce(nullif(${responses.metadata}->>'utmSource', ''), nullif(${responses.metadata}->>'referrer', ''), 'Direto')`)
+      .orderBy(sql`count(*) desc`)
+
+    const sourceBreakdown = sourceRows.map((r) => ({
+      source: r.source,
+      count: r.count,
+      percentage: total > 0 ? r.count / total : 0,
+    }))
+
+    // ── 8. Device breakdown ───────────────────────────────────────────────────
+    const deviceRows = await db
+      .select({
+        device: sql<string>`coalesce(nullif(${responses.metadata}->>'deviceType', ''), 'unknown')`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(responses)
+      .where(eq(responses.formId, formId))
+      .groupBy(sql`coalesce(nullif(${responses.metadata}->>'deviceType', ''), 'unknown')`)
+      .orderBy(sql`count(*) desc`)
+
+    const deviceBreakdown = deviceRows.map((r) => ({
+      device: r.device,
+      count: r.count,
+      percentage: total > 0 ? r.count / total : 0,
+    }))
+
     return {
       success: true,
       data: {
@@ -455,6 +489,8 @@ export async function getFormAnalytics(
         dropoffByQuestion,
         questionStats,
         mobilePercentage,
+        sourceBreakdown,
+        deviceBreakdown,
       },
     }
   } catch (error) {

@@ -183,6 +183,8 @@ export interface FormAnalytics {
   dropoffByQuestion: { questionId: string; dropoffRate: number }[]
   questionStats: QuestionAnalytics[]
   mobilePercentage: number
+  sourceBreakdown: { source: string; count: number; percentage: number }[]
+  deviceBreakdown: { device: string; count: number; percentage: number }[]
 }
 
 export interface QuestionAnalytics {
