@@ -698,13 +698,22 @@ export function FormRenderer({
             state.answers
         )
 
-        if (nextIdx >= questions.length || isLastQuestion) {
-            // Submit
+        const nextQuestion = questions[nextIdx]
+        const isNextThankYou = nextQuestion?.type === "thank_you"
+
+        if (nextIdx >= questions.length || isLastQuestion || isNextThankYou) {
+            // Submit answers, then navigate to thank_you if it exists
             setState((s) => ({ ...s, isSubmitting: true }))
             try {
                 await onSubmit?.(state.answers)
             } finally {
-                setState((s) => ({ ...s, isSubmitting: false, isComplete: true }))
+                setState((s) => ({
+                    ...s,
+                    isSubmitting: false,
+                    isComplete: true,
+                    // Navigate into the thank_you screen so it renders
+                    ...(isNextThankYou ? { currentQuestionIndex: nextIdx } : {}),
+                }))
             }
             return
         }
@@ -793,12 +802,16 @@ export function FormRenderer({
         <div className={`ff-root ${className}`} style={cssVars as React.CSSProperties}>
             <FormStyles headingFont={theme.font.heading} bodyFont={theme.font.body} />
 
-            {settings.showProgressBar && !state.isComplete && (
-                <ProgressBar
-                    current={state.currentQuestionIndex}
-                    total={questions.length}
-                />
-            )}
+            {settings.showProgressBar && !state.isComplete && (() => {
+                const LAYOUT = new Set(["welcome", "statement", "thank_you"])
+                const inputTotal = questions.filter((q) => !LAYOUT.has(q.type)).length
+                const inputAnswered = questions
+                    .slice(0, state.currentQuestionIndex + 1)
+                    .filter((q) => !LAYOUT.has(q.type)).length
+                return inputTotal > 0
+                    ? <ProgressBar current={inputAnswered} total={inputTotal} />
+                    : null
+            })()}
 
             {/* Logotipo da Marca */}
             {theme.logo?.url && (
