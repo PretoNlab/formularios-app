@@ -3,7 +3,8 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { eq, and, inArray } from "drizzle-orm"
 import { db } from "@/lib/db/client"
-import { questions, answers, responses } from "@/lib/db/schema"
+import { questions, answers, responses, forms } from "@/lib/db/schema"
+import type { FormAnalytics } from "@/lib/types/form"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -136,6 +137,128 @@ Regras:
     return {
       success: false,
       error: err instanceof Error ? err.message : "Erro na análise com IA.",
+    }
+  }
+}
+
+// ─── Form Report ──────────────────────────────────────────────────────────────
+
+export interface FormReportResult {
+  score: number                  // 0–100, nota geral do formulário
+  summary: string                // 2–3 frases de diagnóstico
+  highlights: {
+    type: "positive" | "negative" | "neutral"
+    text: string
+  }[]
+  recommendations: {
+    title: string
+    description: string
+    priority: "high" | "medium" | "low"
+  }[]
+}
+
+export async function generateFormReportAction(
+  formId: string,
+  analytics: FormAnalytics,
+  formTitle: string
+): Promise<{ success: true; data: FormReportResult } | { success: false; error: string }> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { success: false, error: "ANTHROPIC_API_KEY não configurada." }
+  }
+
+  if (analytics.totalResponses < 3) {
+    return { success: false, error: "São necessárias pelo menos 3 respostas para gerar o relatório." }
+  }
+
+  // Build question stats summary for the prompt
+  const form = await db.query.forms.findFirst({
+    where: eq(forms.id, formId),
+    columns: { title: true },
+    with: { questions: { columns: { title: true, type: true, order: true }, orderBy: (q, { asc }) => [asc(q.order)] } },
+  })
+
+  const questionSummary = (form?.questions ?? [])
+    .filter((q) => !["welcome", "statement", "thank_you"].includes(q.type))
+    .map((q, i) => {
+      const stat = analytics.questionStats.find((s) => s.questionTitle === q.title)
+      if (!stat) return `${i + 1}. "${q.title}" (${q.type})`
+      const parts: string[] = [`${i + 1}. "${q.title}" (${q.type}) — ${stat.totalAnswers} respostas`]
+      if (stat.skipRate > 0.1) parts.push(`${Math.round(stat.skipRate * 100)}% pularam`)
+      if (stat.npsScore !== undefined) parts.push(`NPS: ${stat.npsScore} (${stat.npsPromoters}% promotores, ${stat.npsDetractors}% detratores)`)
+      if (stat.average !== undefined) parts.push(`média: ${stat.average} (min ${stat.min}, max ${stat.max})`)
+      if (stat.optionCounts?.length) {
+        const top = stat.optionCounts.slice(0, 3).map((o) => `"${o.option}" ${Math.round(o.percentage * 100)}%`).join(", ")
+        parts.push(`top opções: ${top}`)
+      }
+      return parts.join(" | ")
+    })
+    .join("\n")
+
+  const worstDropoff = [...analytics.dropoffByQuestion]
+    .sort((a, b) => b.dropoffRate - a.dropoffRate)[0]
+
+  const topSource = analytics.sourceBreakdown[0]
+  const mobileStr = analytics.mobilePercentage > 0
+    ? `${Math.round(analytics.mobilePercentage * 100)}% dos respondentes são mobile`
+    : null
+
+  const prompt = `Você é um especialista em UX de formulários e análise de dados. Analise os dados abaixo de um formulário e gere um relatório diagnóstico em português brasileiro.
+
+FORMULÁRIO: "${formTitle}"
+
+MÉTRICAS GERAIS:
+- Total de respostas: ${analytics.totalResponses}
+- Taxa de conclusão: ${Math.round(analytics.completionRate * 100)}%
+- Tempo médio de conclusão: ${analytics.averageCompletionTime > 0 ? `${analytics.averageCompletionTime}s` : "não disponível"}
+${mobileStr ? `- ${mobileStr}` : ""}
+${topSource ? `- Principal origem de tráfego: ${topSource.source} (${Math.round(topSource.percentage * 100)}%)` : ""}
+${worstDropoff ? `- Maior abandono: pergunta com ${Math.round(worstDropoff.dropoffRate * 100)}% de desistência` : ""}
+
+PERGUNTAS E RESPOSTAS:
+${questionSummary}
+
+Retorne APENAS um JSON com este formato exato (sem markdown):
+{
+  "score": número de 0 a 100 representando a saúde geral do formulário,
+  "summary": "2-3 frases diretas de diagnóstico sobre o formulário e seus resultados",
+  "highlights": [
+    { "type": "positive", "text": "ponto positivo observado nos dados" },
+    { "type": "negative", "text": "ponto de atenção observado nos dados" }
+  ],
+  "recommendations": [
+    {
+      "title": "Título curto da recomendação (máx 50 chars)",
+      "description": "Explicação prática e acionável em 1-2 frases",
+      "priority": "high"
+    }
+  ]
+}
+
+Regras:
+- score: 90-100 excelente, 70-89 bom, 50-69 regular, abaixo de 50 precisa melhorar
+- highlights: 3 a 5 itens, misturando positivos e negativos baseados nos dados reais
+- recommendations: exatamente 3, ordenadas por prioridade (high > medium > low)
+- Seja específico e use os números dos dados — evite generalidades
+- Responda APENAS com o JSON`
+
+  try {
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+    const message = await client.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      messages: [{ role: "user", content: prompt }],
+    })
+
+    const raw = message.content[0].type === "text" ? message.content[0].text.trim() : ""
+    const jsonStr = raw.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim()
+    const parsed = JSON.parse(jsonStr) as FormReportResult
+
+    return { success: true, data: parsed }
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao gerar relatório.",
     }
   }
 }

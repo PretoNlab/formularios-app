@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { FormAnalytics, QuestionAnalytics, QuestionType } from "@/lib/types/form"
 import type { ResponseWithAnswers } from "@/lib/db/queries/responses"
 import { exportResponsesAction } from "@/app/actions/responses"
-import { analyzeTextResponsesAction, type TextAnalysisResult } from "@/app/actions/ai-analysis"
+import { analyzeTextResponsesAction, generateFormReportAction, type TextAnalysisResult, type FormReportResult } from "@/app/actions/ai-analysis"
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -603,12 +603,147 @@ function MiniBarChart({ data }: { data: { date: string; count: number }[] }) {
   )
 }
 
+// ─── AI Form Report ───────────────────────────────────────────────────────────
+
+const PRIORITY_LABEL = { high: "Alta", medium: "Média", low: "Baixa" }
+const PRIORITY_COLOR = {
+  high: "bg-red-100 text-red-700",
+  medium: "bg-amber-100 text-amber-700",
+  low: "bg-slate-100 text-slate-600",
+}
+
+function ScoreRing({ score }: { score: number }) {
+  const color = score >= 80 ? "#22c55e" : score >= 60 ? "#f59e0b" : "#ef4444"
+  const label = score >= 80 ? "Excelente" : score >= 60 ? "Bom" : score >= 40 ? "Regular" : "Precisa melhorar"
+  return (
+    <div className="flex items-center gap-4">
+      <div className="relative h-20 w-20 shrink-0">
+        <svg viewBox="0 0 36 36" className="rotate-[-90deg]" width="80" height="80">
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke={color} strokeWidth="3"
+            strokeDasharray={`${score} 100`} strokeLinecap="round" />
+        </svg>
+        <span className="absolute inset-0 flex items-center justify-center text-xl font-bold">{score}</span>
+      </div>
+      <div>
+        <p className="font-semibold text-lg">{label}</p>
+        <p className="text-xs text-muted-foreground">nota geral do formulário</p>
+      </div>
+    </div>
+  )
+}
+
+function AIReportView({ report }: { report: FormReportResult }) {
+  return (
+    <div className="rounded-xl border bg-card p-6 space-y-6">
+      <div className="flex items-center gap-2 text-violet-600 font-semibold text-sm">
+        <Sparkles className="h-4 w-4" />
+        Relatório gerado com IA
+      </div>
+
+      <ScoreRing score={report.score} />
+
+      <p className="text-sm text-foreground/80 leading-relaxed border-l-2 border-violet-400 pl-4 italic">
+        {report.summary}
+      </p>
+
+      {/* Highlights */}
+      <div>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Destaques</p>
+        <div className="space-y-2">
+          {report.highlights.map((h, i) => (
+            <div key={i} className={`flex items-start gap-2.5 rounded-lg px-3 py-2.5 text-sm ${
+              h.type === "positive" ? "bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300" :
+              h.type === "negative" ? "bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300" :
+              "bg-muted/50 text-foreground/70"
+            }`}>
+              <span className="shrink-0 mt-0.5 text-base leading-none">
+                {h.type === "positive" ? "↑" : h.type === "negative" ? "↓" : "→"}
+              </span>
+              {h.text}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recommendations */}
+      <div>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Recomendações</p>
+        <div className="space-y-3">
+          {report.recommendations.map((rec, i) => (
+            <div key={i} className="rounded-lg border bg-muted/20 p-4">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-sm font-semibold">{rec.title}</span>
+                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${PRIORITY_COLOR[rec.priority]}`}>
+                  {PRIORITY_LABEL[rec.priority]}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">{rec.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AIReportButton({ analytics, formId, formTitle }: {
+  analytics: FormAnalytics
+  formId: string
+  formTitle: string
+}) {
+  const [report, setReport] = useState<FormReportResult | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleGenerate() {
+    setLoading(true)
+    setError(null)
+    const res = await generateFormReportAction(formId, analytics, formTitle)
+    if (res.success) setReport(res.data)
+    else setError(res.error)
+    setLoading(false)
+  }
+
+  if (report) return <AIReportView report={report} />
+
+  return (
+    <div className="rounded-xl border-2 border-dashed border-violet-200 dark:border-violet-900 bg-violet-50/50 dark:bg-violet-950/20 p-6 text-center">
+      <div className="flex justify-center mb-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/40">
+          <Sparkles className="h-6 w-6 text-violet-600" />
+        </div>
+      </div>
+      <h3 className="font-semibold mb-1">Relatório Inteligente</h3>
+      <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
+        O Claude analisa todos os dados do seu formulário e gera um diagnóstico completo com nota, destaques e recomendações acionáveis.
+      </p>
+      <Button
+        onClick={handleGenerate}
+        disabled={loading || analytics.totalResponses < 3}
+        className="gap-2 bg-violet-600 hover:bg-violet-700 text-white"
+      >
+        {loading
+          ? <><Loader2 className="h-4 w-4 animate-spin" />Analisando formulário...</>
+          : <><Sparkles className="h-4 w-4" />Gerar Relatório com IA</>
+        }
+      </Button>
+      {analytics.totalResponses < 3 && (
+        <p className="text-xs text-muted-foreground mt-2">Mínimo de 3 respostas necessário.</p>
+      )}
+      {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
+    </div>
+  )
+}
+
 // ─── Analytics Overview Tab ───────────────────────────────────────────────────
 
-function AnalyticsView({ analytics, questions, completionRate }: {
+function AnalyticsView({ analytics, questions, completionRate, formId, formTitle }: {
   analytics: FormAnalytics | null
   questions: QuestionSummary[]
   completionRate: number
+  formId: string
+  formTitle: string
 }) {
   if (!analytics) {
     return (
@@ -620,6 +755,7 @@ function AnalyticsView({ analytics, questions, completionRate }: {
 
   return (
     <div className="space-y-6">
+      <AIReportButton analytics={analytics} formId={formId} formTitle={formTitle} />
       <InsightCards analytics={analytics} questions={questions} />
 
       <div className="grid lg:grid-cols-2 gap-6">
@@ -950,7 +1086,7 @@ export function ResponsesSection({
         <QuestionIntelligence questionStats={questionStats} questions={questions} formId={formId} />
       )}
       {tab === "analytics" && (
-        <AnalyticsView analytics={analytics} questions={questions} completionRate={completionRate} />
+        <AnalyticsView analytics={analytics} questions={questions} completionRate={completionRate} formId={formId} formTitle={formTitle} />
       )}
     </div>
   )
