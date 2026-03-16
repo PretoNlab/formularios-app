@@ -14,7 +14,7 @@ export interface FormTemplate {
   id: string
   title: string
   description: string
-  category: "pesquisa" | "feedback" | "cadastro" | "rh" | "vendas" | "saude"
+  category: "pesquisa" | "feedback" | "cadastro" | "rh" | "vendas" | "saude" | "politica"
   color: string
   accent: string
   estimatedTime: string
@@ -304,6 +304,98 @@ export const FORM_TEMPLATES: FormTemplate[] = [
       { type: "thank_you", order: 12, required: false, title: "Triagem recebida!", description: "Nossa equipe entrará em contato em breve com o diagnóstico e orçamento." },
     ],
   },
+
+  // ─── Intenção de Voto ─────────────────────────────────────────────────────
+  {
+    id: "voting-intention",
+    title: "Pesquisa de Intenção de Voto 2026",
+    description: "Meça a intenção de voto e os temas prioritários para o eleitor nas eleições gerais de 2026.",
+    category: "politica",
+    color: "from-green-600 to-yellow-500",
+    accent: "#16a34a",
+    estimatedTime: "~4 min",
+    questions: [
+      { type: "welcome", order: 0, required: false, title: "Pesquisa Eleitoral 2026", description: "Suas respostas são anônimas e ajudam a entender o cenário político. Leva cerca de 4 minutos." },
+      { type: "multiple_choice", order: 1, required: true, title: "Em qual estado você vota?", properties: opt(["São Paulo", "Minas Gerais", "Rio de Janeiro", "Bahia", "Rio Grande do Sul", "Paraná", "Pernambuco", "Ceará", "Outro estado"]) },
+      { type: "multiple_choice", order: 2, required: true, title: "Qual cargo você considera mais importante nessa eleição?", properties: opt(["Presidente da República", "Governador do Estado", "Senador", "Deputado Federal", "Deputado Estadual"]) },
+      { type: "multiple_choice", order: 3, required: true, title: "Sua intenção de voto para Presidente está:", properties: opt(["Definida — já sei em quem vou votar", "Parcialmente definida — tenho 2 ou 3 opções", "Indefinida — ainda não decidi", "Vou votar em branco ou nulo"]) },
+      { type: "checkbox", order: 4, required: true, title: "Quais temas mais influenciam seu voto? (escolha até 3)", properties: opt(["Economia e emprego", "Saúde pública", "Segurança pública", "Educação", "Combate à corrupção", "Meio ambiente", "Habitação e moradia", "Direitos sociais"]) },
+      { type: "scale", order: 5, required: true, title: "Como você avalia o cenário político atual do Brasil?", properties: { scaleMin: 1, scaleMax: 10, scaleMinLabel: "Muito ruim", scaleMaxLabel: "Muito bom" } },
+      { type: "multiple_choice", order: 6, required: false, title: "Onde você busca informações sobre os candidatos?", properties: opt(["Redes sociais (Instagram, TikTok, X)", "TV / Rádio", "Sites de notícias", "Conversas com família/amigos", "Debates eleitorais", "WhatsApp"]) },
+      { type: "long_text", order: 7, required: false, title: "O que você espera do próximo presidente?", description: "Escreva livremente." },
+      { type: "thank_you", order: 8, required: false, title: "Obrigado pela sua participação!", description: "Sua opinião contribui para uma visão mais precisa do eleitorado brasileiro." },
+    ],
+  },
+
+  // ─── Prioridades do Eleitor ───────────────────────────────────────────────
+  {
+    id: "voter-priorities",
+    title: "Prioridades do Eleitor 2026",
+    description: "Identifique quais pautas e problemas são mais urgentes para o eleitor nas eleições de 2026.",
+    category: "politica",
+    color: "from-blue-600 to-indigo-700",
+    accent: "#2563eb",
+    estimatedTime: "~5 min",
+    questions: [
+      { type: "welcome", order: 0, required: false, title: "O que mais importa para você nas eleições 2026?", description: "Pesquisa anônima sobre as prioridades do eleitor brasileiro." },
+      { type: "multiple_choice", order: 1, required: true, title: "Qual é a sua faixa etária?", properties: opt(["16–24 anos", "25–34 anos", "35–44 anos", "45–59 anos", "60+ anos"]) },
+      { type: "multiple_choice", order: 2, required: true, title: "Como você se identifica politicamente?", properties: opt(["Esquerda", "Centro-esquerda", "Centro", "Centro-direita", "Direita", "Prefiro não dizer"]) },
+      { type: "scale", order: 3, required: true, title: "Qual a urgência de melhorias na saúde pública?", properties: { scaleMin: 1, scaleMax: 5, scaleMinLabel: "Pouco urgente", scaleMaxLabel: "Muito urgente" } },
+      { type: "scale", order: 4, required: true, title: "Qual a urgência de melhorias na segurança pública?", properties: { scaleMin: 1, scaleMax: 5, scaleMinLabel: "Pouco urgente", scaleMaxLabel: "Muito urgente" } },
+      { type: "scale", order: 5, required: true, title: "Qual a urgência de melhorias na economia e geração de empregos?", properties: { scaleMin: 1, scaleMax: 5, scaleMinLabel: "Pouco urgente", scaleMaxLabel: "Muito urgente" } },
+      { type: "scale", order: 6, required: true, title: "Qual a urgência no combate à corrupção?", properties: { scaleMin: 1, scaleMax: 5, scaleMinLabel: "Pouco urgente", scaleMaxLabel: "Muito urgente" } },
+      { type: "multiple_choice", order: 7, required: true, title: "O que mais pesa na hora de escolher um candidato?", properties: opt(["Propostas concretas para o país", "Histórico e ficha limpa", "Partido político", "Indicação de alguém de confiança", "Desempenho em debates", "Postura e valores pessoais"]) },
+      { type: "yes_no", order: 8, required: true, title: "Você acredita que seu voto faz diferença?" },
+      { type: "long_text", order: 9, required: false, title: "Qual o maior problema que o Brasil precisa resolver nos próximos 4 anos?" },
+      { type: "thank_you", order: 10, required: false, title: "Participação registrada!", description: "Suas respostas ajudam a mapear as prioridades reais do eleitorado." },
+    ],
+  },
+
+  // ─── Voluntários de Campanha ──────────────────────────────────────────────
+  {
+    id: "campaign-volunteers",
+    title: "Cadastro de Voluntários de Campanha",
+    description: "Recrute apoiadores e voluntários para sua campanha eleitoral com dados estruturados.",
+    category: "politica",
+    color: "from-yellow-400 to-orange-500",
+    accent: "#f59e0b",
+    estimatedTime: "~5 min",
+    questions: [
+      { type: "welcome", order: 0, required: false, title: "Faça parte da nossa campanha!", description: "Cadastre-se como voluntário e ajude a construir um futuro melhor para nossa cidade e estado." },
+      { type: "short_text", order: 1, required: true, title: "Qual é o seu nome completo?" },
+      { type: "email", order: 2, required: true, title: "Qual é o seu e-mail?" },
+      { type: "phone", order: 3, required: true, title: "WhatsApp para contato" },
+      { type: "short_text", order: 4, required: true, title: "Em qual cidade e estado você mora?" },
+      { type: "multiple_choice", order: 5, required: true, title: "Qual é a sua disponibilidade para o voluntariado?", properties: opt(["Fins de semana", "Noites de semana", "Horário comercial", "Tempo integral", "Somente online"]) },
+      { type: "checkbox", order: 6, required: true, title: "Como você quer ajudar? (pode marcar mais de um)", properties: opt(["Panfletagem e abordagem", "Redes sociais e conteúdo digital", "Organização de eventos", "Transporte de materiais", "Apoio administrativo", "Captação de recursos", "Boca a boca na comunidade"]) },
+      { type: "checkbox", order: 7, required: false, title: "Quais habilidades você tem?", properties: opt(["Design gráfico", "Fotografia / Vídeo", "Comunicação e oratória", "Gestão de projetos", "Programação / Tecnologia", "Jornalismo / Redação", "Nenhuma específica"]) },
+      { type: "short_text", order: 8, required: false, title: "Qual bairro ou região você pode cobrir?" },
+      { type: "long_text", order: 9, required: false, title: "Por que você quer apoiar essa campanha?", description: "Conta um pouco sobre você e suas motivações." },
+      { type: "thank_you", order: 10, required: false, title: "Bem-vindo ao time!", description: "Seu cadastro foi recebido. Em breve entraremos em contato com as próximas etapas." },
+    ],
+  },
+
+  // ─── Avaliação de Candidato ───────────────────────────────────────────────
+  {
+    id: "candidate-evaluation",
+    title: "Avaliação de Candidato",
+    description: "Meça a percepção do eleitor sobre um candidato: aprovação, pontos fortes, fracos e pautas prioritárias.",
+    category: "politica",
+    color: "from-purple-600 to-fuchsia-600",
+    accent: "#9333ea",
+    estimatedTime: "~4 min",
+    questions: [
+      { type: "welcome", order: 0, required: false, title: "Avalie o candidato", description: "Pesquisa rápida e anônima para entender a percepção dos eleitores. Leva cerca de 4 minutos." },
+      { type: "nps", order: 1, required: true, title: "De 0 a 10, qual a chance de você votar neste candidato?" },
+      { type: "multiple_choice", order: 2, required: true, title: "Como você descreveria sua impressão geral do candidato?", properties: opt(["Muito positiva", "Positiva", "Neutra", "Negativa", "Muito negativa"]) },
+      { type: "checkbox", order: 3, required: false, title: "Quais são os pontos fortes do candidato? (pode marcar mais de um)", properties: opt(["Experiência política", "Propostas concretas", "Honestidade e transparência", "Capacidade de diálogo", "Proximidade com o povo", "Gestão econômica"]) },
+      { type: "checkbox", order: 4, required: false, title: "Quais são os pontos fracos? (pode marcar mais de um)", properties: opt(["Falta de experiência", "Propostas vagas", "Histórico questionável", "Distante da realidade", "Associação com partidos impopulares", "Comunicação ruim"]) },
+      { type: "checkbox", order: 5, required: true, title: "Quais pautas você quer que o candidato priorize?", properties: opt(["Saúde pública", "Segurança", "Geração de empregos", "Educação de qualidade", "Combate à corrupção", "Infraestrutura", "Meio ambiente"]) },
+      { type: "multiple_choice", order: 6, required: false, title: "Você já assistiu a algum debate com este candidato?", properties: opt(["Sim, assisti ao vivo", "Sim, vi trechos nas redes sociais", "Não assisti", "Não tinha conhecimento dos debates"]) },
+      { type: "long_text", order: 7, required: false, title: "O que o candidato precisaria fazer para garantir seu voto?" },
+      { type: "thank_you", order: 8, required: false, title: "Avaliação registrada!", description: "Obrigado pela participação. Sua opinião contribui para uma campanha mais alinhada com o eleitor." },
+    ],
+  },
 ]
 
 export const TEMPLATE_CATEGORIES: Record<FormTemplate["category"], string> = {
@@ -313,4 +405,5 @@ export const TEMPLATE_CATEGORIES: Record<FormTemplate["category"], string> = {
   rh: "RH & Pessoas",
   vendas: "Vendas",
   saude: "Saúde",
+  politica: "Política 2026",
 }
