@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import Link from "next/link"
 import {
   Search, BarChart3, Users, Zap, Link2,
   Trash2, Globe, FileText, Clock, ChevronRight,
+  PlusCircle, Sparkles, MessageCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,11 +21,88 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip"
 import { PRESET_THEMES } from "@/config/themes"
 import { FORM_TEMPLATES, TEMPLATE_CATEGORIES, type FormTemplate } from "@/config/templates"
 import { CreateFormButton } from "./create-form-button"
 import { deleteFormAction, publishFormAction, createFormFromTemplateAction } from "@/app/actions/forms"
 import type { FormListItem } from "@/lib/db/queries/forms"
+
+// ─── Welcome Modal ────────────────────────────────────────────────────────────
+
+function WelcomeModal() {
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!localStorage.getItem("formularios_onboarded")) {
+      setOpen(true)
+    }
+  }, [])
+
+  function dismiss() {
+    localStorage.setItem("formularios_onboarded", "1")
+    setOpen(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) dismiss() }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-3xl">
+            🎉
+          </div>
+          <DialogTitle className="text-center text-2xl font-bold font-heading">
+            Bem-vindo ao formularios!
+          </DialogTitle>
+          <DialogDescription className="text-center text-base mt-1">
+            Crie formulários inteligentes e colete dados com muito mais qualidade.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="mt-4 space-y-3">
+          {[
+            { icon: MessageCircle, label: "Formulários conversacionais", desc: "Experiência fluida como um chat, sem cansar o respondente" },
+            { icon: Sparkles, label: "Analytics com IA", desc: "Insights automáticos sobre suas respostas abertas" },
+            { icon: BarChart3, label: "Métricas em tempo real", desc: "Acompanhe taxa de conclusão, NPS e abandono por pergunta" },
+          ].map(({ icon: Icon, label, desc }) => (
+            <div key={label} className="flex items-start gap-3 rounded-xl bg-muted/50 p-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Icon className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">{label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 flex flex-col gap-2">
+          <div onClick={dismiss}>
+            <CreateFormButton variant="hero" />
+          </div>
+          <Button variant="ghost" className="w-full text-muted-foreground" onClick={dismiss}>
+            Explorar depois
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ─── Section ──────────────────────────────────────────────────────────────────
 
 interface FormsSectionProps {
   forms: FormListItem[]
@@ -66,6 +144,8 @@ export function FormsSection({ forms }: FormsSectionProps) {
   }
 
   return (
+    <TooltipProvider delayDuration={400}>
+    <WelcomeModal />
     <main className="flex-1 pb-24">
       <div className="absolute inset-0 -z-10 h-[600px] w-full bg-white [background:radial-gradient(125%_125%_at_50%_10%,#fff_40%,#f0f0f5_100%)]" />
 
@@ -158,7 +238,7 @@ export function FormsSection({ forms }: FormsSectionProps) {
               <span className="text-sm text-muted-foreground">{filteredForms.length} formulário{filteredForms.length !== 1 ? "s" : ""}</span>
             </div>
             {filteredForms.length === 0 ? (
-              <EmptyFormsState hasSearch={search !== ""} />
+              <EmptyFormsState hasSearch={search !== ""} onSwitchToTemplates={() => setActiveTab("templates")} />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredForms.map((form) => (
@@ -195,6 +275,7 @@ export function FormsSection({ forms }: FormsSectionProps) {
         </>
       )}
     </main>
+    </TooltipProvider>
   )
 }
 
@@ -231,22 +312,42 @@ function FormCard({ form, onDelete, onPublish }: { form: FormListItem; onDelete:
           <span className="flex h-7 items-center rounded-md bg-muted px-2.5 text-sm font-medium">{form.responseCount} respostas</span>
           <div className="flex items-center gap-1">
             {form.status === "draft" && (
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-green-600" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPublish(); }} title="Publicar">
-                <Globe className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-green-600" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPublish(); }}>
+                    <Globe className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Publicar formulário</TooltipContent>
+              </Tooltip>
             )}
-            <Link href={`/responses/${form.id}`} onClick={(e) => e.stopPropagation()} className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Ver respostas">
-              <BarChart3 className="h-4 w-4" />
-            </Link>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/f/${form.slug}`); }} title="Copiar link">
-              <Link2 className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href={`/responses/${form.id}`} onClick={(e) => e.stopPropagation()} className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                  <BarChart3 className="h-4 w-4" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Ver respostas</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/f/${form.slug}`); }}>
+                  <Link2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Copiar link público</TooltipContent>
+            </Tooltip>
             <AlertDialog>
+              <Tooltip>
+              <TooltipTrigger asChild>
               <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={(e) => e.stopPropagation()} title="Excluir">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={(e) => e.stopPropagation()}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </AlertDialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Excluir formulário</TooltipContent>
+              </Tooltip>
               <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
@@ -320,28 +421,54 @@ function TemplateCard({ template, onUse }: { template: FormTemplate; onUse: () =
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
-function EmptyFormsState({ hasSearch }: { hasSearch: boolean }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mb-6">
-        <FileText className="h-8 w-8 text-muted-foreground" />
+function EmptyFormsState({ hasSearch, onSwitchToTemplates }: { hasSearch: boolean; onSwitchToTemplates: () => void }) {
+  if (hasSearch) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mb-6">
+          <FileText className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <h3 className="text-xl font-semibold">Nenhum resultado encontrado</h3>
+        <p className="mt-2 text-muted-foreground">Tente buscar por outro termo.</p>
       </div>
-      {hasSearch ? (
-        <>
-          <h3 className="text-xl font-semibold">Nenhum resultado encontrado</h3>
-          <p className="mt-2 text-muted-foreground">Tente buscar por outro termo.</p>
-        </>
-      ) : (
-        <>
-          <h3 className="text-xl font-semibold">Nenhum formulário ainda</h3>
-          <p className="mt-2 text-muted-foreground max-w-sm">
-            Crie seu primeiro formulário ou escolha um template para começar.
-          </p>
-          <div className="mt-6">
-            <CreateFormButton variant="hero" />
-          </div>
-        </>
-      )}
+    )
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl py-16">
+      <div className="rounded-2xl border bg-gradient-to-br from-primary/5 via-background to-muted/40 p-10 text-center shadow-sm">
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-3xl">
+          📋
+        </div>
+        <h3 className="font-heading text-2xl font-bold">Crie seu primeiro formulário</h3>
+        <p className="mt-2 text-muted-foreground max-w-sm mx-auto">
+          Em três passos simples você já está coletando respostas de qualidade.
+        </p>
+
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+          {[
+            { step: "1", icon: PlusCircle, label: "Crie", desc: "Adicione perguntas em minutos com nosso editor visual" },
+            { step: "2", icon: Globe, label: "Publique", desc: "Um clique e seu formulário já está no ar com link único" },
+            { step: "3", icon: BarChart3, label: "Colete", desc: "Veja as respostas e insights em tempo real no analytics" },
+          ].map(({ step, icon: Icon, label, desc }) => (
+            <div key={step} className="flex flex-col items-center text-center rounded-xl bg-background/80 border p-4 gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                {step}
+              </div>
+              <Icon className="h-5 w-5 text-primary" />
+              <p className="font-semibold text-sm">{label}</p>
+              <p className="text-xs text-muted-foreground">{desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <CreateFormButton variant="hero" />
+          <Button variant="outline" className="rounded-full gap-1" onClick={onSwitchToTemplates}>
+            Ver templates <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

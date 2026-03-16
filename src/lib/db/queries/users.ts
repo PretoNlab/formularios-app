@@ -49,18 +49,33 @@ export async function ensureUserExists(authUser: {
   user_metadata?: Record<string, unknown>
 }): Promise<ApiResponse<UserWithWorkspace>> {
   try {
-    // Fast path — user already exists
-    const existing = await db.query.users.findFirst({
+    // Fast path — user already exists (by auth ID)
+    const existingByAuthId = await db.query.users.findFirst({
       where: eq(users.supabaseAuthId, authUser.id),
     })
 
-    if (existing) {
+    if (existingByAuthId) {
       const workspace = await db.query.workspaces.findFirst({
-        where: eq(workspaces.ownerId, existing.id),
+        where: eq(workspaces.ownerId, existingByAuthId.id),
       })
       return {
         success: true,
-        data: { ...existing, defaultWorkspace: workspace! },
+        data: { ...existingByAuthId, defaultWorkspace: workspace! },
+      }
+    }
+
+    // Fallback — same email registered via different provider (e.g. Google + email/password)
+    const existingByEmail = await db.query.users.findFirst({
+      where: eq(users.email, authUser.email),
+    })
+
+    if (existingByEmail) {
+      const workspace = await db.query.workspaces.findFirst({
+        where: eq(workspaces.ownerId, existingByEmail.id),
+      })
+      return {
+        success: true,
+        data: { ...existingByEmail, defaultWorkspace: workspace! },
       }
     }
 
