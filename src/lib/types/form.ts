@@ -183,8 +183,9 @@ export interface FormAnalytics {
   dropoffByQuestion: { questionId: string; dropoffRate: number }[]
   questionStats: QuestionAnalytics[]
   mobilePercentage: number
-  sourceBreakdown: { source: string; count: number; percentage: number }[]
+  sourceBreakdown: { source: string; count: number; percentage: number; completionRate: number; avgTime: number }[]
   deviceBreakdown: { device: string; count: number; percentage: number }[]
+  responsesByHour: { dow: number; hour: number; count: number }[]
 }
 
 export interface QuestionAnalytics {

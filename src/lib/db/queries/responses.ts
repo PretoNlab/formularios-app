@@ -462,24 +462,45 @@ export async function getFormAnalytics(
       }
     }
 
-    // ── 7. Source breakdown (UTM source or referrer) ──────────────────────────
+    // ── 7. Source breakdown with completion rate + avg time ───────────────────
+    const SOURCE_EXPR = sql<string>`coalesce(nullif(${responses.metadata}->>'utmSource', ''), nullif(${responses.metadata}->>'referrer', ''), 'Direto')`
     const sourceRows = await db
       .select({
-        source: sql<string>`coalesce(nullif(${responses.metadata}->>'utmSource', ''), nullif(${responses.metadata}->>'referrer', ''), 'Direto')`,
+        source: SOURCE_EXPR,
         count: sql<number>`count(*)::int`,
+        completed: sql<number>`count(case when ${responses.completedAt} is not null then 1 end)::int`,
+        avgSeconds: sql<number | null>`avg(case when ${responses.completedAt} is not null then extract(epoch from (${responses.completedAt} - ${responses.startedAt})) end)`,
       })
       .from(responses)
       .where(eq(responses.formId, formId))
-      .groupBy(sql`coalesce(nullif(${responses.metadata}->>'utmSource', ''), nullif(${responses.metadata}->>'referrer', ''), 'Direto')`)
+      .groupBy(SOURCE_EXPR)
       .orderBy(sql`count(*) desc`)
 
     const sourceBreakdown = sourceRows.map((r) => ({
       source: r.source,
       count: r.count,
       percentage: total > 0 ? r.count / total : 0,
+      completionRate: r.count > 0 ? r.completed / r.count : 0,
+      avgTime: Math.round(r.avgSeconds ?? 0),
     }))
 
-    // ── 8. Device breakdown ───────────────────────────────────────────────────
+    // ── 8. Heatmap: responses by day-of-week × hour (America/Sao_Paulo) ───────
+    const hourRows = await db
+      .select({
+        dow: sql<number>`extract(dow from ${responses.startedAt} at time zone 'America/Sao_Paulo')::int`,
+        hour: sql<number>`extract(hour from ${responses.startedAt} at time zone 'America/Sao_Paulo')::int`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(responses)
+      .where(eq(responses.formId, formId))
+      .groupBy(
+        sql`extract(dow from ${responses.startedAt} at time zone 'America/Sao_Paulo')`,
+        sql`extract(hour from ${responses.startedAt} at time zone 'America/Sao_Paulo')`,
+      )
+
+    const responsesByHour = hourRows.map((r) => ({ dow: r.dow, hour: r.hour, count: r.count }))
+
+    // ── 9. Device breakdown ───────────────────────────────────────────────────
     const deviceRows = await db
       .select({
         device: sql<string>`coalesce(nullif(${responses.metadata}->>'deviceType', ''), 'unknown')`,
@@ -509,6 +530,7 @@ export async function getFormAnalytics(
         mobilePercentage,
         sourceBreakdown,
         deviceBreakdown,
+        responsesByHour,
       },
     }
   } catch (error) {

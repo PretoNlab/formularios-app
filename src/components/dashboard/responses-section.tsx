@@ -635,47 +635,6 @@ function QuestionIntelligence({ questionStats, questions, formId, dropoffByQuest
   )
 }
 
-// ─── Source Breakdown ─────────────────────────────────────────────────────────
-
-function SourceBreakdown({ data }: { data: FormAnalytics["sourceBreakdown"] }) {
-  const max = Math.max(...data.map((d) => d.count), 1)
-
-  function trimSource(source: string): string {
-    try {
-      const url = new URL(source.startsWith("http") ? source : `https://${source}`)
-      return url.hostname.replace(/^www\./, "")
-    } catch {
-      return source.length > 32 ? source.slice(0, 32) + "…" : source
-    }
-  }
-
-  if (data.length === 0) {
-    return <p className="text-sm text-muted-foreground">Sem dados de origem ainda.</p>
-  }
-
-  return (
-    <div className="space-y-2.5">
-      {data.slice(0, 6).map((row) => (
-        <div key={row.source}>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-sm truncate max-w-[60%]">{trimSource(row.source)}</span>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground tabular-nums shrink-0">
-              <span className="font-medium text-foreground">{pct(row.percentage)}</span>
-              <span>{row.count}</span>
-            </div>
-          </div>
-          <div className="h-2 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full rounded-full bg-primary/70 transition-all duration-500"
-              style={{ width: `${(row.count / max) * 100}%` }}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 // ─── Device Breakdown ─────────────────────────────────────────────────────────
 
 const DEVICE_LABELS: Record<string, string> = {
@@ -917,6 +876,151 @@ function NPSHighlight({ npsStats }: { npsStats: QuestionAnalytics[] }) {
   )
 }
 
+// ─── Hour Heatmap ─────────────────────────────────────────────────────────────
+
+const DOW_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
+// Show every 3 hours to avoid crowding
+const HOUR_LABELS = Array.from({ length: 24 }, (_, i) =>
+  i % 3 === 0 ? `${String(i).padStart(2, "0")}h` : ""
+)
+
+function HourHeatmap({ data }: { data: FormAnalytics["responsesByHour"] }) {
+  if (data.length === 0) {
+    return <p className="text-sm text-muted-foreground">Dados insuficientes para o heatmap.</p>
+  }
+
+  const countMap = new Map(data.map((d) => [`${d.dow}-${d.hour}`, d.count]))
+  const maxCount = Math.max(...data.map((d) => d.count), 1)
+
+  // Peak cell for annotation
+  const peak = data.reduce((a, b) => (b.count > a.count ? b : a), data[0])
+  const peakLabel = `${DOW_LABELS[peak.dow]} ${String(peak.hour).padStart(2, "0")}h`
+
+  return (
+    <div className="space-y-3">
+      {/* Hour labels */}
+      <div className="flex gap-0.5 pl-9">
+        {HOUR_LABELS.map((label, h) => (
+          <div key={h} className="flex-1 text-center" style={{ minWidth: 0 }}>
+            <span className="text-[9px] text-muted-foreground leading-none">{label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Grid rows */}
+      <div className="space-y-0.5">
+        {DOW_LABELS.map((day, dow) => (
+          <div key={dow} className="flex items-center gap-0.5">
+            <span className="text-[10px] text-muted-foreground w-8 shrink-0 text-right pr-1">{day}</span>
+            {Array.from({ length: 24 }, (_, hour) => {
+              const count = countMap.get(`${dow}-${hour}`) ?? 0
+              const intensity = count / maxCount
+              return (
+                <div
+                  key={hour}
+                  className="flex-1 rounded-sm transition-colors"
+                  style={{
+                    aspectRatio: "1",
+                    minWidth: 0,
+                    backgroundColor: count === 0
+                      ? "hsl(var(--muted))"
+                      : `hsl(var(--primary) / ${Math.max(intensity * 0.9 + 0.1, 0.12)})`,
+                  }}
+                  title={`${day} ${String(hour).padStart(2, "0")}h: ${count} resposta${count !== 1 ? "s" : ""}`}
+                />
+              )
+            })}
+          </div>
+        ))}
+      </div>
+
+      {/* Legend + peak */}
+      <div className="flex items-center justify-between pt-1">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-muted-foreground">Menos</span>
+          {[0.1, 0.3, 0.55, 0.75, 0.95].map((v) => (
+            <div
+              key={v}
+              className="h-3 w-3 rounded-sm"
+              style={{ backgroundColor: `hsl(var(--primary) / ${v})` }}
+            />
+          ))}
+          <span className="text-[10px] text-muted-foreground">Mais</span>
+        </div>
+        <span className="text-[10px] text-muted-foreground">
+          Pico: <span className="font-medium text-foreground">{peakLabel}</span> ({peak.count})
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// ─── UTM Source Comparison ────────────────────────────────────────────────────
+
+function UTMComparison({ data }: { data: FormAnalytics["sourceBreakdown"] }) {
+  if (data.length <= 1) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Compartilhe via diferentes canais (UTM links) para comparar a performance por origem.
+      </p>
+    )
+  }
+
+  const maxCount = Math.max(...data.map((d) => d.count), 1)
+
+  function trimSource(source: string): string {
+    try {
+      const url = new URL(source.startsWith("http") ? source : `https://${source}`)
+      return url.hostname.replace(/^www\./, "")
+    } catch {
+      return source.length > 24 ? source.slice(0, 24) + "…" : source
+    }
+  }
+
+  return (
+    <div className="space-y-1">
+      {/* Header */}
+      <div className="grid grid-cols-[1fr_5rem_5rem_5rem] gap-2 pb-2 border-b">
+        <span className="text-xs text-muted-foreground font-medium">Origem</span>
+        <span className="text-xs text-muted-foreground font-medium text-right">Respostas</span>
+        <span className="text-xs text-muted-foreground font-medium text-right">Conclusão</span>
+        <span className="text-xs text-muted-foreground font-medium text-right">Tempo médio</span>
+      </div>
+
+      {data.slice(0, 8).map((row) => (
+        <div key={row.source} className="grid grid-cols-[1fr_5rem_5rem_5rem] gap-2 py-2 border-b last:border-0 items-center">
+          {/* Source + bar */}
+          <div className="min-w-0">
+            <span className="text-sm font-medium truncate block">{trimSource(row.source)}</span>
+            <div className="mt-1 h-1 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-primary/60 transition-all duration-500"
+                style={{ width: `${(row.count / maxCount) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Count */}
+          <span className="text-sm tabular-nums text-right font-medium">{row.count}</span>
+
+          {/* Completion rate — colored */}
+          <span className={`text-sm tabular-nums text-right font-semibold ${
+            row.completionRate >= 0.75 ? "text-emerald-600" :
+            row.completionRate >= 0.5  ? "text-amber-600"  : "text-red-500"
+          }`}>
+            {pct(row.completionRate)}
+          </span>
+
+          {/* Avg time */}
+          <span className="text-sm tabular-nums text-right text-muted-foreground">
+            {row.avgTime > 0 ? formatDuration(row.avgTime) : "—"}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ─── Analytics Overview Tab ───────────────────────────────────────────────────
 
 function AnalyticsView({ analytics, questions, completionRate, formId, formTitle }: {
@@ -1025,17 +1129,25 @@ function AnalyticsView({ analytics, questions, completionRate, formId, formTitle
           )}
         </div>
 
-        {/* Source breakdown */}
-        <div className="rounded-xl border bg-card p-6">
-          <h3 className="font-semibold mb-4">Origem dos respondentes</h3>
-          <SourceBreakdown data={analytics.sourceBreakdown} />
-        </div>
-
         {/* Device breakdown */}
         <div className="rounded-xl border bg-card p-6">
           <h3 className="font-semibold mb-4">Dispositivos</h3>
           <DeviceBreakdown data={analytics.deviceBreakdown} />
         </div>
+      </div>
+
+      {/* Heatmap — full width */}
+      <div className="rounded-xl border bg-card p-6">
+        <h3 className="font-semibold mb-1">Quando as pessoas respondem</h3>
+        <p className="text-xs text-muted-foreground mb-5">Dia da semana × hora do dia (horário de Brasília)</p>
+        <HourHeatmap data={analytics.responsesByHour} />
+      </div>
+
+      {/* UTM comparison — full width */}
+      <div className="rounded-xl border bg-card p-6">
+        <h3 className="font-semibold mb-1">Performance por canal de origem</h3>
+        <p className="text-xs text-muted-foreground mb-5">Taxa de conclusão e tempo médio por fonte de tráfego</p>
+        <UTMComparison data={analytics.sourceBreakdown} />
       </div>
     </div>
   )
