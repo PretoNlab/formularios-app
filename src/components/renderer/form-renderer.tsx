@@ -258,9 +258,9 @@ function MultipleChoiceInput({ question, value, onChange, onSubmit }: InputProps
             {options.map((opt, i) => (
                 <button
                     key={opt.id}
-                    className={`ff-option ${selected === opt.id ? "ff-option--selected" : ""}`}
+                    className={`ff-option ${selected === opt.label ? "ff-option--selected" : ""}`}
                     onClick={() => {
-                        onChange(opt.id)
+                        onChange(opt.label)
                         setTimeout(onSubmit, 250)
                     }}
                 >
@@ -276,10 +276,10 @@ function CheckboxInput({ question, value, onChange }: InputProps) {
     const options = question.properties.options ?? []
     const selected: string[] = Array.isArray(value) ? (value as string[]) : []
 
-    const toggle = (id: string) => {
-        const next = selected.includes(id)
-            ? selected.filter((s) => s !== id)
-            : [...selected, id]
+    const toggle = (label: string) => {
+        const next = selected.includes(label)
+            ? selected.filter((s) => s !== label)
+            : [...selected, label]
         onChange(next)
     }
 
@@ -288,12 +288,12 @@ function CheckboxInput({ question, value, onChange }: InputProps) {
             {options.map((opt, i) => (
                 <button
                     key={opt.id}
-                    className={`ff-option ${selected.includes(opt.id) ? "ff-option--selected" : ""}`}
-                    onClick={() => toggle(opt.id)}
+                    className={`ff-option ${selected.includes(opt.label) ? "ff-option--selected" : ""}`}
+                    onClick={() => toggle(opt.label)}
                 >
                     <span className="ff-option-letter">{String.fromCharCode(65 + i)}</span>
                     <span>{opt.label}</span>
-                    {selected.includes(opt.id) && (
+                    {selected.includes(opt.label) && (
                         <span className="ff-option-check">✓</span>
                     )}
                 </button>
@@ -318,7 +318,7 @@ function DropdownInput({ question, value, onChange, onSubmit }: InputProps) {
                 Escolha uma opção...
             </option>
             {options.map((opt) => (
-                <option key={opt.id} value={opt.id}>
+                <option key={opt.id} value={opt.label}>
                     {opt.label}
                 </option>
             ))}
