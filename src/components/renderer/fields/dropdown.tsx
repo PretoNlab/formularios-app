@@ -24,7 +24,7 @@ export function DropdownField({ question, value, onChange, onSubmit }: FieldProp
                 Escolha uma opção...
             </option>
             {options.map((opt) => (
-                <option key={opt.id} value={opt.id}>
+                <option key={opt.id} value={opt.label}>
                     {opt.label}
                 </option>
             ))}

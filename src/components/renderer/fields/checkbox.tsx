@@ -10,24 +10,24 @@ export function CheckboxField({ question, value, onChange }: FieldProps) {
     const options = question.properties.options ?? []
     const selected: string[] = Array.isArray(value) ? (value as string[]) : []
 
-    const toggle = (id: string) => {
-        const next = selected.includes(id)
-            ? selected.filter((s) => s !== id)
-            : [...selected, id]
+    const toggle = (label: string) => {
+        const next = selected.includes(label)
+            ? selected.filter((s) => s !== label)
+            : [...selected, label]
         onChange(next)
     }
 
     return (
         <div className="ff-options" role="group">
             {options.map((opt, i) => {
-                const isChecked = selected.includes(opt.id)
+                const isChecked = selected.includes(opt.label)
                 return (
                     <button
                         key={opt.id}
                         role="checkbox"
                         aria-checked={isChecked}
                         className={`ff-option${isChecked ? " ff-option--selected" : ""}`}
-                        onClick={() => toggle(opt.id)}
+                        onClick={() => toggle(opt.label)}
                     >
                         {opt.imageUrl && (
                             <img src={opt.imageUrl} alt="" className="ff-option-img" />

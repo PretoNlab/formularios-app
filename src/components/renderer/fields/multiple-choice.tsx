@@ -14,7 +14,7 @@ export function MultipleChoiceField({ question, value, onChange, onSubmit }: Fie
     return (
         <div className="ff-options" role="radiogroup">
             {options.map((opt, i) => {
-                const isSelected = selected === opt.id
+                const isSelected = selected === opt.label
                 return (
                     <button
                         key={opt.id}
@@ -22,7 +22,7 @@ export function MultipleChoiceField({ question, value, onChange, onSubmit }: Fie
                         aria-checked={isSelected}
                         className={`ff-option${isSelected ? " ff-option--selected" : ""}`}
                         onClick={() => {
-                            onChange(opt.id)
+                            onChange(opt.label)
                             setTimeout(onSubmit, 280)
                         }}
                     >
