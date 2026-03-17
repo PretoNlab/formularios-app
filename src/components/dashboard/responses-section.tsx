@@ -15,7 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import type { FormAnalytics, QuestionAnalytics, QuestionType } from "@/lib/types/form"
 import type { ResponseWithAnswers } from "@/lib/db/queries/responses"
 import { exportResponsesAction } from "@/app/actions/responses"
-import { analyzeTextResponsesAction, generateFormReportAction, type TextAnalysisResult, type FormReportResult } from "@/app/actions/ai-analysis"
+import { analyzeTextResponsesAction, type TextAnalysisResult } from "@/app/actions/ai-analysis"
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -650,169 +650,6 @@ function MiniBarChart({ data }: { data: { date: string; count: number }[] }) {
   )
 }
 
-// ─── AI Form Report ───────────────────────────────────────────────────────────
-
-const PRIORITY_LABEL = { high: "Alta", medium: "Média", low: "Baixa" }
-const PRIORITY_COLOR = {
-  high: "bg-red-100 text-red-700",
-  medium: "bg-amber-100 text-amber-700",
-  low: "bg-slate-100 text-slate-600",
-}
-
-function ScoreRing({ score }: { score: number }) {
-  const color = score >= 80 ? "#22c55e" : score >= 60 ? "#f59e0b" : "#ef4444"
-  const label = score >= 80 ? "Excelente" : score >= 60 ? "Bom" : score >= 40 ? "Regular" : "Precisa melhorar"
-  return (
-    <div className="flex items-center gap-4">
-      <div className="relative h-20 w-20 shrink-0">
-        <svg viewBox="0 0 36 36" className="rotate-[-90deg]" width="80" height="80">
-          <circle cx="18" cy="18" r="15.9" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
-          <circle cx="18" cy="18" r="15.9" fill="none" stroke={color} strokeWidth="3"
-            strokeDasharray={`${score} 100`} strokeLinecap="round" />
-        </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-xl font-bold">{score}</span>
-      </div>
-      <div>
-        <p className="font-semibold text-lg">{label}</p>
-        <p className="text-xs text-muted-foreground">nota geral do formulário</p>
-      </div>
-    </div>
-  )
-}
-
-function AIReportView({ report }: { report: FormReportResult }) {
-  return (
-    <div className="rounded-xl border bg-card p-6 space-y-6">
-      <div className="flex items-center gap-2 text-violet-600 font-semibold text-sm">
-        <Sparkles className="h-4 w-4" />
-        Relatório gerado com IA
-      </div>
-
-      <ScoreRing score={report.score} />
-
-      <p className="text-sm text-foreground/80 leading-relaxed border-l-2 border-violet-400 pl-4 italic">
-        {report.summary}
-      </p>
-
-      {/* Highlights */}
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Destaques</p>
-        <div className="space-y-2">
-          {report.highlights.map((h, i) => (
-            <div key={i} className={`flex items-start gap-2.5 rounded-lg px-3 py-2.5 text-sm ${
-              h.type === "positive" ? "bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300" :
-              h.type === "negative" ? "bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300" :
-              "bg-muted/50 text-foreground/70"
-            }`}>
-              <span className="shrink-0 mt-0.5 text-base leading-none">
-                {h.type === "positive" ? "↑" : h.type === "negative" ? "↓" : "→"}
-              </span>
-              {h.text}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Recommendations */}
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Recomendações</p>
-        <div className="space-y-3">
-          {report.recommendations.map((rec, i) => (
-            <div key={i} className="rounded-lg border bg-muted/20 p-4">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-sm font-semibold">{rec.title}</span>
-                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${PRIORITY_COLOR[rec.priority]}`}>
-                  {PRIORITY_LABEL[rec.priority]}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">{rec.description}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function AIReportAuto({ analytics, formId, formTitle }: {
-  analytics: FormAnalytics
-  formId: string
-  formTitle: string
-}) {
-  const cacheKey = `formularios-report-${formId}-${analytics.totalResponses}`
-  const canGenerate = analytics.totalResponses >= 3
-  const hasFired = useRef(false)
-
-  const [report, setReport] = useState<FormReportResult | null>(() => {
-    if (typeof window === "undefined") return null
-    try {
-      const cached = localStorage.getItem(cacheKey)
-      return cached ? (JSON.parse(cached) as FormReportResult) : null
-    } catch { return null }
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function generate() {
-    setLoading(true)
-    setError(null)
-    const res = await generateFormReportAction(formId, analytics, formTitle)
-    if (res.success) {
-      setReport(res.data)
-      try { localStorage.setItem(cacheKey, JSON.stringify(res.data)) } catch { /* ignore */ }
-    } else {
-      setError(res.error)
-    }
-    setLoading(false)
-  }
-
-  useEffect(() => {
-    if (!canGenerate || report || hasFired.current) return
-    hasFired.current = true
-    generate()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  if (!canGenerate) {
-    return (
-      <div className="rounded-xl border bg-muted/30 p-5 text-center text-sm text-muted-foreground">
-        Colete pelo menos 3 respostas para gerar o relatório com IA.
-      </div>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/20 p-6 space-y-4">
-        <div className="flex items-center gap-2.5 text-violet-600">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm font-medium">Analisando formulário com IA...</span>
-        </div>
-        <div className="space-y-2.5 animate-pulse">
-          <div className="h-16 w-16 rounded-full bg-violet-200/60 dark:bg-violet-800/40" />
-          <div className="h-3 bg-muted rounded-full w-3/4" />
-          <div className="h-3 bg-muted rounded-full w-1/2" />
-          <div className="h-3 bg-muted rounded-full w-2/3" />
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-xl border border-red-200 bg-red-50/50 p-4 flex items-center justify-between gap-4">
-        <p className="text-sm text-red-600">Erro ao gerar relatório: {error}</p>
-        <Button size="sm" variant="outline" onClick={generate} className="shrink-0">
-          Tentar novamente
-        </Button>
-      </div>
-    )
-  }
-
-  if (report) return <AIReportView report={report} />
-  return null
-}
-
 // ─── Analytics Overview Tab ───────────────────────────────────────────────────
 
 function AnalyticsView({ analytics, questions, completionRate, formId, formTitle }: {
@@ -832,7 +669,6 @@ function AnalyticsView({ analytics, questions, completionRate, formId, formTitle
 
   return (
     <div className="space-y-6">
-      <AIReportAuto analytics={analytics} formId={formId} formTitle={formTitle} />
       <InsightCards analytics={analytics} questions={questions} />
 
       <div className="grid lg:grid-cols-2 gap-6">
@@ -1341,7 +1177,7 @@ export function ResponsesSection({
   formId, formTitle, formStatus, formSlug,
   questions, responses, analytics,
 }: ResponsesSectionProps) {
-  const [tab, setTab] = useState<"responses" | "questions" | "analytics">("analytics")
+  const [tab, setTab] = useState<"responses" | "questions" | "analytics">("questions")
   const [copied, setCopied] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [filters, setFilters] = useState<ResponseFilters>(DEFAULT_FILTERS)
@@ -1463,13 +1299,13 @@ export function ResponsesSection({
       {/* Tabs */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <TabsList className="mb-6">
-          <TabsTrigger value="analytics">Relatório</TabsTrigger>
           <TabsTrigger value="questions" disabled={questionStats.length === 0}>
             Perguntas{questionStats.length > 0 ? ` (${questionStats.length})` : ""}
           </TabsTrigger>
           <TabsTrigger value="responses">
             Respostas ({filteredResponses.length !== responses.length ? `${filteredResponses.length}/${responses.length}` : responses.length})
           </TabsTrigger>
+          <TabsTrigger value="analytics">Visão Geral</TabsTrigger>
         </TabsList>
       </Tabs>
 
