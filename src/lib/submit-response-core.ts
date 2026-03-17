@@ -2,9 +2,9 @@ import { z } from "zod"
 import { eq, asc, and, gte, sql } from "drizzle-orm"
 import { createHash } from "crypto"
 import { db } from "@/lib/db/client"
-import { forms, questions, responses, answers } from "@/lib/db/schema"
+import { forms, questions, responses, answers, users } from "@/lib/db/schema"
 import { getIntegrationsByForm } from "@/lib/db/queries/integrations"
-import { sendResponseNotification } from "@/lib/email"
+import { sendResponseNotification, sendFirstResponseEmail } from "@/lib/email"
 import { appendGoogleSheetsRow } from "@/lib/google-sheets"
 import type { AnswerValue, FormSettings, IntegrationConfig } from "@/lib/db/schema"
 
@@ -105,7 +105,7 @@ export async function submitResponseCore(params: {
   // 1. Fetch form for status + settings validation
   const form = await db.query.forms.findFirst({
     where: eq(forms.id, formId),
-    columns: { id: true, status: true, title: true, settings: true, responseCount: true },
+    columns: { id: true, status: true, title: true, settings: true, responseCount: true, createdById: true },
   })
 
   if (!form) throw new Error("Formulário não encontrado.")
@@ -217,6 +217,18 @@ export async function submitResponseCore(params: {
       responseId: response.id,
       answers: sanitizedAnswers,
     }).catch(() => {})
+  }
+
+  // 10b. First-response milestone email (fire-and-forget)
+  if (form.responseCount === 0) {
+    db.query.users
+      .findFirst({ where: eq(users.id, form.createdById), columns: { email: true } })
+      .then((creator) => {
+        if (creator?.email) {
+          sendFirstResponseEmail({ toEmail: creator.email, formId, formTitle: form.title }).catch(() => {})
+        }
+      })
+      .catch(() => {})
   }
 
   // 11. Fire webhooks (fire-and-forget)

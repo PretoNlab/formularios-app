@@ -59,6 +59,112 @@ import type { IntegrationRow } from "@/lib/db/queries/integrations"
 import { PRESET_THEMES, AVAILABLE_FONTS } from "@/config/themes"
 import { cn } from "@/lib/utils"
 
+// ─── Builder Tour ─────────────────────────────────────────────────────────────
+
+const BUILDER_TOUR_KEY = "formularios_builder_tour_v1"
+
+const TOUR_STEPS = [
+  {
+    icon: Plus,
+    areaLabel: "Painel esquerdo",
+    areaColor: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    title: "Adicione campos ao formulário",
+    description: "Clique em qualquer tipo de campo no painel à esquerda para adicioná-lo. Você pode arrastar e soltar para reordenar.",
+  },
+  {
+    icon: Settings2,
+    areaLabel: "Área central",
+    areaColor: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+    title: "Edite e personalize",
+    description: "Selecione um campo no centro para editar título, opções e configurações. Use a aba Propriedades à direita para ajustes avançados.",
+  },
+  {
+    icon: Globe,
+    areaLabel: "Barra superior",
+    areaColor: "bg-green-500/10 text-green-600 dark:text-green-400",
+    title: "Publique e compartilhe",
+    description: "Quando estiver pronto, clique em Publicar na barra superior. Você receberá um link para compartilhar e começar a coletar respostas.",
+  },
+]
+
+function BuilderTour() {
+  const [open, setOpen] = useState(false)
+  const [step, setStep] = useState(0)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (!localStorage.getItem(BUILDER_TOUR_KEY)) setOpen(true)
+  }, [])
+
+  function dismiss() {
+    localStorage.setItem(BUILDER_TOUR_KEY, "done")
+    setOpen(false)
+  }
+
+  const current = TOUR_STEPS[step]
+  const Icon = current.icon
+  const isLast = step === TOUR_STEPS.length - 1
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) dismiss() }}>
+      <DialogContent className="max-w-sm p-0 overflow-hidden gap-0">
+        {/* Progress bar */}
+        <div className="flex h-1">
+          {TOUR_STEPS.map((_, i) => (
+            <div
+              key={i}
+              className={`flex-1 transition-colors duration-300 ${i <= step ? "bg-primary" : "bg-muted"} ${i > 0 ? "ml-0.5" : ""}`}
+            />
+          ))}
+        </div>
+
+        <div className="p-6">
+          {/* Area badge */}
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold mb-4 ${current.areaColor}`}>
+            <Icon className="h-3 w-3" />
+            {current.areaLabel}
+          </span>
+
+          <DialogHeader className="mb-4 space-y-1.5">
+            <DialogTitle className="text-base leading-snug">{current.title}</DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              {current.description}
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Step dots */}
+          <div className="flex items-center justify-center gap-1.5 mb-5">
+            {TOUR_STEPS.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setStep(i)}
+                className={`rounded-full transition-all ${i === step ? "w-4 h-2 bg-primary" : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"}`}
+              />
+            ))}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            {step > 0 && (
+              <Button variant="ghost" size="sm" className="flex-1" onClick={() => setStep(step - 1)}>
+                Anterior
+              </Button>
+            )}
+            {step === 0 && (
+              <Button variant="ghost" size="sm" className="flex-1 text-muted-foreground" onClick={dismiss}>
+                Pular tour
+              </Button>
+            )}
+            <Button size="sm" className="flex-1" onClick={isLast ? dismiss : () => setStep(step + 1)}>
+              {isLast ? "Começar" : "Próximo →"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 // ─── Icon map ─────────────────────────────────────────────────────────────────
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
@@ -474,6 +580,9 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
           )}
         </ScrollArea>
       </aside>
+
+      {/* ── BUILDER TOUR ─────────────────────────────────────────────── */}
+      <BuilderTour />
 
       {/* ── SHARE DIALOG ────────────────────────────────────────────── */}
       <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>

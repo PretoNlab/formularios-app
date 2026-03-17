@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm"
 import { db } from "../client"
 import { users, workspaces, workspaceMembers } from "../schema"
 import { generateSlug } from "../../utils/slug"
+import { sendWelcomeEmail } from "../../email"
 import type { ApiResponse } from "../../types/form"
 
 type UserRow = typeof users.$inferSelect
@@ -117,6 +118,9 @@ export async function ensureUserExists(authUser: {
 
       return { user, workspace }
     })
+
+    // Fire-and-forget: welcome email on first login
+    sendWelcomeEmail({ toEmail: authUser.email, name: result.user.name ?? authUser.email.split("@")[0] }).catch(() => {})
 
     return {
       success: true,
