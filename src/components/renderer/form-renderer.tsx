@@ -630,6 +630,8 @@ export interface FormRendererProps {
     initialState?: Partial<RendererState>
     /** Class name added to the root wrapper */
     className?: string
+    /** When true, shows an offline-queued notice on the completion screen */
+    pendingSync?: boolean
 }
 
 export function FormRenderer({
@@ -637,6 +639,7 @@ export function FormRenderer({
     onSubmit,
     initialState,
     className = "",
+    pendingSync = false,
 }: FormRendererProps) {
     const questions = [...form.questions].sort((a, b) => a.order - b.order)
     const { settings, theme } = form
@@ -769,10 +772,12 @@ export function FormRenderer({
                 <div className="ff-screen ff-screen--enter">
                     <div className="ff-card">
                         <div className="ff-thankyou">
-                            <div className="ff-thankyou-icon">🎉</div>
-                            <h2 className="ff-question-title">Obrigado!</h2>
+                            <div className="ff-thankyou-icon">{pendingSync ? "📡" : "🎉"}</div>
+                            <h2 className="ff-question-title">{pendingSync ? "Salvo!" : "Obrigado!"}</h2>
                             <p className="ff-thankyou-text">
-                                {settings.closeMessage || "Sua resposta foi registrada com sucesso."}
+                                {pendingSync
+                                    ? "Você está offline. Sua resposta foi salva e será enviada automaticamente quando você tiver conexão."
+                                    : settings.closeMessage || "Sua resposta foi registrada com sucesso."}
                             </p>
                         </div>
                     </div>

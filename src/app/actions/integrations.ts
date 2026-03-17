@@ -10,6 +10,8 @@ import {
   deleteIntegration,
   getIntegrationsByForm,
 } from "@/lib/db/queries/integrations"
+import { listSheetTabs, extractSpreadsheetId } from "@/lib/google-sheets"
+import type { IntegrationConfig } from "@/lib/db/schema"
 
 async function requireUser() {
   const supabase = await createClient()
@@ -53,12 +55,16 @@ export async function createWebhookAction(
 
 export async function toggleIntegrationAction(id: string, enabled: boolean, formId: string) {
   await requireFormOwner(formId)
+  const { data: formIntegrations } = await getIntegrationsByForm(formId)
+  if (!formIntegrations?.some((i) => i.id === id)) throw new Error("Integração não encontrada.")
   await updateIntegration(id, { enabled })
   revalidatePath(`/builder/${formId}`)
 }
 
 export async function deleteIntegrationAction(id: string, formId: string) {
   await requireFormOwner(formId)
+  const { data: formIntegrations } = await getIntegrationsByForm(formId)
+  if (!formIntegrations?.some((i) => i.id === id)) throw new Error("Integração não encontrada.")
   await deleteIntegration(id)
   revalidatePath(`/builder/${formId}`)
 }
@@ -67,5 +73,85 @@ export async function getFormIntegrationsAction(formId: string) {
   await requireFormOwner(formId)
   const result = await getIntegrationsByForm(formId)
   if (!result.success) return []
-  return result.data ?? []
+  // Strip OAuth tokens — never send credentials to the client
+  return (result.data ?? []).map((integration) => {
+    const { accessToken: _a, refreshToken: _r, tokenExpiry: _t, ...safeConfig } = integration.config as IntegrationConfig & {
+      accessToken?: string
+      refreshToken?: string
+      tokenExpiry?: number
+    }
+    return { ...integration, config: safeConfig }
+  })
+}
+
+// ─── Google Sheets ─────────────────────────────────────────────────────────────
+
+/**
+ * Returns the path to initiate Google OAuth.
+ * Client does: window.location.href = await getGoogleSheetsAuthUrlAction(formId)
+ */
+export async function getGoogleSheetsAuthUrlAction(formId: string): Promise<string> {
+  await requireFormOwner(formId)
+  return `/api/auth/google-sheets?formId=${formId}`
+}
+
+/**
+ * Lists the sheet tabs for a given spreadsheet URL or ID.
+ * Uses the stored OAuth tokens for the form's google_sheets integration.
+ */
+export async function listSheetTabsAction(
+  formId: string,
+  spreadsheetUrlOrId: string
+): Promise<string[]> {
+  await requireFormOwner(formId)
+
+  const { data: integrations } = await getIntegrationsByForm(formId, "google_sheets")
+  const integration = integrations?.[0]
+  if (!integration) throw new Error("Conta Google não conectada.")
+
+  const config = integration.config as IntegrationConfig
+  if (!config.accessToken || !config.refreshToken) {
+    throw new Error("Tokens OAuth não encontrados. Conecte novamente.")
+  }
+
+  const spreadsheetId = extractSpreadsheetId(spreadsheetUrlOrId)
+  return listSheetTabs(config.accessToken, config.refreshToken, spreadsheetId, config.tokenExpiry)
+}
+
+/**
+ * Saves the chosen spreadsheet and sheet tab to the integration.
+ * Also enables the integration.
+ */
+export async function configureGoogleSheetsAction(
+  formId: string,
+  spreadsheetUrlOrId: string,
+  sheetName: string
+): Promise<void> {
+  await requireFormOwner(formId)
+
+  const { data: integrations } = await getIntegrationsByForm(formId, "google_sheets")
+  const integration = integrations?.[0]
+  if (!integration) throw new Error("Conta Google não conectada.")
+
+  const spreadsheetId = extractSpreadsheetId(spreadsheetUrlOrId)
+  const existingConfig = integration.config as IntegrationConfig
+
+  await updateIntegration(integration.id, {
+    enabled: true,
+    config: { ...existingConfig, spreadsheetId, sheetName },
+  })
+  revalidatePath(`/builder/${formId}`)
+}
+
+/**
+ * Disconnects the Google Sheets integration for a form.
+ */
+export async function disconnectGoogleSheetsAction(formId: string): Promise<void> {
+  await requireFormOwner(formId)
+
+  const { data: integrations } = await getIntegrationsByForm(formId, "google_sheets")
+  for (const integration of integrations ?? []) {
+    await deleteIntegration(integration.id)
+  }
+  revalidatePath(`/builder/${formId}`)
 }

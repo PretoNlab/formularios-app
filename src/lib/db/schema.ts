@@ -327,6 +327,9 @@ export interface IntegrationConfig {
   // Google Sheets
   spreadsheetId?: string
   sheetName?: string
+  accessToken?: string
+  refreshToken?: string
+  tokenExpiry?: number
 
   // WhatsApp (Evolution API / ManyChat)
   phoneNumber?: string

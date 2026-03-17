@@ -80,6 +80,7 @@ export async function generateMetadata(
   const metadata: Metadata = {
     title,
     description,
+    manifest: "/manifest.json",
     openGraph: {
       title,
       description,

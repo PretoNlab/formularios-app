@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import {
   ArrowLeft, Eye, Users, TrendingUp, Clock,
   CheckCircle2, Circle, Copy, ExternalLink, Download,
   Smartphone, AlertTriangle, BarChart2, Sparkles, Loader2,
+  Filter, X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -971,6 +972,104 @@ function formatAnswerValue(value: unknown): string {
   return String(value)
 }
 
+// ─── Response Filters ─────────────────────────────────────────────────────────
+
+type FilterPeriod = "all" | "today" | "7d" | "30d"
+type FilterStatus = "all" | "complete" | "partial"
+type FilterDevice = "all" | "desktop" | "mobile" | "tablet"
+
+interface ResponseFilters {
+  period: FilterPeriod
+  status: FilterStatus
+  device: FilterDevice
+  source: string
+}
+
+const DEFAULT_FILTERS: ResponseFilters = { period: "all", status: "all", device: "all", source: "all" }
+
+function getResponseSource(meta: { utmSource?: string | null; referrer?: string | null } | null | undefined): string {
+  if (!meta) return "Direto"
+  if (meta.utmSource) return meta.utmSource
+  if (meta.referrer) {
+    try {
+      return new URL(meta.referrer).hostname.replace(/^www\./, "")
+    } catch {
+      return meta.referrer.slice(0, 32)
+    }
+  }
+  return "Direto"
+}
+
+function FilterBar({
+  filters,
+  onChange,
+  sources,
+  filteredCount,
+  totalCount,
+}: {
+  filters: ResponseFilters
+  onChange: (f: ResponseFilters) => void
+  sources: string[]
+  filteredCount: number
+  totalCount: number
+}) {
+  const hasActive =
+    filters.period !== "all" || filters.status !== "all" || filters.device !== "all" || filters.source !== "all"
+
+  function set<K extends keyof ResponseFilters>(key: K, value: ResponseFilters[K]) {
+    onChange({ ...filters, [key]: value })
+  }
+
+  const sel =
+    "h-8 rounded-lg border bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-4">
+      <Filter className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+      <select className={sel} value={filters.period} onChange={(e) => set("period", e.target.value as FilterPeriod)}>
+        <option value="all">Todos os períodos</option>
+        <option value="today">Hoje</option>
+        <option value="7d">Últimos 7 dias</option>
+        <option value="30d">Últimos 30 dias</option>
+      </select>
+      <select className={sel} value={filters.status} onChange={(e) => set("status", e.target.value as FilterStatus)}>
+        <option value="all">Todos os status</option>
+        <option value="complete">Completas</option>
+        <option value="partial">Parciais</option>
+      </select>
+      <select className={sel} value={filters.device} onChange={(e) => set("device", e.target.value as FilterDevice)}>
+        <option value="all">Todos os dispositivos</option>
+        <option value="desktop">Desktop</option>
+        <option value="mobile">Mobile</option>
+        <option value="tablet">Tablet</option>
+      </select>
+      {sources.length > 1 && (
+        <select className={sel} value={filters.source} onChange={(e) => set("source", e.target.value)}>
+          <option value="all">Todas as origens</option>
+          {sources.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+      )}
+      {hasActive && (
+        <>
+          <button
+            onClick={() => onChange(DEFAULT_FILTERS)}
+            className="flex items-center gap-1 h-8 rounded-lg border border-dashed px-2.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+          >
+            <X className="h-3 w-3" />Limpar
+          </button>
+          {filteredCount !== totalCount && (
+            <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+              {filteredCount} de {totalCount}
+            </span>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function ResponsesSection({
@@ -980,6 +1079,31 @@ export function ResponsesSection({
   const [tab, setTab] = useState<"responses" | "questions" | "analytics">("responses")
   const [copied, setCopied] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [filters, setFilters] = useState<ResponseFilters>(DEFAULT_FILTERS)
+
+  const sources = useMemo(() => {
+    const set = new Set<string>()
+    for (const r of responses) set.add(getResponseSource(r.metadata))
+    return Array.from(set).sort()
+  }, [responses])
+
+  const filteredResponses = useMemo(() => {
+    return responses.filter((r) => {
+      if (filters.period !== "all") {
+        const now = new Date()
+        const cutoff = new Date()
+        if (filters.period === "today") cutoff.setHours(0, 0, 0, 0)
+        else if (filters.period === "7d") cutoff.setDate(now.getDate() - 7)
+        else if (filters.period === "30d") cutoff.setDate(now.getDate() - 30)
+        if (new Date(r.startedAt) < cutoff) return false
+      }
+      if (filters.status === "complete" && !r.completedAt) return false
+      if (filters.status === "partial" && r.completedAt) return false
+      if (filters.device !== "all" && r.metadata?.deviceType !== filters.device) return false
+      if (filters.source !== "all" && getResponseSource(r.metadata) !== filters.source) return false
+      return true
+    })
+  }, [responses, filters])
 
   const publicUrl =
     typeof window !== "undefined"
@@ -995,7 +1119,9 @@ export function ResponsesSection({
   async function handleExport() {
     setIsExporting(true)
     try {
-      const csv = await exportResponsesAction(formId)
+      const ids =
+        filteredResponses.length !== responses.length ? filteredResponses.map((r) => r.id) : undefined
+      const csv = await exportResponsesAction(formId, ids)
       const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -1071,7 +1197,9 @@ export function ResponsesSection({
       {/* Tabs */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <TabsList className="mb-6">
-          <TabsTrigger value="responses">Respostas ({responses.length})</TabsTrigger>
+          <TabsTrigger value="responses">
+            Respostas ({filteredResponses.length !== responses.length ? `${filteredResponses.length}/${responses.length}` : responses.length})
+          </TabsTrigger>
           <TabsTrigger value="questions" disabled={questionStats.length === 0}>
             Perguntas{questionStats.length > 0 ? ` (${questionStats.length})` : ""}
           </TabsTrigger>
@@ -1080,7 +1208,16 @@ export function ResponsesSection({
       </Tabs>
 
       {tab === "responses" && (
-        <ResponsesTable responses={responses} questions={questions} />
+        <>
+          <FilterBar
+            filters={filters}
+            onChange={setFilters}
+            sources={sources}
+            filteredCount={filteredResponses.length}
+            totalCount={responses.length}
+          />
+          <ResponsesTable responses={filteredResponses} questions={questions} />
+        </>
       )}
       {tab === "questions" && (
         <QuestionIntelligence questionStats={questionStats} questions={questions} formId={formId} />
