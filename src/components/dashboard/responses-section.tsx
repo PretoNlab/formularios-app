@@ -469,11 +469,12 @@ function QuestionCard({ stat, order, formId, criticality, dropoffRate }: {
 
 // ─── Question Intelligence Tab ────────────────────────────────────────────────
 
-function QuestionIntelligence({ questionStats, questions, formId, dropoffByQuestion }: {
+function QuestionIntelligence({ questionStats, questions, formId, dropoffByQuestion, totalResponses }: {
   questionStats: QuestionAnalytics[]
   questions: QuestionSummary[]
   formId: string
   dropoffByQuestion: FormAnalytics["dropoffByQuestion"]
+  totalResponses: number
 }) {
   if (questionStats.length === 0) {
     return (
@@ -485,6 +486,8 @@ function QuestionIntelligence({ questionStats, questions, formId, dropoffByQuest
 
   const dropoffMap = new Map(dropoffByQuestion.map((d) => [d.questionId, d.dropoffRate]))
 
+  const npsStats = questionStats.filter((s) => s.npsScore !== undefined)
+
   const sorted = [...questionStats].sort((a, b) => {
     const da = dropoffMap.get(a.questionId) ?? 0
     const db = dropoffMap.get(b.questionId) ?? 0
@@ -492,7 +495,10 @@ function QuestionIntelligence({ questionStats, questions, formId, dropoffByQuest
   })
 
   return (
-    <div className="space-y-4">
+    <div>
+      {npsStats.length > 0 && <NPSHighlight npsStats={npsStats} />}
+      <DropoffFunnel dropoff={dropoffByQuestion} questions={questions} totalResponses={totalResponses} />
+      <div className="space-y-4">
       {sorted.map((stat) => {
         const q = questions.find((x) => x.id === stat.questionId)
         const order = q?.order !== undefined ? q.order + 1 : "?"
@@ -510,6 +516,7 @@ function QuestionIntelligence({ questionStats, questions, formId, dropoffByQuest
           />
         )
       })}
+      </div>
     </div>
   )
 }
@@ -645,6 +652,152 @@ function MiniBarChart({ data }: { data: { date: string; count: number }[] }) {
       <div className="flex justify-between text-[10px] text-muted-foreground">
         <span>{days[0].date.slice(5).replace("-", "/")}</span>
         <span>hoje</span>
+      </div>
+    </div>
+  )
+}
+
+// ─── Dropoff Funnel ───────────────────────────────────────────────────────────
+
+function DropoffFunnel({ dropoff, questions, totalResponses }: {
+  dropoff: FormAnalytics["dropoffByQuestion"]
+  questions: QuestionSummary[]
+  totalResponses: number
+}) {
+  if (dropoff.length === 0 || totalResponses === 0) return null
+
+  const dropoffMap = new Map(dropoff.map((d) => [d.questionId, d.dropoffRate]))
+
+  const ordered = [...questions]
+    .filter((q) => dropoffMap.has(q.id))
+    .sort((a, b) => a.order - b.order)
+
+  if (ordered.length === 0) return null
+
+  return (
+    <div className="rounded-xl border bg-card p-6 mb-6">
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="font-semibold">Funil de conclusão</h3>
+        <span className="text-xs text-muted-foreground">{totalResponses} respondentes</span>
+      </div>
+      <p className="text-xs text-muted-foreground mb-5">% que chegou a cada pergunta</p>
+
+      <div className="space-y-3">
+        {ordered.map((q, i) => {
+          const dropoffRate = dropoffMap.get(q.id) ?? 0
+          const answeredRate = 1 - dropoffRate
+          const count = Math.round(answeredRate * totalResponses)
+          const isBottleneck = i > 0 && dropoffRate > 0.15
+          const barColor =
+            answeredRate >= 0.8 ? "bg-emerald-500" :
+            answeredRate >= 0.6 ? "bg-amber-400" : "bg-red-400"
+          const textColor =
+            answeredRate >= 0.8 ? "text-emerald-600" :
+            answeredRate >= 0.6 ? "text-amber-600" : "text-red-600"
+
+          // Cascade: indent bar slightly per step to give funnel shape
+          const indent = Math.round(i * 1.2)
+
+          return (
+            <div key={q.id}>
+              <div className="flex items-center justify-between mb-1 gap-2">
+                <span className="text-xs text-muted-foreground truncate flex-1">
+                  {i + 1}. {q.title || "Pergunta sem título"}
+                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {isBottleneck && (
+                    <span className="text-[10px] font-medium text-red-500 bg-red-50 dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
+                      −{pct(dropoffRate)} aqui
+                    </span>
+                  )}
+                  <span className={`text-xs font-semibold tabular-nums ${textColor}`}>
+                    {pct(answeredRate)}
+                  </span>
+                  <span className="text-xs text-muted-foreground tabular-nums w-8 text-right">
+                    {count}
+                  </span>
+                </div>
+              </div>
+              <div
+                className="h-7 bg-muted rounded-lg overflow-hidden"
+                style={{ marginLeft: `${indent}px` }}
+              >
+                <div
+                  className={`h-full ${barColor} rounded-lg transition-all duration-700`}
+                  style={{ width: `${Math.max(answeredRate * 100, 1)}%` }}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── NPS Highlight Card ───────────────────────────────────────────────────────
+
+function NPSHighlight({ npsStats }: { npsStats: QuestionAnalytics[] }) {
+  if (npsStats.length === 0) return null
+  const main = npsStats[0]
+  const score = main.npsScore ?? 0
+  const promoters = main.npsPromoters ?? 0
+  const passives = main.npsPassives ?? 0
+  const detractors = main.npsDetractors ?? 0
+
+  const scoreColor = score >= 50 ? "text-emerald-600" : score >= 0 ? "text-amber-600" : "text-red-600"
+  const ringColor = score >= 50 ? "#22c55e" : score >= 0 ? "#f59e0b" : "#ef4444"
+  const scoreLabel = score >= 50 ? "Excelente" : score >= 0 ? "Bom" : score < 0 ? "Precisa atenção" : "Regular"
+
+  return (
+    <div className="rounded-xl border bg-card p-6 mb-6">
+      <div className="flex items-center gap-2 mb-4">
+        <BarChart2 className="h-4 w-4 text-muted-foreground" />
+        <h3 className="font-semibold">NPS Score</h3>
+        {npsStats.length > 0 && (
+          <span className="text-xs text-muted-foreground ml-1 truncate max-w-[200px]">
+            · {main.questionTitle}
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-8">
+        {/* Ring */}
+        <div className="relative h-24 w-24 shrink-0">
+          <svg viewBox="0 0 36 36" className="rotate-[-90deg]" width="96" height="96">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
+            <circle
+              cx="18" cy="18" r="15.9" fill="none"
+              stroke={ringColor} strokeWidth="3"
+              strokeDasharray={`${Math.abs(score)} 100`}
+              strokeLinecap="round"
+            />
+          </svg>
+          <span className={`absolute inset-0 flex items-center justify-center text-2xl font-bold tabular-nums ${scoreColor}`}>
+            {score > 0 ? `+${score}` : score}
+          </span>
+        </div>
+
+        {/* Details */}
+        <div className="flex-1 space-y-3">
+          <p className={`text-sm font-semibold ${scoreColor}`}>{scoreLabel}</p>
+          <div className="flex h-2.5 rounded-full overflow-hidden gap-0.5">
+            <div className="bg-red-400" style={{ width: `${detractors}%` }} title={`Detratores: ${detractors}%`} />
+            <div className="bg-yellow-400" style={{ width: `${passives}%` }} title={`Passivos: ${passives}%`} />
+            <div className="bg-emerald-500" style={{ width: `${promoters}%` }} title={`Promotores: ${promoters}%`} />
+          </div>
+          <div className="flex gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-red-400 inline-block" />Detratores {detractors}%
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-yellow-400 inline-block" />Passivos {passives}%
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />Promotores {promoters}%
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -1341,6 +1494,7 @@ export function ResponsesSection({
           questions={questions}
           formId={formId}
           dropoffByQuestion={analytics?.dropoffByQuestion ?? []}
+          totalResponses={analytics?.totalResponses ?? responses.length}
         />
       )}
       {tab === "analytics" && (

@@ -291,7 +291,7 @@ export async function getFormAnalytics(
 
     // ── 4. Questions metadata ─────────────────────────────────────────────────
     const formQuestions = await db
-      .select({ id: questions.id, title: questions.title, type: questions.type })
+      .select({ id: questions.id, title: questions.title, type: questions.type, properties: questions.properties })
       .from(questions)
       .where(eq(questions.formId, formId))
       .orderBy(asc(questions.order))
@@ -411,7 +411,9 @@ export async function getFormAnalytics(
           let npsPassives: number | undefined
           let npsDetractors: number | undefined
 
-          if (q.type === "nps") {
+          const props = q.properties as { scaleMin?: number; scaleMax?: number } | null
+          const isNpsScale = q.type === "scale" && props?.scaleMin === 0 && props?.scaleMax === 10
+          if (q.type === "nps" || isNpsScale) {
             const promoters = nums.filter((n) => n >= 9).length
             const passives = nums.filter((n) => n >= 7 && n <= 8).length
             const detractors = nums.filter((n) => n <= 6).length
