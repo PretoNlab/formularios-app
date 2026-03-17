@@ -1,7 +1,7 @@
 // formularios.ia — Service Worker
 // Scope: /f/ (public form renderer only)
 
-const CACHE_NAME = "formularios-v1"
+const CACHE_NAME = "formularios-v2"
 const DB_NAME = "formularios-offline-queue"
 const STORE_NAME = "responses"
 const SUBMIT_URL = "/api/responses/submit"
