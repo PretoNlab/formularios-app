@@ -411,7 +411,11 @@ export async function getFormAnalytics(
           let npsPassives: number | undefined
           let npsDetractors: number | undefined
 
-          const props = q.properties as { scaleMin?: number; scaleMax?: number } | null
+          const props = q.properties as {
+            scaleMin?: number; scaleMax?: number
+            scaleMinLabel?: string; scaleMaxLabel?: string
+            ratingMax?: number; ratingStyle?: string
+          } | null
           const isNpsScale = q.type === "scale" && props?.scaleMin === 0 && props?.scaleMax === 10
           if (q.type === "nps" || isNpsScale) {
             const promoters = nums.filter((n) => n >= 9).length
@@ -429,6 +433,18 @@ export async function getFormAnalytics(
             min: Math.min(...nums),
             max: Math.max(...nums),
             distribution,
+            // Rating context
+            ...(q.type === "rating" && {
+              ratingMax: props?.ratingMax ?? 5,
+              ratingStyle: (props?.ratingStyle ?? "stars") as "stars" | "hearts" | "thumbs" | "numbers",
+            }),
+            // Scale context (non-NPS)
+            ...(!isNpsScale && q.type === "scale" && {
+              scaleMin: props?.scaleMin ?? 1,
+              scaleMax: props?.scaleMax ?? 10,
+              scaleMinLabel: props?.scaleMinLabel,
+              scaleMaxLabel: props?.scaleMaxLabel,
+            }),
             npsScore,
             npsPromoters,
             npsPassives,

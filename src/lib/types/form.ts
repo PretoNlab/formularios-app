@@ -200,6 +200,14 @@ export interface QuestionAnalytics {
   min?: number
   max?: number
   distribution?: { value: number; count: number }[]
+  // Rating specific
+  ratingMax?: number
+  ratingStyle?: "stars" | "hearts" | "thumbs" | "numbers"
+  // Scale specific
+  scaleMin?: number
+  scaleMax?: number
+  scaleMinLabel?: string
+  scaleMaxLabel?: string
   // NPS specific
   npsScore?: number
   npsPromoters?: number

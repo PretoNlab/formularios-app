@@ -199,7 +199,117 @@ function NpsViz({ stat }: { stat: QuestionAnalytics }) {
   )
 }
 
-// ─── Numeric Visualization ────────────────────────────────────────────────────
+// ─── Rating Visualization ─────────────────────────────────────────────────────
+
+const RATING_ICONS: Record<string, { filled: string; empty: string }> = {
+  stars:   { filled: "★", empty: "☆" },
+  hearts:  { filled: "♥", empty: "♡" },
+  thumbs:  { filled: "👍", empty: "·" },
+  numbers: { filled: "●", empty: "○" },
+}
+
+function RatingViz({ stat }: { stat: QuestionAnalytics }) {
+  const ratingMax = stat.ratingMax ?? 5
+  const style = stat.ratingStyle ?? "stars"
+  const icons = RATING_ICONS[style] ?? RATING_ICONS.stars
+  const avg = stat.average ?? 0
+  const dist = stat.distribution ?? []
+  const maxCount = Math.max(...dist.map((d) => d.count), 1)
+  const filledCount = Math.round(avg)
+
+  const bars = Array.from({ length: ratingMax }, (_, i) => {
+    const value = i + 1
+    const found = dist.find((d) => d.value === value)
+    return { value, count: found?.count ?? 0 }
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <span className="text-3xl font-bold tabular-nums">{avg}</span>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xl tracking-wide leading-none">
+            {Array.from({ length: ratingMax }, (_, i) => (
+              <span key={i} className={i < filledCount ? "text-amber-400" : "text-muted-foreground/30"}>
+                {i < filledCount ? icons.filled : icons.empty}
+              </span>
+            ))}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            média de {stat.totalAnswers} resposta{stat.totalAnswers !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        {[...bars].reverse().map((b) => (
+          <div key={b.value} className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground w-4 text-right tabular-nums shrink-0">{b.value}</span>
+            <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-amber-400 transition-all duration-500"
+                style={{ width: `${(b.count / maxCount) * 100}%` }}
+              />
+            </div>
+            <span className="text-xs text-muted-foreground tabular-nums w-6 text-right shrink-0">{b.count}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Scale Visualization ──────────────────────────────────────────────────────
+
+function ScaleViz({ stat }: { stat: QuestionAnalytics }) {
+  const scaleMin = stat.scaleMin ?? 1
+  const scaleMax = stat.scaleMax ?? 10
+  const avg = stat.average ?? scaleMin
+  const dist = stat.distribution ?? []
+  const maxCount = Math.max(...dist.map((d) => d.count), 1)
+  const range = scaleMax - scaleMin
+  const position = range > 0 ? ((avg - scaleMin) / range) * 100 : 50
+
+  const allValues = Array.from({ length: scaleMax - scaleMin + 1 }, (_, i) => {
+    const value = scaleMin + i
+    const found = dist.find((d) => d.value === value)
+    return { value, count: found?.count ?? 0 }
+  })
+
+  return (
+    <div className="space-y-5">
+      <div className="space-y-2">
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>{stat.scaleMinLabel || scaleMin}</span>
+          <span>{stat.scaleMaxLabel || scaleMax}</span>
+        </div>
+        <div className="relative h-3 rounded-full bg-gradient-to-r from-red-300 via-amber-300 to-emerald-400">
+          <div
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-5 w-5 rounded-full bg-white border-2 border-primary shadow-sm transition-all duration-700"
+            style={{ left: `${position}%` }}
+          />
+        </div>
+        <div className="flex justify-center gap-1">
+          <span className="text-2xl font-bold tabular-nums">{avg}</span>
+          <span className="text-xs text-muted-foreground self-end mb-0.5">/ {scaleMax}</span>
+        </div>
+      </div>
+      <div className="flex items-end gap-1 h-12">
+        {allValues.map((v) => (
+          <div key={v.value} className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
+            <div
+              className="w-full rounded-t bg-primary/60 transition-all duration-500"
+              style={{ height: `${(v.count / maxCount) * 40}px`, minHeight: v.count > 0 ? "3px" : "0" }}
+              title={`${v.value}: ${v.count}`}
+            />
+            <span className="text-[9px] text-muted-foreground tabular-nums">{v.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Numeric Visualization (campo number) ────────────────────────────────────
 
 function NumericViz({ stat }: { stat: QuestionAnalytics }) {
   const dist = stat.distribution ?? []
@@ -456,6 +566,10 @@ function QuestionCard({ stat, order, formId, criticality, dropoffRate }: {
 
       {stat.npsScore !== undefined ? (
         <NpsViz stat={stat} />
+      ) : stat.questionType === "rating" && stat.distribution && stat.average !== undefined ? (
+        <RatingViz stat={stat} />
+      ) : stat.questionType === "scale" && stat.distribution && stat.average !== undefined ? (
+        <ScaleViz stat={stat} />
       ) : stat.distribution && stat.average !== undefined ? (
         <NumericViz stat={stat} />
       ) : stat.optionCounts && stat.optionCounts.length > 0 ? (
