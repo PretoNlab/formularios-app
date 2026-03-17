@@ -1,16 +1,17 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import Link from "next/link"
 import {
   ArrowLeft, Eye, Users, TrendingUp, Clock,
   CheckCircle2, Circle, Copy, ExternalLink, Download,
   Smartphone, AlertTriangle, BarChart2, Sparkles, Loader2,
-  Filter, X,
+  Filter, X, ChevronLeft, ChevronRight, Monitor, Tablet,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import type { FormAnalytics, QuestionAnalytics, QuestionType } from "@/lib/types/form"
 import type { ResponseWithAnswers } from "@/lib/db/queries/responses"
 import { exportResponsesAction } from "@/app/actions/responses"
@@ -409,7 +410,21 @@ function AIAnalysisView({ result }: { result: TextAnalysisResult }) {
 
 // ─── Question Card ────────────────────────────────────────────────────────────
 
-function QuestionCard({ stat, order, formId }: { stat: QuestionAnalytics; order: number | string; formId: string }) {
+const CRITICALITY_BADGE = {
+  high: { label: "Alta atenção", cls: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
+  medium: { label: "Observar", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
+  ok: { label: "OK", cls: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+}
+
+function QuestionCard({ stat, order, formId, criticality, dropoffRate }: {
+  stat: QuestionAnalytics
+  order: number | string
+  formId: string
+  criticality?: "high" | "medium" | "ok"
+  dropoffRate?: number
+}) {
+  const badge = criticality ? CRITICALITY_BADGE[criticality] : null
+
   return (
     <div className="rounded-xl border bg-card p-6">
       <div className="flex items-start justify-between gap-4 mb-5">
@@ -421,12 +436,22 @@ function QuestionCard({ stat, order, formId }: { stat: QuestionAnalytics; order:
             <p className="font-semibold text-sm leading-tight line-clamp-2">{stat.questionTitle || "Sem título"}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {stat.totalAnswers} resposta{stat.totalAnswers !== 1 ? "s" : ""}
+              {dropoffRate && dropoffRate > 0.1
+                ? <span className="text-red-500"> · {pct(dropoffRate)} abandonaram aqui</span>
+                : null}
             </p>
           </div>
         </div>
-        {stat.skipRate > 0.1 && (
-          <span className="text-xs text-muted-foreground shrink-0">{pct(stat.skipRate)} pularam</span>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {badge && (
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${badge.cls}`}>
+              {badge.label}
+            </span>
+          )}
+          {stat.skipRate > 0.1 && (
+            <span className="text-xs text-muted-foreground">{pct(stat.skipRate)} pularam</span>
+          )}
+        </div>
       </div>
 
       {stat.npsScore !== undefined ? (
@@ -444,10 +469,11 @@ function QuestionCard({ stat, order, formId }: { stat: QuestionAnalytics; order:
 
 // ─── Question Intelligence Tab ────────────────────────────────────────────────
 
-function QuestionIntelligence({ questionStats, questions, formId }: {
+function QuestionIntelligence({ questionStats, questions, formId, dropoffByQuestion }: {
   questionStats: QuestionAnalytics[]
   questions: QuestionSummary[]
   formId: string
+  dropoffByQuestion: FormAnalytics["dropoffByQuestion"]
 }) {
   if (questionStats.length === 0) {
     return (
@@ -457,12 +483,32 @@ function QuestionIntelligence({ questionStats, questions, formId }: {
     )
   }
 
+  const dropoffMap = new Map(dropoffByQuestion.map((d) => [d.questionId, d.dropoffRate]))
+
+  const sorted = [...questionStats].sort((a, b) => {
+    const da = dropoffMap.get(a.questionId) ?? 0
+    const db = dropoffMap.get(b.questionId) ?? 0
+    return db - da
+  })
+
   return (
     <div className="space-y-4">
-      {questionStats.map((stat) => {
+      {sorted.map((stat) => {
         const q = questions.find((x) => x.id === stat.questionId)
         const order = q?.order !== undefined ? q.order + 1 : "?"
-        return <QuestionCard key={stat.questionId} stat={stat} order={order} formId={formId} />
+        const dropoffRate = dropoffMap.get(stat.questionId) ?? 0
+        const criticality: "high" | "medium" | "ok" =
+          dropoffRate > 0.4 ? "high" : dropoffRate > 0.2 ? "medium" : "ok"
+        return (
+          <QuestionCard
+            key={stat.questionId}
+            stat={stat}
+            order={order}
+            formId={formId}
+            criticality={criticality}
+            dropoffRate={dropoffRate}
+          />
+        )
       })}
     </div>
   )
@@ -688,53 +734,83 @@ function AIReportView({ report }: { report: FormReportResult }) {
   )
 }
 
-function AIReportButton({ analytics, formId, formTitle }: {
+function AIReportAuto({ analytics, formId, formTitle }: {
   analytics: FormAnalytics
   formId: string
   formTitle: string
 }) {
-  const [report, setReport] = useState<FormReportResult | null>(null)
+  const cacheKey = `formularios-report-${formId}-${analytics.totalResponses}`
+  const canGenerate = analytics.totalResponses >= 3
+  const hasFired = useRef(false)
+
+  const [report, setReport] = useState<FormReportResult | null>(() => {
+    if (typeof window === "undefined") return null
+    try {
+      const cached = localStorage.getItem(cacheKey)
+      return cached ? (JSON.parse(cached) as FormReportResult) : null
+    } catch { return null }
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function handleGenerate() {
+  async function generate() {
     setLoading(true)
     setError(null)
     const res = await generateFormReportAction(formId, analytics, formTitle)
-    if (res.success) setReport(res.data)
-    else setError(res.error)
+    if (res.success) {
+      setReport(res.data)
+      try { localStorage.setItem(cacheKey, JSON.stringify(res.data)) } catch { /* ignore */ }
+    } else {
+      setError(res.error)
+    }
     setLoading(false)
   }
 
-  if (report) return <AIReportView report={report} />
+  useEffect(() => {
+    if (!canGenerate || report || hasFired.current) return
+    hasFired.current = true
+    generate()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  return (
-    <div className="rounded-xl border-2 border-dashed border-violet-200 dark:border-violet-900 bg-violet-50/50 dark:bg-violet-950/20 p-6 text-center">
-      <div className="flex justify-center mb-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/40">
-          <Sparkles className="h-6 w-6 text-violet-600" />
+  if (!canGenerate) {
+    return (
+      <div className="rounded-xl border bg-muted/30 p-5 text-center text-sm text-muted-foreground">
+        Colete pelo menos 3 respostas para gerar o relatório com IA.
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/20 p-6 space-y-4">
+        <div className="flex items-center gap-2.5 text-violet-600">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm font-medium">Analisando formulário com IA...</span>
+        </div>
+        <div className="space-y-2.5 animate-pulse">
+          <div className="h-16 w-16 rounded-full bg-violet-200/60 dark:bg-violet-800/40" />
+          <div className="h-3 bg-muted rounded-full w-3/4" />
+          <div className="h-3 bg-muted rounded-full w-1/2" />
+          <div className="h-3 bg-muted rounded-full w-2/3" />
         </div>
       </div>
-      <h3 className="font-semibold mb-1">Relatório Inteligente</h3>
-      <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
-        O Claude analisa todos os dados do seu formulário e gera um diagnóstico completo com nota, destaques e recomendações acionáveis.
-      </p>
-      <Button
-        onClick={handleGenerate}
-        disabled={loading || analytics.totalResponses < 3}
-        className="gap-2 bg-violet-600 hover:bg-violet-700 text-white"
-      >
-        {loading
-          ? <><Loader2 className="h-4 w-4 animate-spin" />Analisando formulário...</>
-          : <><Sparkles className="h-4 w-4" />Gerar Relatório com IA</>
-        }
-      </Button>
-      {analytics.totalResponses < 3 && (
-        <p className="text-xs text-muted-foreground mt-2">Mínimo de 3 respostas necessário.</p>
-      )}
-      {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
-    </div>
-  )
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50/50 p-4 flex items-center justify-between gap-4">
+        <p className="text-sm text-red-600">Erro ao gerar relatório: {error}</p>
+        <Button size="sm" variant="outline" onClick={generate} className="shrink-0">
+          Tentar novamente
+        </Button>
+      </div>
+    )
+  }
+
+  if (report) return <AIReportView report={report} />
+  return null
 }
 
 // ─── Analytics Overview Tab ───────────────────────────────────────────────────
@@ -756,7 +832,7 @@ function AnalyticsView({ analytics, questions, completionRate, formId, formTitle
 
   return (
     <div className="space-y-6">
-      <AIReportButton analytics={analytics} formId={formId} formTitle={formTitle} />
+      <AIReportAuto analytics={analytics} formId={formId} formTitle={formTitle} />
       <InsightCards analytics={analytics} questions={questions} />
 
       <div className="grid lg:grid-cols-2 gap-6">
@@ -862,14 +938,229 @@ function AnalyticsView({ analytics, questions, completionRate, formId, formTitle
   )
 }
 
-// ─── Responses Table ──────────────────────────────────────────────────────────
+// ─── Individual Response View ─────────────────────────────────────────────────
 
-function ResponsesTable({ responses, questions }: {
+function AnswerDisplay({ value, type }: { value: unknown; type?: string }) {
+  if (value === null || value === undefined || value === "") {
+    return <span className="text-muted-foreground italic text-sm">Sem resposta</span>
+  }
+  if (typeof value === "boolean") {
+    return (
+      <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${value ? "text-green-600" : "text-red-500"}`}>
+        {value ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
+        {value ? "Sim" : "Não"}
+      </span>
+    )
+  }
+  if (Array.isArray(value)) {
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {(value as unknown[]).map((item, i) => (
+          <span key={i} className="rounded-full bg-primary/10 text-primary text-xs font-medium px-3 py-1">
+            {String(item)}
+          </span>
+        ))}
+      </div>
+    )
+  }
+  if (typeof value === "number" || (type && ["rating", "scale", "nps", "number"].includes(type))) {
+    return <span className="text-3xl font-bold tabular-nums">{String(value)}</span>
+  }
+  if (typeof value === "object" && "fileName" in (value as object)) {
+    return (
+      <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+        📎 {(value as { fileName: string }).fileName}
+      </span>
+    )
+  }
+  const text = String(value)
+  return (
+    <p className={`text-sm leading-relaxed ${text.length > 80 ? "whitespace-pre-wrap" : ""}`}>
+      {text}
+    </p>
+  )
+}
+
+const DEVICE_ICON: Record<string, React.ElementType> = {
+  desktop: Monitor,
+  mobile: Smartphone,
+  tablet: Tablet,
+}
+
+function ResponseDetailPanel({
+  responses,
+  questions,
+  index,
+  onClose,
+  onNavigate,
+}: {
   responses: ResponseWithAnswers[]
   questions: QuestionSummary[]
+  index: number
+  onClose: () => void
+  onNavigate: (i: number) => void
 }) {
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const r = responses[index]
+  const total = responses.length
+  const hasPrev = index > 0
+  const hasNext = index < total - 1
 
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose()
+      if (e.key === "ArrowLeft" && hasPrev) onNavigate(index - 1)
+      if (e.key === "ArrowRight" && hasNext) onNavigate(index + 1)
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [index, hasPrev, hasNext, onClose, onNavigate])
+
+  const duration = r.completedAt
+    ? Math.round((new Date(r.completedAt).getTime() - new Date(r.startedAt).getTime()) / 1000)
+    : null
+
+  const meta = r.metadata as {
+    deviceType?: string; utmSource?: string; referrer?: string
+  } | null
+
+  const questionMap = new Map(questions.map((q) => [q.id, q]))
+  const DeviceIcon = DEVICE_ICON[meta?.deviceType ?? ""] ?? null
+
+  const source = meta?.utmSource
+    ?? (meta?.referrer ? (() => { try { return new URL(meta.referrer!).hostname.replace(/^www\./, "") } catch { return meta.referrer! } })() : null)
+
+  // Sort answers by question order
+  const sortedAnswers = [...r.answers].sort((a, b) => {
+    const qa = questionMap.get(a.questionId)
+    const qb = questionMap.get(b.questionId)
+    return (qa?.order ?? 0) - (qb?.order ?? 0)
+  })
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
+
+      {/* Panel */}
+      <div className="fixed right-0 top-0 h-full w-full max-w-[540px] bg-background border-l shadow-2xl z-50 flex flex-col">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3.5 border-b">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => onNavigate(index - 1)}
+              disabled={!hasPrev}
+              className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              title="Resposta anterior (←)"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-sm font-medium tabular-nums px-2">
+              {index + 1} <span className="text-muted-foreground font-normal">de {total}</span>
+            </span>
+            <button
+              onClick={() => onNavigate(index + 1)}
+              disabled={!hasNext}
+              className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              title="Próxima resposta (→)"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Meta strip */}
+        <div className="px-5 py-3 border-b bg-muted/20 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          <span className="text-xs text-muted-foreground">{formatDate(r.startedAt)}</span>
+          {duration != null && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3" />{formatDuration(duration)}
+            </span>
+          )}
+          {r.completedAt ? (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
+              <CheckCircle2 className="h-3 w-3" />Completa
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <Circle className="h-3 w-3" />Parcial
+            </span>
+          )}
+          {DeviceIcon && (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground capitalize">
+              <DeviceIcon className="h-3 w-3" />{meta?.deviceType}
+            </span>
+          )}
+          {source && (
+            <span className="text-xs text-muted-foreground">via {source}</span>
+          )}
+        </div>
+
+        {/* Q&A list */}
+        <ScrollArea className="flex-1">
+          <div className="px-5 py-6 space-y-7">
+            {sortedAnswers.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic text-center py-10">
+                Nenhuma resposta registrada.
+              </p>
+            ) : (
+              sortedAnswers.map((a) => {
+                const q = questionMap.get(a.questionId)
+                return (
+                  <div key={a.questionId} className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide line-clamp-2">
+                      {q?.title ?? "Pergunta"}
+                    </p>
+                    <AnswerDisplay value={a.value} type={q?.type} />
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </ScrollArea>
+
+        {/* Footer navigation */}
+        <div className="px-5 py-3.5 border-t flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!hasPrev}
+            onClick={() => onNavigate(index - 1)}
+            className="gap-1.5"
+          >
+            <ChevronLeft className="h-4 w-4" />Anterior
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            ← → para navegar · Esc para fechar
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!hasNext}
+            onClick={() => onNavigate(index + 1)}
+            className="gap-1.5"
+          >
+            Próxima<ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ─── Responses Table ──────────────────────────────────────────────────────────
+
+function ResponsesTable({ responses, questions, onOpen }: {
+  responses: ResponseWithAnswers[]
+  questions: QuestionSummary[]
+  onOpen: (index: number) => void
+}) {
   if (responses.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground rounded-xl border bg-card">
@@ -879,8 +1170,6 @@ function ResponsesTable({ responses, questions }: {
       </div>
     )
   }
-
-  const questionMap = new Map(questions.map((q) => [q.id, q]))
 
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
@@ -892,6 +1181,7 @@ function ResponsesTable({ responses, questions }: {
             <th className="text-left p-4 font-semibold text-muted-foreground">Respostas</th>
             <th className="text-left p-4 font-semibold text-muted-foreground">Tempo</th>
             <th className="text-left p-4 font-semibold text-muted-foreground">Status</th>
+            <th className="w-8" />
           </tr>
         </thead>
         <tbody>
@@ -899,61 +1189,36 @@ function ResponsesTable({ responses, questions }: {
             const duration = r.completedAt
               ? Math.round((new Date(r.completedAt).getTime() - new Date(r.startedAt).getTime()) / 1000)
               : null
-            const isExpanded = expanded === r.id
             return (
-              <>
-                <tr
-                  key={r.id}
-                  className="border-b last:border-0 hover:bg-muted/20 cursor-pointer transition-colors"
-                  onClick={() => setExpanded(isExpanded ? null : r.id)}
-                >
-                  <td className="p-4 text-muted-foreground">{i + 1}</td>
-                  <td className="p-4">{formatDate(r.startedAt)}</td>
-                  <td className="p-4">
-                    <span className="tabular-nums">{r.answers.length}</span>
-                    <span className="text-muted-foreground"> / {questions.length}</span>
-                  </td>
-                  <td className="p-4 text-muted-foreground tabular-nums">
-                    {duration != null ? formatDuration(duration) : "—"}
-                  </td>
-                  <td className="p-4">
-                    {r.completedAt ? (
-                      <span className="inline-flex items-center gap-1.5 text-green-600">
-                        <CheckCircle2 className="h-3.5 w-3.5" />Completa
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                        <Circle className="h-3.5 w-3.5" />Parcial
-                      </span>
-                    )}
-                  </td>
-                </tr>
-                {isExpanded && (
-                  <tr key={`${r.id}-detail`} className="bg-muted/10">
-                    <td colSpan={5} className="px-6 py-4">
-                      <div className="space-y-3">
-                        {r.answers.length === 0 ? (
-                          <p className="text-sm text-muted-foreground italic">Nenhuma resposta registrada.</p>
-                        ) : (
-                          r.answers.map((a) => {
-                            const q = questionMap.get(a.questionId)
-                            return (
-                              <div key={a.questionId} className="flex gap-4">
-                                <p className="text-xs text-muted-foreground w-48 shrink-0 pt-0.5 line-clamp-2">
-                                  {q?.title ?? a.questionId}
-                                </p>
-                                <p className="text-sm font-medium break-words flex-1">
-                                  {formatAnswerValue(a.value)}
-                                </p>
-                              </div>
-                            )
-                          })
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </>
+              <tr
+                key={r.id}
+                className="border-b last:border-0 hover:bg-muted/20 cursor-pointer transition-colors group"
+                onClick={() => onOpen(i)}
+              >
+                <td className="p-4 text-muted-foreground">{i + 1}</td>
+                <td className="p-4">{formatDate(r.startedAt)}</td>
+                <td className="p-4">
+                  <span className="tabular-nums">{r.answers.length}</span>
+                  <span className="text-muted-foreground"> / {questions.length}</span>
+                </td>
+                <td className="p-4 text-muted-foreground tabular-nums">
+                  {duration != null ? formatDuration(duration) : "—"}
+                </td>
+                <td className="p-4">
+                  {r.completedAt ? (
+                    <span className="inline-flex items-center gap-1.5 text-green-600">
+                      <CheckCircle2 className="h-3.5 w-3.5" />Completa
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                      <Circle className="h-3.5 w-3.5" />Parcial
+                    </span>
+                  )}
+                </td>
+                <td className="p-4 pr-3">
+                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </td>
+              </tr>
             )
           })}
         </tbody>
@@ -1076,10 +1341,11 @@ export function ResponsesSection({
   formId, formTitle, formStatus, formSlug,
   questions, responses, analytics,
 }: ResponsesSectionProps) {
-  const [tab, setTab] = useState<"responses" | "questions" | "analytics">("responses")
+  const [tab, setTab] = useState<"responses" | "questions" | "analytics">("analytics")
   const [copied, setCopied] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [filters, setFilters] = useState<ResponseFilters>(DEFAULT_FILTERS)
+  const [openResponseIndex, setOpenResponseIndex] = useState<number | null>(null)
 
   const sources = useMemo(() => {
     const set = new Set<string>()
@@ -1197,13 +1463,13 @@ export function ResponsesSection({
       {/* Tabs */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <TabsList className="mb-6">
-          <TabsTrigger value="responses">
-            Respostas ({filteredResponses.length !== responses.length ? `${filteredResponses.length}/${responses.length}` : responses.length})
-          </TabsTrigger>
+          <TabsTrigger value="analytics">Relatório</TabsTrigger>
           <TabsTrigger value="questions" disabled={questionStats.length === 0}>
             Perguntas{questionStats.length > 0 ? ` (${questionStats.length})` : ""}
           </TabsTrigger>
-          <TabsTrigger value="analytics">Visão geral</TabsTrigger>
+          <TabsTrigger value="responses">
+            Respostas ({filteredResponses.length !== responses.length ? `${filteredResponses.length}/${responses.length}` : responses.length})
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -1216,11 +1482,30 @@ export function ResponsesSection({
             filteredCount={filteredResponses.length}
             totalCount={responses.length}
           />
-          <ResponsesTable responses={filteredResponses} questions={questions} />
+          <ResponsesTable
+            responses={filteredResponses}
+            questions={questions}
+            onOpen={setOpenResponseIndex}
+          />
         </>
       )}
+
+      {openResponseIndex !== null && (
+        <ResponseDetailPanel
+          responses={filteredResponses}
+          questions={questions}
+          index={openResponseIndex}
+          onClose={() => setOpenResponseIndex(null)}
+          onNavigate={setOpenResponseIndex}
+        />
+      )}
       {tab === "questions" && (
-        <QuestionIntelligence questionStats={questionStats} questions={questions} formId={formId} />
+        <QuestionIntelligence
+          questionStats={questionStats}
+          questions={questions}
+          formId={formId}
+          dropoffByQuestion={analytics?.dropoffByQuestion ?? []}
+        />
       )}
       {tab === "analytics" && (
         <AnalyticsView analytics={analytics} questions={questions} completionRate={completionRate} formId={formId} formTitle={formTitle} />

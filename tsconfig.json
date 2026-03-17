@@ -40,6 +40,9 @@
   "exclude": [
     "node_modules",
     "mnt",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "src/test/**"
   ]
 }
