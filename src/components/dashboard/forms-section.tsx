@@ -5,7 +5,7 @@ import Link from "next/link"
 import {
   Search, BarChart3, Users, Zap, Link2,
   Trash2, Globe, FileText, Clock, ChevronRight,
-  PlusCircle, Sparkles, MessageCircle,
+  PlusCircle, Sparkles, MessageCircle, Check, X, Rocket,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -99,6 +99,172 @@ function WelcomeModal() {
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+// ─── Onboarding Checklist ────────────────────────────────────────────────────
+
+const CHECKLIST_KEY = "formularios_checklist_v1"
+
+function OnboardingChecklist({ forms }: { forms: FormListItem[] }) {
+  const [dismissed, setDismissed] = useState<boolean | null>(null)
+  const [celebrating, setCelebrating] = useState(false)
+
+  useEffect(() => {
+    setDismissed(!!localStorage.getItem(CHECKLIST_KEY))
+  }, [])
+
+  const firstForm = forms[0]
+  const publishedForm = forms.find((f) => f.status === "published")
+
+  const steps: { id: string; label: string; description: string; done: boolean; href: string | null }[] = [
+    {
+      id: "create",
+      label: "Criar formulário",
+      description: "Crie seu primeiro formulário do zero ou use um template",
+      done: forms.length > 0,
+      href: firstForm ? `/builder/${firstForm.id}` : null,
+    },
+    {
+      id: "questions",
+      label: "Adicionar 3+ perguntas",
+      description: "Seu formulário precisa de pelo menos 3 perguntas",
+      done: forms.some((f) => f.questionCount >= 3),
+      href: firstForm ? `/builder/${firstForm.id}` : null,
+    },
+    {
+      id: "publish",
+      label: "Publicar o formulário",
+      description: "Deixe seu formulário disponível para receber respostas",
+      done: !!publishedForm,
+      href: firstForm ? `/builder/${firstForm.id}` : null,
+    },
+    {
+      id: "response",
+      label: "Receber 1ª resposta",
+      description: "Compartilhe o link e veja os dados chegando",
+      done: forms.some((f) => f.responseCount > 0),
+      href: publishedForm
+        ? `/responses/${publishedForm.id}`
+        : firstForm
+        ? `/builder/${firstForm.id}`
+        : null,
+    },
+  ]
+
+  const completedCount = steps.filter((s) => s.done).length
+  const allDone = completedCount === steps.length
+
+  // When all done: show celebration for 3s then auto-dismiss
+  useEffect(() => {
+    if (allDone && dismissed === false) {
+      setCelebrating(true)
+      const t = setTimeout(() => {
+        localStorage.setItem(CHECKLIST_KEY, "1")
+        setDismissed(true)
+      }, 3000)
+      return () => clearTimeout(t)
+    }
+  }, [allDone, dismissed])
+
+  function dismiss() {
+    localStorage.setItem(CHECKLIST_KEY, "1")
+    setDismissed(true)
+  }
+
+  // Wait for localStorage check before rendering
+  if (dismissed === null || dismissed) return null
+
+  if (celebrating) {
+    return (
+      <section className="container mb-6">
+        <div className="rounded-2xl border border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/20 p-6 text-center">
+          <p className="text-3xl mb-2">🎉</p>
+          <p className="font-semibold text-green-700 dark:text-green-400 text-lg">Configuração completa!</p>
+          <p className="text-sm text-green-600/80 dark:text-green-500 mt-1">
+            Você está pronto para coletar dados com o formularios.ia.
+          </p>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="container mb-6">
+      <div className="rounded-2xl border bg-card p-5">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+              <Rocket className="h-4 w-4 text-primary" />
+            </div>
+            <span className="text-sm font-semibold">Primeiros passos</span>
+            <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+              {completedCount} de {steps.length}
+            </span>
+          </div>
+          <button
+            onClick={dismiss}
+            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
+            aria-label="Fechar guia de início"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-1.5 rounded-full bg-muted mb-5 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-700"
+            style={{ width: `${(completedCount / steps.length) * 100}%` }}
+          />
+        </div>
+
+        {/* Steps */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {steps.map((step, i) => {
+            const inner = (
+              <div
+                className={`flex items-start gap-3 rounded-xl border p-3.5 h-full transition-colors ${
+                  step.done
+                    ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
+                    : step.href
+                    ? "hover:bg-muted/50 border-border cursor-pointer"
+                    : "border-border opacity-50"
+                }`}
+              >
+                <div
+                  className={`shrink-0 h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 ${
+                    step.done
+                      ? "bg-green-500 text-white"
+                      : "bg-muted text-muted-foreground border border-border"
+                  }`}
+                >
+                  {step.done ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                </div>
+                <div className="min-w-0">
+                  <p className={`text-sm font-semibold leading-tight ${step.done ? "text-green-700 dark:text-green-400" : ""}`}>
+                    {step.label}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-tight">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            )
+
+            if (!step.done && step.href) {
+              return (
+                <Link key={step.id} href={step.href} className="block">
+                  {inner}
+                </Link>
+              )
+            }
+            return <div key={step.id}>{inner}</div>
+          })}
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -210,6 +376,9 @@ export function FormsSection({ forms }: FormsSectionProps) {
 
       {activeTab === "forms" ? (
         <>
+          {/* Onboarding checklist */}
+          <OnboardingChecklist forms={forms} />
+
           {/* Filters */}
           <section className="container mb-8">
             <div className="flex items-center gap-3 overflow-x-auto pb-4">
