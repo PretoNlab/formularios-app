@@ -357,7 +357,9 @@ export async function getFormAnalytics(
         if (SELECTION_TYPES.has(q.type)) {
           const counts = new Map<string, number>()
           for (const v of qAnswers) {
-            const key = String(v ?? "")
+            const key = q.type === "yes_no"
+              ? (v === true || v === "true" ? "Sim" : v === false || v === "false" ? "Não" : "")
+              : String(v ?? "")
             if (key) counts.set(key, (counts.get(key) ?? 0) + 1)
           }
           const optionCounts = Array.from(counts.entries())
@@ -450,6 +452,23 @@ export async function getFormAnalytics(
             npsPassives,
             npsDetractors,
           })
+          continue
+        }
+
+        // File upload — show file names as text samples
+        if (q.type === "file_upload") {
+          const fileNames = qAnswers
+            .filter((v) => typeof v === "object" && v !== null && "fileName" in (v as object))
+            .slice(-5)
+            .reverse()
+            .map((v) => (v as { fileName: string }).fileName)
+          questionStats.push({ ...base, textSamples: fileNames })
+          continue
+        }
+
+        // Signature — count only, no text rendering
+        if (q.type === "signature") {
+          questionStats.push(base)
           continue
         }
 

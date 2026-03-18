@@ -583,12 +583,11 @@ function QuestionCard({ stat, order, formId, criticality, dropoffRate }: {
 
 // ─── Question Intelligence Tab ────────────────────────────────────────────────
 
-function QuestionIntelligence({ questionStats, questions, formId, dropoffByQuestion, totalResponses }: {
+function QuestionIntelligence({ questionStats, questions, formId, dropoffByQuestion }: {
   questionStats: QuestionAnalytics[]
   questions: QuestionSummary[]
   formId: string
   dropoffByQuestion: FormAnalytics["dropoffByQuestion"]
-  totalResponses: number
 }) {
   if (questionStats.length === 0) {
     return (
@@ -611,7 +610,6 @@ function QuestionIntelligence({ questionStats, questions, formId, dropoffByQuest
   return (
     <div>
       {npsStats.length > 0 && <NPSHighlight npsStats={npsStats} />}
-      <DropoffFunnel dropoff={dropoffByQuestion} questions={questions} totalResponses={totalResponses} />
       <div className="space-y-4">
       {sorted.map((stat) => {
         const q = questions.find((x) => x.id === stat.questionId)
@@ -725,84 +723,6 @@ function MiniBarChart({ data }: { data: { date: string; count: number }[] }) {
       <div className="flex justify-between text-[10px] text-muted-foreground">
         <span>{days[0].date.slice(5).replace("-", "/")}</span>
         <span>hoje</span>
-      </div>
-    </div>
-  )
-}
-
-// ─── Dropoff Funnel ───────────────────────────────────────────────────────────
-
-function DropoffFunnel({ dropoff, questions, totalResponses }: {
-  dropoff: FormAnalytics["dropoffByQuestion"]
-  questions: QuestionSummary[]
-  totalResponses: number
-}) {
-  if (dropoff.length === 0 || totalResponses === 0) return null
-
-  const dropoffMap = new Map(dropoff.map((d) => [d.questionId, d.dropoffRate]))
-
-  const ordered = [...questions]
-    .filter((q) => dropoffMap.has(q.id))
-    .sort((a, b) => a.order - b.order)
-
-  if (ordered.length === 0) return null
-
-  return (
-    <div className="rounded-xl border bg-card p-6 mb-6">
-      <div className="flex items-center justify-between mb-1">
-        <h3 className="font-semibold">Funil de conclusão</h3>
-        <span className="text-xs text-muted-foreground">{totalResponses} respondentes</span>
-      </div>
-      <p className="text-xs text-muted-foreground mb-5">% que chegou a cada pergunta</p>
-
-      <div className="space-y-3">
-        {ordered.map((q, i) => {
-          const dropoffRate = dropoffMap.get(q.id) ?? 0
-          const answeredRate = 1 - dropoffRate
-          const count = Math.round(answeredRate * totalResponses)
-          const isBottleneck = i > 0 && dropoffRate > 0.15
-          const barColor =
-            answeredRate >= 0.8 ? "bg-emerald-500" :
-            answeredRate >= 0.6 ? "bg-amber-400" : "bg-red-400"
-          const textColor =
-            answeredRate >= 0.8 ? "text-emerald-600" :
-            answeredRate >= 0.6 ? "text-amber-600" : "text-red-600"
-
-          // Cascade: indent bar slightly per step to give funnel shape
-          const indent = Math.round(i * 1.2)
-
-          return (
-            <div key={q.id}>
-              <div className="flex items-center justify-between mb-1 gap-2">
-                <span className="text-xs text-muted-foreground truncate flex-1">
-                  {i + 1}. {q.title || "Pergunta sem título"}
-                </span>
-                <div className="flex items-center gap-2 shrink-0">
-                  {isBottleneck && (
-                    <span className="text-[10px] font-medium text-red-500 bg-red-50 dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
-                      −{pct(dropoffRate)} aqui
-                    </span>
-                  )}
-                  <span className={`text-xs font-semibold tabular-nums ${textColor}`}>
-                    {pct(answeredRate)}
-                  </span>
-                  <span className="text-xs text-muted-foreground tabular-nums w-8 text-right">
-                    {count}
-                  </span>
-                </div>
-              </div>
-              <div
-                className="h-7 bg-muted rounded-lg overflow-hidden"
-                style={{ marginLeft: `${indent}px` }}
-              >
-                <div
-                  className={`h-full ${barColor} rounded-lg transition-all duration-700`}
-                  style={{ width: `${Math.max(answeredRate * 100, 1)}%` }}
-                />
-              </div>
-            </div>
-          )
-        })}
       </div>
     </div>
   )
@@ -1182,11 +1102,23 @@ function AnswerDisplay({ value, type }: { value: unknown; type?: string }) {
     return <span className="text-3xl font-bold tabular-nums">{String(value)}</span>
   }
   if (typeof value === "object" && "fileName" in (value as object)) {
+    const file = value as { fileName: string; fileUrl?: string }
     return (
       <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-        📎 {(value as { fileName: string }).fileName}
+        📎{" "}
+        {file.fileUrl ? (
+          <a href={file.fileUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
+            {file.fileName}
+          </a>
+        ) : (
+          file.fileName
+        )}
       </span>
     )
+  }
+  if (type === "signature" && typeof value === "string") {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={value} alt="Assinatura" className="max-h-20 border rounded bg-white" />
   }
   const text = String(value)
   return (
@@ -1720,7 +1652,6 @@ export function ResponsesSection({
           questions={questions}
           formId={formId}
           dropoffByQuestion={analytics?.dropoffByQuestion ?? []}
-          totalResponses={analytics?.totalResponses ?? responses.length}
         />
       )}
       {tab === "analytics" && (
