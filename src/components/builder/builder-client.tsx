@@ -61,31 +61,67 @@ import { cn } from "@/lib/utils"
 
 // ─── Builder Tour ─────────────────────────────────────────────────────────────
 
-const BUILDER_TOUR_KEY = "formularios_builder_tour_v1"
+const BUILDER_TOUR_KEY = "formularios_builder_tour_v2"
 
 const TOUR_STEPS = [
   {
-    icon: Plus,
-    areaLabel: "Painel esquerdo",
-    areaColor: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-    title: "Adicione campos ao formulário",
-    description: "Clique em qualquer tipo de campo no painel à esquerda para adicioná-lo. Você pode arrastar e soltar para reordenar.",
+    highlight: "left" as const,
+    title: "Adicione campos",
+    description: "No painel à esquerda, clique em qualquer tipo de campo para adicioná-lo. Arraste os campos no canvas para reordenar.",
   },
   {
-    icon: Settings2,
-    areaLabel: "Área central",
-    areaColor: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
-    title: "Edite e personalize",
-    description: "Selecione um campo no centro para editar título, opções e configurações. Use a aba Propriedades à direita para ajustes avançados.",
+    highlight: "center" as const,
+    title: "Edite e configure",
+    description: "Clique em um campo no canvas para selecioná-lo. As propriedades aparecem à direita — título, opções, obrigatoriedade e mais.",
   },
   {
-    icon: Globe,
-    areaLabel: "Barra superior",
-    areaColor: "bg-green-500/10 text-green-600 dark:text-green-400",
+    highlight: "top" as const,
     title: "Publique e compartilhe",
-    description: "Quando estiver pronto, clique em Publicar na barra superior. Você receberá um link para compartilhar e começar a coletar respostas.",
+    description: "Quando o formulário estiver pronto, clique em Publicar na barra superior. Você ganha um link para compartilhar e começa a coletar respostas.",
   },
 ]
+
+function BuilderDiagram({ highlight }: { highlight: "left" | "center" | "top" }) {
+  return (
+    <div className="rounded-md border overflow-hidden text-[10px] select-none mb-4">
+      <div className={cn(
+        "flex items-center justify-between px-2 py-1 border-b",
+        highlight === "top" ? "bg-green-500/15 border-green-400/40" : "bg-muted/50"
+      )}>
+        <span className={highlight === "top" ? "text-green-700 dark:text-green-400 font-semibold" : "text-muted-foreground"}>
+          Editor
+        </span>
+        <span className={cn(
+          "font-semibold",
+          highlight === "top" ? "text-green-700 dark:text-green-400" : "text-muted-foreground"
+        )}>
+          Publicar
+        </span>
+      </div>
+      <div className="flex h-14">
+        <div className={cn(
+          "w-[38%] border-r flex items-center justify-center",
+          highlight === "left" ? "bg-blue-500/15 border-blue-400/40" : "bg-muted/30"
+        )}>
+          <span className={highlight === "left" ? "text-blue-700 dark:text-blue-400 font-semibold" : "text-muted-foreground"}>
+            Campos
+          </span>
+        </div>
+        <div className={cn(
+          "flex-1 flex items-center justify-center",
+          highlight === "center" ? "bg-violet-500/15" : "bg-muted/10"
+        )}>
+          <span className={highlight === "center" ? "text-violet-700 dark:text-violet-400 font-semibold" : "text-muted-foreground"}>
+            Canvas
+          </span>
+        </div>
+        <div className="w-[28%] border-l flex items-center justify-center bg-muted/20">
+          <span className="text-muted-foreground">Props</span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function BuilderTour() {
   const [open, setOpen] = useState(false)
@@ -102,7 +138,6 @@ function BuilderTour() {
   }
 
   const current = TOUR_STEPS[step]
-  const Icon = current.icon
   const isLast = step === TOUR_STEPS.length - 1
 
   return (
@@ -119,18 +154,16 @@ function BuilderTour() {
         </div>
 
         <div className="p-6">
-          {/* Area badge */}
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold mb-4 ${current.areaColor}`}>
-            <Icon className="h-3 w-3" />
-            {current.areaLabel}
-          </span>
+          <div key={step} className="animate-in fade-in-0 slide-in-from-right-2 duration-200">
+            <BuilderDiagram highlight={current.highlight} />
 
-          <DialogHeader className="mb-4 space-y-1.5">
-            <DialogTitle className="text-base leading-snug">{current.title}</DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              {current.description}
-            </DialogDescription>
-          </DialogHeader>
+            <DialogHeader className="mb-4 space-y-1.5">
+              <DialogTitle className="text-base leading-snug">{current.title}</DialogTitle>
+              <DialogDescription className="text-sm leading-relaxed">
+                {current.description}
+              </DialogDescription>
+            </DialogHeader>
+          </div>
 
           {/* Step dots */}
           <div className="flex items-center justify-center gap-1.5 mb-5">
