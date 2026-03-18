@@ -8,7 +8,7 @@ export async function createPixQrCode(params: {
   const apiKey = process.env.ABACATEPAY_API_KEY
   if (!apiKey) throw new Error("ABACATEPAY_API_KEY não configurada.")
 
-  const res = await fetch(`${BASE_URL}/pixQrCode/create`, {
+  const res = await fetch(`${BASE_URL}/v1/pixQrCode/create`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -21,17 +21,16 @@ export async function createPixQrCode(params: {
     }),
   })
 
-  if (!res.ok) {
-    const body = await res.text()
-    throw new Error(`AbacatePay ${res.status}: ${body}`)
+  const json = (await res.json()) as {
+    success: boolean
+    data: { id: string; brCode: string; brCodeBase64: string; expiresAt: string } | null
+    error: string | null
   }
 
-  const data = (await res.json()) as {
-    id: string
-    brCode: string
-    brCodeBase64: string
-    expiresAt: string
+  if (!json.success || !json.data) {
+    throw new Error(`AbacatePay: ${json.error ?? "Erro desconhecido"}`)
   }
 
-  return { id: data.id, brCode: data.brCode, brCodeBase64: data.brCodeBase64, expiresAt: data.expiresAt }
+  const { id, brCode, brCodeBase64, expiresAt } = json.data
+  return { id, brCode, brCodeBase64, expiresAt }
 }

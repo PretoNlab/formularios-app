@@ -169,7 +169,7 @@ function PixModal({
               {/* QR Code */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`data:image/png;base64,${pixQrBase64}`}
+                src={pixQrBase64}
                 alt="QR Code PIX"
                 className="w-48 h-48 rounded-xl border"
               />
