@@ -164,12 +164,12 @@ function PixModal({
             </div>
           )}
 
-          {!loading && !error && !paid && pixQrBase64 && (
+          {!loading && !error && !paid && pixCode && (
             <div className="flex flex-col items-center gap-4">
               {/* QR Code */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={pixQrBase64}
+                src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(pixCode)}&size=200x200`}
                 alt="QR Code PIX"
                 className="w-48 h-48 rounded-xl border"
               />
