@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { ensureUserExists } from "@/lib/db/queries/users"
 import { getFormsByWorkspace } from "@/lib/db/queries/forms"
 import { FormsSection } from "@/components/dashboard/forms-section"
+import { Suspense } from "react"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -25,5 +26,9 @@ export default async function DashboardPage() {
 
   const { data: forms } = await getFormsByWorkspace(user.defaultWorkspace.id)
 
-  return <FormsSection forms={forms ?? []} />
+  return (
+    <Suspense fallback={null}>
+      <FormsSection forms={forms ?? []} />
+    </Suspense>
+  )
 }

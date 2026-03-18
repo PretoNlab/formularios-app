@@ -50,14 +50,19 @@ export async function GET(request: Request) {
 
     if (!error && data.user) {
       // Provision user + workspace in our DB on first login
-      await ensureUserExists({
+      const { data: dbUser } = await ensureUserExists({
         id: data.user.id,
         email: data.user.email!,
         user_metadata: data.user.user_metadata,
       })
 
       // Build redirect and attach session cookies to it
-      const redirectResponse = NextResponse.redirect(`${origin}${next}`)
+      let finalNext = next
+      if (dbUser?.isNewUser) {
+        finalNext = finalNext.includes("?") ? `${finalNext}&welcome=true` : `${finalNext}?welcome=true`
+      }
+
+      const redirectResponse = NextResponse.redirect(`${origin}${finalNext}`)
       newCookies.forEach(({ name, value, options }) => {
         redirectResponse.cookies.set(name, value, options)
       })

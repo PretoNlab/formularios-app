@@ -49,7 +49,7 @@ export async function ensureUserExists(authUser: {
   id: string
   email: string
   user_metadata?: Record<string, unknown>
-}): Promise<ApiResponse<UserWithWorkspace>> {
+}): Promise<ApiResponse<UserWithWorkspace & { isNewUser?: boolean }>> {
   try {
     // Fast path — user already exists (by auth ID)
     const existingByAuthId = await db.query.users.findFirst({
@@ -62,7 +62,7 @@ export async function ensureUserExists(authUser: {
       })
       return {
         success: true,
-        data: { ...existingByAuthId, defaultWorkspace: workspace! },
+        data: { ...existingByAuthId, defaultWorkspace: workspace!, isNewUser: false },
       }
     }
 
@@ -77,7 +77,7 @@ export async function ensureUserExists(authUser: {
       })
       return {
         success: true,
-        data: { ...existingByEmail, defaultWorkspace: workspace! },
+        data: { ...existingByEmail, defaultWorkspace: workspace!, isNewUser: false },
       }
     }
 
@@ -134,7 +134,7 @@ export async function ensureUserExists(authUser: {
 
     return {
       success: true,
-      data: { ...result.user, defaultWorkspace: result.workspace },
+      data: { ...result.user, defaultWorkspace: result.workspace, isNewUser: true },
     }
   } catch (error) {
     return {

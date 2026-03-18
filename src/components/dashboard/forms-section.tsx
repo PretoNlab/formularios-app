@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useEffect } from "react"
 import Link from "next/link"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import {
   Search, BarChart3, Users, Zap, Link2,
   Trash2, Globe, FileText, Clock, ChevronRight,
@@ -44,16 +45,30 @@ import type { FormListItem } from "@/lib/db/queries/forms"
 
 function WelcomeModal() {
   const [open, setOpen] = useState(false)
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
-    if (!localStorage.getItem("formularios_onboarded")) {
+    // Show if there is a 'welcome' param (reliable across accounts in same browser)
+    // OR if it's the very first time on this browser
+    if (searchParams.get("welcome") === "true" || !localStorage.getItem("formularios_onboarded_v2")) {
       setOpen(true)
     }
-  }, [])
+  }, [searchParams])
 
   function dismiss() {
-    localStorage.setItem("formularios_onboarded", "1")
+    localStorage.setItem("formularios_onboarded_v2", "1")
     setOpen(false)
+    
+    // Clean up the URL if the parameter is present
+    if (searchParams.get("welcome") === "true") {
+      const newSearchParams = new URLSearchParams(searchParams.toString())
+      newSearchParams.delete("welcome")
+      const search = newSearchParams.toString()
+      const url = search ? `${pathname}?${search}` : pathname
+      router.replace(url, { scroll: false })
+    }
   }
 
   return (
@@ -66,8 +81,10 @@ function WelcomeModal() {
           <DialogTitle className="text-center text-2xl font-bold font-heading">
             Bem-vindo ao formularios!
           </DialogTitle>
-          <DialogDescription className="text-center text-base mt-1">
+          <DialogDescription className="text-center text-base mt-2">
             Crie formulários inteligentes e colete dados com muito mais qualidade.
+            <br/><br/>
+            🎁 <strong>Bônus Especial:</strong> Adicionamos <strong>50 créditos gratuitos</strong> na sua conta para você testar nossas funcionalidades com IA!
           </DialogDescription>
         </DialogHeader>
 
