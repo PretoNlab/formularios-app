@@ -497,13 +497,12 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
         </div>
 
         {builderMode === "preview" ? (
-          <div className="flex-1 w-full h-full overflow-hidden relative pt-16 mt-8">
-            {/* O FormRenderer toma 100% de width e height baseados no parent. */}
-            <FormRenderer 
-              form={form} 
+          <div className="absolute inset-0 overflow-auto">
+            <FormRenderer
+              form={form}
               onSubmit={async () => {
                 alert("Em modo preview as respostas não são salvas.")
-              }} 
+              }}
             />
           </div>
         ) : (
@@ -712,6 +711,9 @@ function ThemePickerPanel({
   const [savedThemes, setSavedThemes] = useState<ThemeConfig[]>([])
   const [isSavingTheme, setIsSavingTheme] = useState(false)
   const [newThemeName, setNewThemeName] = useState("")
+  const [appearanceTab, setAppearanceTab] = useState<"presets" | "custom">(
+    currentThemeId === "custom" ? "custom" : "presets"
+  )
 
   useEffect(() => {
     const stored = localStorage.getItem("formularios.ia_saved_themes")
@@ -744,7 +746,8 @@ function ThemePickerPanel({
     saveThemesToStorage([...savedThemes, newTheme])
     setIsSavingTheme(false)
     setNewThemeName("")
-    onSelect(newTheme) // Switch to it
+    setAppearanceTab("presets") // Show saved themes list after saving
+    onSelect(newTheme)
   }
 
   function handleDeleteSavedTheme(e: React.MouseEvent, idToRemove: string) {
@@ -873,7 +876,7 @@ function ThemePickerPanel({
           Aparência
         </p>
 
-        <Tabs defaultValue={currentThemeId === "custom" ? "custom" : "presets"} className="w-full">
+        <Tabs value={appearanceTab} onValueChange={(v) => setAppearanceTab(v as "presets" | "custom")} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="presets" className="text-xs">Prontos</TabsTrigger>
             <TabsTrigger value="custom" className="text-xs">Personalizar</TabsTrigger>
