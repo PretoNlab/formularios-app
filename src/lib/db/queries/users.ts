@@ -1,8 +1,9 @@
 import { eq } from "drizzle-orm"
 import { db } from "../client"
-import { users, workspaces, workspaceMembers } from "../schema"
+import { users, workspaces, workspaceMembers, creditTransactions } from "../schema"
 import { generateSlug } from "../../utils/slug"
 import { sendWelcomeEmail } from "../../email"
+import { WELCOME_CREDITS } from "../../credits"
 import type { ApiResponse } from "../../types/form"
 
 type UserRow = typeof users.$inferSelect
@@ -116,7 +117,16 @@ export async function ensureUserExists(authUser: {
         role: "owner",
       })
 
-      return { user, workspace }
+      // Welcome credits
+      await tx.update(users).set({ creditBalance: WELCOME_CREDITS }).where(eq(users.id, user.id))
+      await tx.insert(creditTransactions).values({
+        userId: user.id,
+        amount: WELCOME_CREDITS,
+        type: "welcome",
+        metadata: null,
+      })
+
+      return { user: { ...user, creditBalance: WELCOME_CREDITS }, workspace }
     })
 
     // Fire-and-forget: welcome email on first login
