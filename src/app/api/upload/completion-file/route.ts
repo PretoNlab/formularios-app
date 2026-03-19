@@ -4,16 +4,17 @@ import { createClient as createAuthClient } from "@/lib/supabase/server"
 
 const BUCKET = "form-downloads"
 const MAX_SIZE_BYTES = 10 * 1024 * 1024 // 10MB
-const ALLOWED_TYPES = new Set([
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/zip",
-  "image/png",
-  "image/jpeg",
-  "image/jpg",
-  "image/webp",
-])
+const MIME_TO_EXT: Record<string, string> = {
+  "application/pdf": "pdf",
+  "application/msword": "doc",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+  "application/zip": "zip",
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/webp": "webp",
+}
+const ALLOWED_TYPES = new Set(Object.keys(MIME_TO_EXT))
 
 function serviceClient() {
   return createClient(
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Tipo de arquivo não permitido." }, { status: 400 })
   }
 
-  const ext = file.name.split(".").pop() ?? "bin"
+  const ext = MIME_TO_EXT[file.type] ?? "bin"
   const path = `${user.id}/${Date.now()}.${ext}`
 
   const buffer = Buffer.from(await file.arrayBuffer())

@@ -1,10 +1,13 @@
 "use server"
 
 import Anthropic from "@anthropic-ai/sdk"
-import { eq, and, inArray } from "drizzle-orm"
+import { redirect } from "next/navigation"
+import { eq, and } from "drizzle-orm"
 import { db } from "@/lib/db/client"
 import { questions, answers, responses, forms } from "@/lib/db/schema"
-import type { FormAnalytics } from "@/lib/types/form"
+import { createClient } from "@/lib/supabase/server"
+import { ensureUserExists } from "@/lib/db/queries/users"
+import { getFormAnalytics } from "@/lib/db/queries/responses"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -27,6 +30,26 @@ export interface TextAnalysisResult {
   summary: string
 }
 
+// ─── Auth helpers ─────────────────────────────────────────────────────────────
+
+async function requireUser() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
+
+  const { data: userWithWorkspace, success } = await ensureUserExists({
+    id: user.id,
+    email: user.email!,
+    user_metadata: user.user_metadata,
+  })
+
+  if (!success || !userWithWorkspace) {
+    throw new Error("Falha ao obter dados do usuário.")
+  }
+
+  return userWithWorkspace
+}
+
 // ─── Action ───────────────────────────────────────────────────────────────────
 
 export async function analyzeTextResponsesAction(
@@ -36,6 +59,15 @@ export async function analyzeTextResponsesAction(
   if (!process.env.ANTHROPIC_API_KEY) {
     return { success: false, error: "ANTHROPIC_API_KEY não configurada." }
   }
+
+  // 0. Auth + ownership check
+  const user = await requireUser()
+  const form = await db.query.forms.findFirst({
+    where: eq(forms.id, formId),
+    columns: { id: true, createdById: true },
+  })
+  if (!form) return { success: false, error: "Formulário não encontrado." }
+  if (form.createdById !== user.id) return { success: false, error: "Acesso negado." }
 
   // 1. Fetch question metadata
   const question = await db.query.questions.findFirst({
@@ -159,25 +191,37 @@ export interface FormReportResult {
 
 export async function generateFormReportAction(
   formId: string,
-  analytics: FormAnalytics,
-  formTitle: string
 ): Promise<{ success: true; data: FormReportResult } | { success: false; error: string }> {
   if (!process.env.ANTHROPIC_API_KEY) {
     return { success: false, error: "ANTHROPIC_API_KEY não configurada." }
   }
 
+  // 0. Auth + ownership check
+  const user = await requireUser()
+
+  // 1. Fetch form server-side (title + questions)
+  const form = await db.query.forms.findFirst({
+    where: eq(forms.id, formId),
+    columns: { title: true, createdById: true },
+    with: { questions: { columns: { title: true, type: true, order: true }, orderBy: (q, { asc }) => [asc(q.order)] } },
+  })
+
+  if (!form) return { success: false, error: "Formulário não encontrado." }
+  if (form.createdById !== user.id) return { success: false, error: "Acesso negado." }
+
+  // 2. Fetch analytics server-side (never trust client-supplied data for AI prompts)
+  const analyticsResult = await getFormAnalytics(formId)
+  if (!analyticsResult.success || !analyticsResult.data) {
+    return { success: false, error: "Não foi possível carregar os dados de analytics." }
+  }
+  const analytics = analyticsResult.data
+
   if (analytics.totalResponses < 3) {
     return { success: false, error: "São necessárias pelo menos 3 respostas para gerar o relatório." }
   }
 
-  // Build question stats summary for the prompt
-  const form = await db.query.forms.findFirst({
-    where: eq(forms.id, formId),
-    columns: { title: true },
-    with: { questions: { columns: { title: true, type: true, order: true }, orderBy: (q, { asc }) => [asc(q.order)] } },
-  })
-
-  const questionSummary = (form?.questions ?? [])
+  // 3. Build question stats summary for the prompt
+  const questionSummary = form.questions
     .filter((q) => !["welcome", "statement", "thank_you"].includes(q.type))
     .map((q, i) => {
       const stat = analytics.questionStats.find((s) => s.questionTitle === q.title)
@@ -204,7 +248,7 @@ export async function generateFormReportAction(
 
   const prompt = `Você é um especialista em UX de formulários e análise de dados. Analise os dados abaixo de um formulário e gere um relatório diagnóstico em português brasileiro.
 
-FORMULÁRIO: "${formTitle}"
+FORMULÁRIO: "${form.title}"
 
 MÉTRICAS GERAIS:
 - Total de respostas: ${analytics.totalResponses}

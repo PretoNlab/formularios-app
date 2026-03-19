@@ -44,7 +44,7 @@ export const submitBodySchema = z.object({
 
 export function hashIp(ip: string): string {
   return createHash("sha256")
-    .update(ip + process.env.NEXT_PUBLIC_SUPABASE_URL)
+    .update(ip + (process.env.IP_HASH_SALT ?? process.env.NEXT_PUBLIC_SUPABASE_URL))
     .digest("hex")
     .slice(0, 32)
 }
@@ -230,8 +230,6 @@ export async function submitResponseCore(params: {
       toEmail: settings.notificationEmail,
       formId,
       formTitle: form.title,
-      responseId: response.id,
-      answers: sanitizedAnswers,
     }).catch(() => {})
   }
 

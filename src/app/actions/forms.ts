@@ -140,6 +140,7 @@ export async function upsertQuestionsAction(
   questionList: UpsertQuestionInput[]
 ) {
   await requireFormOwner(formId)
+  if (questionList.length === 0) return
   const result = await upsertQuestions(formId, questionList)
   if (!result.success) throw new Error("Falha ao salvar perguntas.")
 }

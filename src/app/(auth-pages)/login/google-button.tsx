@@ -3,6 +3,7 @@
 import { Chrome } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+import { getAppUrl } from "@/lib/utils"
 
 export function GoogleLoginButton({ next }: { next: string }) {
   async function handleGoogleLogin() {
@@ -10,7 +11,7 @@ export function GoogleLoginButton({ next }: { next: string }) {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(next)}`,
+        redirectTo: `${getAppUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     })
   }

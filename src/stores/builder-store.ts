@@ -101,7 +101,7 @@ export const useBuilderStore = create<BuilderState & BuilderActions>()(
         const duplicate: Question = {
           ...JSON.parse(JSON.stringify(original)),
           id: crypto.randomUUID(),
-          title: original.title + " (copia)",
+          title: original.title + " (cópia)",
           order: idx + 1,
         }
         state.form.questions.splice(idx + 1, 0, duplicate)

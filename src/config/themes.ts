@@ -20,7 +20,7 @@ export const AVAILABLE_FONTS = [
   "DM Sans",
   "Space Grotesk",
   "Syne",
-  "Outfit",
+  "IBM Plex Sans",
   "Plus Jakarta Sans",
   "Fraunces",
   "Sora",

@@ -1,7 +1,15 @@
 import { Resend } from "resend"
-import type { AnswerValue } from "@/lib/db/schema"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://formularios.ia"
 const from = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"
@@ -27,7 +35,7 @@ export async function sendWelcomeEmail({ toEmail, name }: { toEmail: string; nam
         <!-- Body -->
         <tr>
           <td style="padding:32px;">
-            <h1 style="margin:0 0 16px;color:#0f0f0f;font-size:22px;font-weight:700;line-height:1.3;">Bem-vindo, ${name}!</h1>
+            <h1 style="margin:0 0 16px;color:#0f0f0f;font-size:22px;font-weight:700;line-height:1.3;">Bem-vindo, ${escapeHtml(name)}!</h1>
             <p style="margin:0 0 16px;color:#374151;font-size:14px;line-height:1.7;">
               Sua conta no <strong>formularios.ia</strong> está pronta. Crie formulários profissionais em minutos e comece a coletar respostas agora mesmo.
             </p>
@@ -97,7 +105,7 @@ export async function sendFirstResponseEmail({
             <p style="margin:0 0 8px;color:#6b7280;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">🎉 Marco atingido</p>
             <h1 style="margin:0 0 16px;color:#0f0f0f;font-size:22px;font-weight:700;line-height:1.3;">Sua primeira resposta chegou!</h1>
             <p style="margin:0 0 8px;color:#374151;font-size:14px;line-height:1.7;">
-              O formulário <strong>${formTitle}</strong> acaba de receber sua primeira resposta. Seu formulário está funcionando!
+              O formulário <strong>${escapeHtml(formTitle)}</strong> acaba de receber sua primeira resposta. Seu formulário está funcionando!
             </p>
             <p style="margin:0 0 24px;color:#374151;font-size:14px;line-height:1.7;">
               Veja o que foi respondido e acompanhe as próximas respostas pelo painel de analytics.
@@ -142,8 +150,6 @@ export async function sendResponseNotification({
   toEmail: string
   formId: string
   formTitle: string
-  responseId: string
-  answers: Record<string, AnswerValue>
 }) {
   const responsesUrl = `${appUrl}/responses/${formId}`
 
@@ -166,7 +172,7 @@ export async function sendResponseNotification({
         <tr>
           <td style="padding:32px;">
             <p style="margin:0 0 8px;color:#6b7280;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Nova resposta recebida</p>
-            <h1 style="margin:0 0 24px;color:#0f0f0f;font-size:22px;font-weight:700;line-height:1.3;">${formTitle}</h1>
+            <h1 style="margin:0 0 24px;color:#0f0f0f;font-size:22px;font-weight:700;line-height:1.3;">${escapeHtml(formTitle)}</h1>
 
             <p style="margin:0 0 24px;color:#374151;font-size:14px;line-height:1.6;">
               Seu formulário recebeu uma nova resposta completa.

@@ -23,7 +23,7 @@ export const QUESTION_TYPE_GROUPS: QuestionTypeGroup[] = [
   },
   {
     category: "selection",
-    label: "Campos de selecao",
+    label: "Campos de seleção",
     types: [
       { type: "multiple_choice", ...QUESTION_TYPES.multiple_choice },
       { type: "checkbox", ...QUESTION_TYPES.checkbox },
@@ -33,7 +33,7 @@ export const QUESTION_TYPE_GROUPS: QuestionTypeGroup[] = [
   },
   {
     category: "rating",
-    label: "Avaliacao",
+    label: "Avaliação",
     types: [
       { type: "rating", ...QUESTION_TYPES.rating },
       { type: "scale", ...QUESTION_TYPES.scale },
@@ -51,7 +51,7 @@ export const QUESTION_TYPE_GROUPS: QuestionTypeGroup[] = [
   },
   {
     category: "advanced",
-    label: "Avancado",
+    label: "Avançado",
     types: [
       { type: "file_upload", ...QUESTION_TYPES.file_upload },
       { type: "download", ...QUESTION_TYPES.download },
@@ -68,13 +68,13 @@ export function getDefaultProperties(type: QuestionType): Record<string, unknown
     number: { placeholder: "0", min: 0 },
     phone: { placeholder: "(00) 00000-0000", defaultCountry: "BR" },
     url: { placeholder: "https://" },
-    multiple_choice: { options: [{ id: "opt_1", label: "Opcao 1" }, { id: "opt_2", label: "Opcao 2" }], allowOther: false, randomizeOptions: false },
-    checkbox: { options: [{ id: "opt_1", label: "Opcao 1" }, { id: "opt_2", label: "Opcao 2" }], allowOther: false },
-    dropdown: { options: [{ id: "opt_1", label: "Opcao 1" }, { id: "opt_2", label: "Opcao 2" }] },
+    multiple_choice: { options: [{ id: "opt_1", label: "Opção 1" }, { id: "opt_2", label: "Opção 2" }], allowOther: false, randomizeOptions: false },
+    checkbox: { options: [{ id: "opt_1", label: "Opção 1" }, { id: "opt_2", label: "Opção 2" }], allowOther: false },
+    dropdown: { options: [{ id: "opt_1", label: "Opção 1" }, { id: "opt_2", label: "Opção 2" }] },
     rating: { ratingStyle: "stars", ratingMax: 5 },
     scale: { scaleMin: 1, scaleMax: 10, scaleMinLabel: "Discordo", scaleMaxLabel: "Concordo" },
-    nps: { scaleMin: 0, scaleMax: 10, scaleMinLabel: "Nada provavel", scaleMaxLabel: "Muito provavel" },
-    welcome: { buttonText: "Comecar" },
+    nps: { scaleMin: 0, scaleMax: 10, scaleMinLabel: "Nada provável", scaleMaxLabel: "Muito provável" },
+    welcome: { buttonText: "Começar" },
     statement: { buttonText: "Continuar" },
     thank_you: { buttonText: "Enviar outra resposta" },
     download: { buttonText: "Baixar arquivo", downloadButtonSize: "default", downloadButtonAlign: "center" },

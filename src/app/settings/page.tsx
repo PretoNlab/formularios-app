@@ -130,9 +130,9 @@ export default async function SettingsPage() {
             </p>
           </div>
           {user.plan === "free" && (
-            <button className="rounded-full bg-gradient-to-r from-violet-600 to-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-lg hover:opacity-90 transition-opacity">
+            <Link href="/billing" className="rounded-full bg-gradient-to-r from-violet-600 to-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-lg hover:opacity-90 transition-opacity">
               Fazer upgrade
-            </button>
+            </Link>
           )}
         </div>
 
