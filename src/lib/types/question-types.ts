@@ -54,6 +54,7 @@ export const QUESTION_TYPE_GROUPS: QuestionTypeGroup[] = [
     label: "Avancado",
     types: [
       { type: "file_upload", ...QUESTION_TYPES.file_upload },
+      { type: "download", ...QUESTION_TYPES.download },
       { type: "signature", ...QUESTION_TYPES.signature },
     ],
   },
@@ -76,6 +77,7 @@ export function getDefaultProperties(type: QuestionType): Record<string, unknown
     welcome: { buttonText: "Comecar" },
     statement: { buttonText: "Continuar" },
     thank_you: { buttonText: "Enviar outra resposta" },
+    download: { buttonText: "Baixar arquivo", downloadButtonSize: "default", downloadButtonAlign: "center" },
   }
   return defaults[type] || {}
 }

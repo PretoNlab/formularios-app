@@ -11,7 +11,7 @@ import {
   Loader2, Globe, Trash2, Copy, CheckCircle2, AlertCircle, BarChart3,
   Webhook, Zap, MessageCircle, CreditCard, Building2, Share2,
   Image as ImageIcon, AlignLeft as AlignLeftIcon, AlignCenter, AlignRight, X, PaintBucket, Palette, Type as TypeIcon,
-  Table2, ChevronDown as ChevronDownIcon, ExternalLink, RefreshCw
+  Table2, ChevronDown as ChevronDownIcon, ExternalLink, RefreshCw, Download
 } from "lucide-react"
 import {
   DndContext,
@@ -221,6 +221,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   welcome: Presentation,
   statement: MessageSquare,
   thank_you: PartyPopper,
+  download: Download,
   file_upload: Paperclip,
   signature: PenTool,
 }
@@ -231,7 +232,7 @@ const SIDEBAR_TYPES: QuestionType[] = [
   "cpf", "cnpj",
   "multiple_choice", "checkbox", "dropdown", "yes_no",
   "rating", "nps",
-  "file_upload",
+  "download", "file_upload",
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1862,6 +1863,72 @@ function PropertiesPanel({ question }: { question: Question }) {
         <>
           <Separator />
           <OptionsEditor question={question} />
+        </>
+      )}
+
+      {["welcome", "statement", "thank_you", "download"].includes(question.type) && (
+        <>
+          <Separator />
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">Texto do Botão</label>
+            <Input
+              value={question.properties.buttonText ?? ""}
+              onChange={(e) =>
+                updateQuestion(question.id, { properties: { ...question.properties, buttonText: e.target.value || undefined } })
+              }
+              placeholder="Adicionar texto..."
+              className="text-sm h-9"
+            />
+          </div>
+        </>
+      )}
+
+      {question.type === "download" && (
+        <>
+          <Separator />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">URL do Arquivo</label>
+              <Input
+                value={question.properties.downloadUrl ?? ""}
+                onChange={(e) =>
+                  updateQuestion(question.id, { properties: { ...question.properties, downloadUrl: e.target.value || undefined } })
+                }
+                placeholder="https://..."
+                className="text-sm h-9"
+                type="url"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Tamanho do Botão</label>
+              <select
+                value={question.properties.downloadButtonSize ?? "default"}
+                onChange={(e) =>
+                  updateQuestion(question.id, { properties: { ...question.properties, downloadButtonSize: e.target.value as any } })
+                }
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="sm">Pequeno</option>
+                <option value="default">Normal</option>
+                <option value="lg">Grande</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Alinhamento</label>
+              <select
+                value={question.properties.downloadButtonAlign ?? "center"}
+                onChange={(e) =>
+                  updateQuestion(question.id, { properties: { ...question.properties, downloadButtonAlign: e.target.value as any } })
+                }
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="left">Esquerda</option>
+                <option value="center">Centro</option>
+                <option value="right">Direita</option>
+                <option value="full">Largura Total (Expandido)</option>
+              </select>
+            </div>
+          </div>
         </>
       )}
 

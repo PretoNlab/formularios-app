@@ -21,6 +21,7 @@ export const QUESTION_TYPES = {
   welcome: { label: "Tela de boas-vindas", icon: "👋", category: "layout", hasOptions: false },
   statement: { label: "Declaração", icon: "💬", category: "layout", hasOptions: false },
   thank_you: { label: "Tela de agradecimento", icon: "🎉", category: "layout", hasOptions: false },
+  download: { label: "Download de Arquivo", icon: "⬇️", category: "advanced", hasOptions: false },
   file_upload: { label: "Upload de arquivo", icon: "📎", category: "advanced", hasOptions: false },
   signature: { label: "Assinatura", icon: "✍️", category: "advanced", hasOptions: false },
 } as const
@@ -62,6 +63,9 @@ export interface QuestionProperties {
   buttonText?: string
   imageUrl?: string
   videoUrl?: string
+  downloadUrl?: string
+  downloadButtonSize?: "sm" | "default" | "lg"
+  downloadButtonAlign?: "left" | "center" | "right" | "full"
 }
 
 export interface QuestionOption {

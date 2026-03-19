@@ -39,6 +39,7 @@ export { ThankYouField } from "./thank-you"
 
 // ── Advanced fields ───────────────────────────
 export { FileUploadField } from "./file-upload"
+export { DownloadField } from "./download"
 export { SignatureField } from "./signature"
 
 // ─── QuestionType → Component map ────────────────────────────────────────────
@@ -67,6 +68,7 @@ import { WelcomeField } from "./welcome"
 import { StatementField } from "./statement"
 import { ThankYouField } from "./thank-you"
 import { FileUploadField } from "./file-upload"
+import { DownloadField } from "./download"
 import { SignatureField } from "./signature"
 
 export const FIELD_COMPONENTS: Record<QuestionType, ComponentType<FieldProps>> = {
@@ -90,6 +92,7 @@ export const FIELD_COMPONENTS: Record<QuestionType, ComponentType<FieldProps>> =
     welcome: WelcomeField,
     statement: StatementField,
     thank_you: ThankYouField,
+    download: DownloadField,
     file_upload: FileUploadField,
     signature: SignatureField,
 }
