@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js"
 import { createClient as createAuthClient } from "@/lib/supabase/server"
 
 const BUCKET = "form-downloads"
-const MAX_SIZE_BYTES = 50 * 1024 * 1024 // 50MB
+const MAX_SIZE_BYTES = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = new Set([
   "application/pdf",
   "application/msword",
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (file.size > MAX_SIZE_BYTES) {
-    return NextResponse.json({ error: "Arquivo excede o limite de 50MB." }, { status: 400 })
+    return NextResponse.json({ error: "Arquivo excede o limite de 10MB." }, { status: 400 })
   }
 
   if (!ALLOWED_TYPES.has(file.type)) {

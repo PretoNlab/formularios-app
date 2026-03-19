@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import {
   Sparkles, ArrowRight, Zap, BarChart3, Globe, MessageCircle,
   CheckCircle2, Star, ChevronRight, MousePointer2, Shield, Layers,
+  Target, Download, ChevronDown
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +22,7 @@ export default async function HomePage() {
       <HowItWorks />
       <Testimonials />
       <Pricing />
+      <FAQ />
       <FinalCTA />
       <Footer />
     </div>
@@ -44,6 +46,7 @@ function Nav() {
           <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Recursos</Link>
           <Link href="#how" className="text-muted-foreground hover:text-foreground transition-colors">Como funciona</Link>
           <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Preços</Link>
+          <Link href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</Link>
         </nav>
 
         <div className="flex items-center gap-3">
@@ -106,7 +109,7 @@ function Hero() {
         </div>
 
         <p className="text-sm text-muted-foreground">
-          Grátis para sempre · Sem cartão de crédito · Setup em 2 minutos
+          Grátis para sempre · Setup em 2 minutos · Ao continuar, você concorda com nossos <Link href="/terms" className="underline">Termos</Link> e <Link href="/privacy" className="underline">Privacidade</Link>
         </p>
 
         {/* Mock UI */}
@@ -187,7 +190,7 @@ function Hero() {
 const FEATURES = [
   {
     icon: MousePointer2,
-    title: "19 tipos de campo",
+    title: "22 tipos de campo",
     description: "Texto, NPS, escala, múltipla escolha, upload de arquivo, assinatura e muito mais. Tudo que você precisa num só lugar.",
     color: "text-violet-600",
     bg: "bg-violet-50",
@@ -228,6 +231,20 @@ const FEATURES = [
     description: "Dados armazenados no Brasil, criptografia em trânsito e em repouso, conformidade com a LGPD.",
     color: "text-slate-600",
     bg: "bg-slate-50",
+  },
+  {
+    icon: Target,
+    title: "Captura de respostas parciais",
+    description: "Saiba onde seus respondentes abandonam, pergunta por pergunta. Perfeito para times de produto e growth.",
+    color: "text-red-600",
+    bg: "bg-red-50",
+  },
+  {
+    icon: Download,
+    title: "Lead magnet nativo",
+    description: "Entregue PDFs ou arquivos automaticamente ao final do form. Um diferencial real para captação de leads.",
+    color: "text-amber-600",
+    bg: "bg-amber-50",
   },
 ]
 
@@ -380,7 +397,7 @@ const PLANS = [
       "Formulários ilimitados",
       "Até 10 perguntas por form",
       "100 respostas / mês",
-      "19 tipos de campo",
+      "22 tipos de campo",
       "Analytics básico",
       "Link público compartilhável",
     ],
@@ -501,6 +518,75 @@ function Pricing() {
   )
 }
 
+// ─── FAQ ──────────────────────────────────────────────────────────────────────
+
+const FAQ_ITEMS = [
+  {
+    question: "O que é o formularios.ia?",
+    answer: "É uma plataforma de criação de formulários conversacionais — exibe uma pergunta por vez, como uma conversa. Diferente de planilhas de campos, o formato aumenta a taxa de conclusão e a qualidade das respostas."
+  },
+  {
+    question: "Preciso instalar alguma coisa?",
+    answer: "Não. A plataforma roda inteiramente no navegador. Não há extensão, plugin ou app para instalar."
+  },
+  {
+    question: "O que acontece quando publico um formulário?",
+    answer: "O formulário fica acessível publicamente pela URL formularios.ia/f/seu-slug. Respostas começam a ser aceitas imediatamente."
+  },
+  {
+    question: "O que são respostas parciais?",
+    answer: "São respostas de usuários que começaram a preencher o formulário mas não chegaram até o fim. Cada pergunta respondida é salva no banco à medida que o usuário avança — mesmo que ele feche o navegador."
+  },
+  {
+    question: "Por quanto tempo as respostas ficam disponíveis?",
+    answer: "Indefinidamente, enquanto sua conta estiver ativa. E você pode exportá-las para CSV ou JSON a qualquer momento."
+  },
+  {
+    question: "Como ofereço um arquivo ou PDF ao respondente?",
+    answer: "No builder, basta preencher o campo 'Arquivo para download' ou fazer upload do seu arquivo. Um botão de download aparecerá automaticamente na tela de conclusão do formulário."
+  },
+  {
+    question: "Os dados dos respondentes são vendidos ou compartilhados?",
+    answer: "Não. Seus dados e os dados dos seus respondentes pertencem exclusivamente a você. Não vendemos dados em hipótese alguma."
+  },
+  {
+    question: "O formulario.ia é compatível com a LGPD?",
+    answer: "Sim. A plataforma foi desenvolvida com boas práticas de privacidade: IPs anonimizados, dados armazenados em servidores no Brasil com criptografia e controle total do criador sobre seus dados."
+  }
+]
+
+function FAQ() {
+  return (
+    <section id="faq" className="py-24 container max-w-4xl mx-auto">
+      <div className="text-center mb-16">
+        <Badge variant="secondary" className="rounded-full mb-4">Perguntas Frequentes</Badge>
+        <h2 className="text-4xl font-bold tracking-tight mb-4">
+          Ficou com alguma dúvida?
+        </h2>
+        <p className="text-xl text-muted-foreground">
+          As respostas para as perguntas mais comuns sobre o formularios.ia.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {FAQ_ITEMS.map((item, i) => (
+          <details key={i} className="group rounded-2xl border bg-card/50 p-6 [&_summary::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer items-center justify-between font-semibold text-lg">
+              {item.question}
+              <span className="ml-4 shrink-0 transition-transform duration-200 group-open:rotate-180">
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              </span>
+            </summary>
+            <p className="mt-4 text-muted-foreground leading-relaxed">
+              {item.answer}
+            </p>
+          </details>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 // ─── Final CTA ────────────────────────────────────────────────────────────────
 
 function FinalCTA() {
@@ -524,7 +610,7 @@ function FinalCTA() {
           </Link>
         </div>
         <p className="text-sm text-background/40 mt-6">
-          Grátis para sempre · Sem cartão de crédito
+          Grátis para sempre · Sem cartão de crédito · Ao continuar, você concorda com nossos <Link href="/terms" className="underline hover:text-white">Termos</Link> e <Link href="/privacy" className="underline hover:text-white">Privacidade</Link>
         </p>
       </div>
     </section>
