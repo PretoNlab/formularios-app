@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { FormRenderer } from "@/components/renderer/form-renderer"
 import type { Form } from "@/lib/types/form"
@@ -29,6 +29,7 @@ function getDeviceType(): "desktop" | "mobile" | "tablet" {
 export function FormRendererPage({ form, isPreview }: FormRendererPageProps) {
   const searchParams = useSearchParams()
   const clientMetaRef = useRef<ClientMeta>({})
+  const responseIdRef = useRef<string | null>(null)
   const [offlineQueued, setOfflineQueued] = useState(false)
 
   // Capture UTM params and device type once on mount
@@ -41,6 +42,22 @@ export function FormRendererPage({ form, isPreview }: FormRendererPageProps) {
       deviceType: getDeviceType(),
     }
   }, [searchParams])
+
+  // Start a partial response session when the form loads (if enabled)
+  useEffect(() => {
+    if (isPreview || !form.settings.allowPartialResponses) return
+    fetch("/api/responses/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ formId: form.id, clientMeta: clientMetaRef.current }),
+    })
+      .then((r) => r.json())
+      .then((data: { responseId?: string }) => {
+        if (data.responseId) responseIdRef.current = data.responseId
+      })
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Register Service Worker and cache this page on the very first visit.
   // The SW can't intercept the initial navigation (it wasn't active yet), so after
@@ -78,6 +95,15 @@ export function FormRendererPage({ form, isPreview }: FormRendererPageProps) {
     return () => window.removeEventListener("online", handleOnline)
   }, [])
 
+  const handleProgress = useCallback((questionId: string, value: AnswerValue) => {
+    if (isPreview || !responseIdRef.current) return
+    fetch("/api/responses/progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ responseId: responseIdRef.current, questionId, value }),
+    }).catch(() => {})
+  }, [isPreview])
+
   async function handleSubmit(answers: Record<string, AnswerValue>) {
     if (isPreview) return
 
@@ -88,6 +114,7 @@ export function FormRendererPage({ form, isPreview }: FormRendererPageProps) {
         formId: form.id,
         answers,
         clientMeta: clientMetaRef.current,
+        responseId: responseIdRef.current ?? undefined,
       }),
     })
 
@@ -103,5 +130,12 @@ export function FormRendererPage({ form, isPreview }: FormRendererPageProps) {
     }
   }
 
-  return <FormRenderer form={form} onSubmit={handleSubmit} pendingSync={offlineQueued} />
+  return (
+    <FormRenderer
+      form={form}
+      onSubmit={handleSubmit}
+      onProgress={handleProgress}
+      pendingSync={offlineQueued}
+    />
+  )
 }

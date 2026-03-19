@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
       clientMeta: parsed.data.clientMeta,
       ipHash: hashIp(rawIp),
       userAgent,
+      responseId: parsed.data.responseId,
     })
     return NextResponse.json({ ok: true })
   } catch (error) {

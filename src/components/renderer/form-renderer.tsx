@@ -626,6 +626,8 @@ export interface FormRendererProps {
     form: Form
     /** Called with the final answers Record when the form completes */
     onSubmit?: (answers: Record<string, AnswerValue>) => Promise<void>
+    /** Called each time the user advances a question (partial response tracking) */
+    onProgress?: (questionId: string, value: AnswerValue) => void
     /** Override the initial renderer state (useful for resuming partial responses) */
     initialState?: Partial<RendererState>
     /** Class name added to the root wrapper */
@@ -637,6 +639,7 @@ export interface FormRendererProps {
 export function FormRenderer({
     form,
     onSubmit,
+    onProgress,
     initialState,
     className = "",
     pendingSync = false,
@@ -721,6 +724,11 @@ export function FormRenderer({
             return
         }
 
+        // Report partial progress for this question
+        if (currentQ && onProgress) {
+            onProgress(currentQ.id, state.answers[currentQ.id] ?? null)
+        }
+
         setDirection("up")
         setAnimating(true)
         setTimeout(() => {
@@ -731,7 +739,7 @@ export function FormRenderer({
             }))
             setAnimating(false)
         }, 220)
-    }, [currentQ, isLastQuestion, isValid, onSubmit, questions, state])
+    }, [currentQ, isLastQuestion, isValid, onProgress, onSubmit, questions, state])
 
     // ── Navigate back ──
     const goBack = useCallback(() => {
@@ -779,6 +787,16 @@ export function FormRenderer({
                                     ? "Você está offline. Sua resposta foi salva e será enviada automaticamente quando você tiver conexão."
                                     : settings.closeMessage || "Sua resposta foi registrada com sucesso."}
                             </p>
+                            {settings.downloadUrl && (
+                                <a
+                                    href={settings.downloadUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="ff-download-btn"
+                                >
+                                    ⬇ {settings.downloadLabel || "Baixar material"}
+                                </a>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -868,6 +886,17 @@ export function FormRenderer({
                             onSubmit={goNext}
                         />
                     </div>
+
+                    {state.isComplete && settings.downloadUrl && (
+                        <a
+                            href={settings.downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ff-download-btn"
+                        >
+                            ⬇ {settings.downloadLabel || "Baixar material"}
+                        </a>
+                    )}
 
                     <Nav
                         canGoBack={state.currentQuestionIndex > 0}
@@ -1189,6 +1218,14 @@ const FF_CSS = `
 .ff-thankyou { text-align: center; padding: 24px 0; }
 .ff-thankyou-icon { font-size: 3rem; margin-bottom: 16px; }
 .ff-thankyou-text { color: var(--ff-muted); font-size: 1.05rem; margin: 0; }
+.ff-download-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 24px; padding: 12px 24px; border-radius: 8px;
+  background: var(--ff-accent); color: #fff;
+  font-size: 0.95rem; font-weight: 600; text-decoration: none;
+  transition: opacity 0.15s;
+}
+.ff-download-btn:hover { opacity: 0.85; }
 
 /* ── File upload ── */
 .ff-upload {

@@ -37,6 +37,7 @@ export const submitBodySchema = z.object({
       deviceType: z.enum(["desktop", "mobile", "tablet"]).optional(),
     })
     .optional(),
+  responseId: z.string().uuid().optional(),
 })
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -99,8 +100,9 @@ export async function submitResponseCore(params: {
   }
   ipHash: string
   userAgent: string | null
+  responseId?: string
 }): Promise<void> {
-  const { formId, answers: parsedAnswers, clientMeta = {}, ipHash, userAgent } = params
+  const { formId, answers: parsedAnswers, clientMeta = {}, ipHash, userAgent, responseId } = params
 
   // 1. Fetch form for status + settings validation
   const form = await db.query.forms.findFirst({
@@ -154,35 +156,44 @@ export async function submitResponseCore(params: {
     throw new Error("Muitas respostas enviadas. Aguarde um momento e tente novamente.")
   }
 
-  // 7-9. Atomically create response, save answers, and mark complete
+  // 7-9. Atomically save answers and mark complete
   const answerList = Object.entries(sanitizedAnswers).map(([questionId, value]) => ({
     questionId,
     value,
   }))
 
   const response = await db.transaction(async (tx) => {
-    const [created] = await tx
-      .insert(responses)
-      .values({
-        formId,
-        metadata: {
-          userAgent,
-          ipHash,
-          utmSource: clientMeta.utmSource ?? null,
-          utmMedium: clientMeta.utmMedium ?? null,
-          utmCampaign: clientMeta.utmCampaign ?? null,
-          referrer: clientMeta.referrer ?? null,
-          deviceType: clientMeta.deviceType ?? null,
-        },
-      })
-      .returning()
+    let targetId: string
+
+    if (responseId) {
+      // Partial session: use existing response record
+      targetId = responseId
+    } else {
+      // New submission: create response record now
+      const [created] = await tx
+        .insert(responses)
+        .values({
+          formId,
+          metadata: {
+            userAgent,
+            ipHash,
+            utmSource: clientMeta.utmSource ?? null,
+            utmMedium: clientMeta.utmMedium ?? null,
+            utmCampaign: clientMeta.utmCampaign ?? null,
+            referrer: clientMeta.referrer ?? null,
+            deviceType: clientMeta.deviceType ?? null,
+          },
+        })
+        .returning()
+      targetId = created.id
+    }
 
     if (answerList.length > 0) {
       await tx
         .insert(answers)
         .values(
           answerList.map((a) => ({
-            responseId: created.id,
+            responseId: targetId,
             questionId: a.questionId,
             value: a.value,
           }))
@@ -196,14 +207,19 @@ export async function submitResponseCore(params: {
     await tx
       .update(responses)
       .set({ completedAt: new Date(), lastActiveAt: new Date() })
-      .where(eq(responses.id, created.id))
+      .where(eq(responses.id, targetId))
 
     await tx
       .update(forms)
       .set({ responseCount: sql`${forms.responseCount} + 1` })
       .where(eq(forms.id, formId))
 
-    return created
+    const [row] = await tx
+      .select()
+      .from(responses)
+      .where(eq(responses.id, targetId))
+
+    return row
   }).catch(() => {
     throw new Error("Falha ao registrar resposta.")
   })

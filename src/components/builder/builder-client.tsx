@@ -1184,6 +1184,46 @@ interface FormConfigPanelProps {
   onSlugChange: (slug: string) => void
 }
 
+function DownloadFileUploadButton({ onUrl }: { onUrl: (url: string) => void }) {
+  const ref = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const body = new FormData()
+      body.append("file", file)
+      const res = await fetch("/api/upload/completion-file", { method: "POST", body })
+      if (!res.ok) throw new Error("Falha no upload.")
+      const data = await res.json() as { url: string }
+      onUrl(data.url)
+    } catch {
+      alert("Erro ao fazer upload do arquivo. Tente novamente.")
+    } finally {
+      setUploading(false)
+      if (ref.current) ref.current.value = ""
+    }
+  }
+
+  return (
+    <>
+      <input ref={ref} type="file" className="hidden" accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg" onChange={handleFile} />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-9 shrink-0 text-xs"
+        disabled={uploading}
+        onClick={() => ref.current?.click()}
+      >
+        {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Upload"}
+      </Button>
+    </>
+  )
+}
+
 function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSettingsChange, onSlugChange }: FormConfigPanelProps) {
   const [slugError, setSlugError] = useState("")
 
@@ -1296,6 +1336,28 @@ function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSettingsC
             className="text-sm h-9"
           />
           <p className="text-[11px] text-muted-foreground">Após conclusão, redireciona para esta URL.</p>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground">Arquivo para download</label>
+          <div className="flex gap-2">
+            <Input
+              type="url"
+              value={form.settings.downloadUrl ?? ""}
+              onChange={(e) => onSettingsChange({ downloadUrl: e.target.value || null })}
+              placeholder="https://drive.google.com/..."
+              className="text-sm h-9 flex-1"
+            />
+            <DownloadFileUploadButton onUrl={(url) => onSettingsChange({ downloadUrl: url })} />
+          </div>
+          <Input
+            type="text"
+            value={form.settings.downloadLabel ?? ""}
+            onChange={(e) => onSettingsChange({ downloadLabel: e.target.value || null })}
+            placeholder="Texto do botão (ex: Baixar material)"
+            className="text-sm h-9"
+          />
+          <p className="text-[11px] text-muted-foreground">Exibe um botão de download na tela de conclusão.</p>
         </div>
       </div>
 

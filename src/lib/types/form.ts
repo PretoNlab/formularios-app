@@ -121,6 +121,8 @@ export interface FormSettings {
   closeMessage: string
   responseLimit: number | null
   closedAt: string | null
+  downloadUrl: string | null
+  downloadLabel: string | null
 }
 
 export interface ThemeConfig {

@@ -71,6 +71,8 @@ export const forms = pgTable("forms", {
     closeMessage: "Este formulário não está mais aceitando respostas.",
     responseLimit: null,
     closedAt: null,
+    downloadUrl: null,
+    downloadLabel: null,
   }),
 
   // Metadados
@@ -267,6 +269,8 @@ export interface FormSettings {
   closeMessage: string
   responseLimit: number | null
   closedAt: string | null
+  downloadUrl: string | null
+  downloadLabel: string | null
 }
 
 export interface QuestionProperties {

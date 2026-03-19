@@ -34,6 +34,8 @@ function mapDbForm(dbForm: FormWithQuestions): Form {
       closeMessage: "Este formulário não está mais aceitando respostas.",
       responseLimit: null,
       closedAt: null,
+      downloadUrl: null,
+      downloadLabel: null,
     },
     questions: dbForm.questions.map(
       (q): Question => ({
