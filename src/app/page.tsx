@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 
 export const metadata: Metadata = {
   title: "formularios.ia — Formulários inteligentes para o Brasil",
-  description: "Crie formulários conversacionais, colete respostas e descubra insights com IA. Alternativa brasileira ao Typeform com analytics avançado, lógica condicional e integração com WhatsApp.",
+  description: "Crie formulários conversacionais, colete respostas e descubra insights com IA. Analytics avançado, lógica condicional, integração com WhatsApp e muito mais — feito para o Brasil.",
   openGraph: {
     title: "formularios.ia — Formulários inteligentes para o Brasil",
     description: "Crie formulários conversacionais e descubra insights com IA.",
@@ -110,7 +110,7 @@ function Hero() {
 
         <p className="max-w-2xl text-xl text-muted-foreground leading-relaxed">
           Crie formulários bonitos em minutos, colete respostas e descubra insights com IA.
-          A alternativa brasileira ao Typeform, com analytics avançado, lógica condicional e muito mais.
+          Analytics avançado, lógica condicional, integração com WhatsApp e muito mais.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -357,7 +357,7 @@ const TESTIMONIALS = [
   {
     name: "Ana Lima",
     role: "Head de Produto · Fintech",
-    text: "Migramos do Typeform e a taxa de conclusão dos nossos formulários subiu 23%. A lógica condicional é muito mais intuitiva.",
+    text: "Após trocar de plataforma, a taxa de conclusão dos nossos formulários subiu 23%. A lógica condicional é muito mais intuitiva e o suporte em português faz toda a diferença.",
     stars: 5,
   },
   {
