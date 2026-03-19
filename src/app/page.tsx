@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
@@ -8,6 +9,24 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+
+export const metadata: Metadata = {
+  title: "formularios.ia — Formulários inteligentes para o Brasil",
+  description: "Crie formulários conversacionais, colete respostas e descubra insights com IA. Alternativa brasileira ao Typeform com analytics avançado, lógica condicional e integração com WhatsApp.",
+  openGraph: {
+    title: "formularios.ia — Formulários inteligentes para o Brasil",
+    description: "Crie formulários conversacionais e descubra insights com IA.",
+    url: "https://formularios.ia.br",
+    siteName: "formularios.ia",
+    locale: "pt_BR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "formularios.ia — Formulários inteligentes para o Brasil",
+    description: "Formulários conversacionais com analytics e IA para o mercado brasileiro.",
+  },
+}
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -101,9 +120,9 @@ function Hero() {
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
-          <Link href="/login">
+          <Link href="/signup">
             <Button variant="outline" size="lg" className="rounded-full px-8 text-base h-12">
-              Ver demonstração
+              Explorar grátis
             </Button>
           </Link>
         </div>

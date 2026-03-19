@@ -3,16 +3,29 @@ import { FileUploadField } from "./file-upload"
 import { makeQuestion, noop } from "./test-helpers"
 
 describe("FileUploadField", () => {
-  it("renders the 'coming soon' placeholder", () => {
+  it("renders the upload prompt", () => {
     const q = makeQuestion()
     render(<FileUploadField question={q} value={null} onChange={noop} onSubmit={noop} />)
-    expect(screen.getByText("Upload de arquivo")).toBeInTheDocument()
-    expect(screen.getByText(/Em breve/)).toBeInTheDocument()
+    expect(screen.getByText(/Clique ou arraste um arquivo aqui/)).toBeInTheDocument()
   })
 
-  it("does not render an interactive file input (disabled state)", () => {
+  it("renders a hidden file input", () => {
     const q = makeQuestion()
     const { container } = render(<FileUploadField question={q} value={null} onChange={noop} onSubmit={noop} />)
-    expect(container.querySelector("input[type='file']")).not.toBeInTheDocument()
+    const input = container.querySelector("input[type='file']")
+    expect(input).toBeInTheDocument()
+  })
+
+  it("shows the file name when a value is provided", () => {
+    const q = makeQuestion()
+    render(
+      <FileUploadField
+        question={q}
+        value={{ fileUrl: "https://example.com/file.pdf", fileName: "relatorio.pdf" }}
+        onChange={noop}
+        onSubmit={noop}
+      />
+    )
+    expect(screen.getByText(/relatorio\.pdf/)).toBeInTheDocument()
   })
 })

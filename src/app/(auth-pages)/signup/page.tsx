@@ -170,7 +170,7 @@ export default function SignupPage() {
       password,
       options: {
         data: { full_name: name },
-        emailRedirectTo: `${getAppUrl()}/auth/callback`,
+        emailRedirectTo: `${getAppUrl()}/auth/callback?next=${encodeURIComponent("/dashboard?welcome=true")}`,
       },
     })
 
@@ -206,7 +206,7 @@ export default function SignupPage() {
           <ul className="space-y-3 text-background/70">
             {[
               "Formulários ilimitados no plano gratuito",
-              "19 tipos de campo diferentes",
+              "22 tipos de campo diferentes",
               "Analytics em tempo real",
               "Integrações com WhatsApp e mais",
             ].map((item) => (

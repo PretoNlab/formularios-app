@@ -72,6 +72,7 @@ function resolveNextIndex(
 interface InputProps {
     question: Question
     value: AnswerValue
+    formId?: string
     onChange: (v: AnswerValue) => void
     onSubmit: () => void
 }
@@ -500,21 +501,47 @@ function DownloadInput({ question, onChange }: InputProps) {
     )
 }
 
-function FileUploadInput({ value, onChange }: InputProps) {
+function FileUploadInput({ value, onChange, formId }: InputProps) {
     const ref = useRef<HTMLInputElement>(null)
     const fileData = value as { fileUrl: string; fileName: string } | null
+    const [uploading, setUploading] = useState(false)
+    const [uploadError, setUploadError] = useState<string | null>(null)
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
-        const url = URL.createObjectURL(file)
-        onChange({ fileUrl: url, fileName: file.name })
+
+        setUploadError(null)
+        setUploading(true)
+
+        const data = new FormData()
+        data.append("file", file)
+        if (formId) data.append("formId", formId)
+
+        try {
+            const res = await fetch("/api/upload/response-file", { method: "POST", body: data })
+            const json = await res.json() as { url?: string; fileName?: string; error?: string }
+            if (!res.ok || !json.url) {
+                setUploadError(json.error ?? "Falha ao enviar arquivo.")
+            } else {
+                onChange({ fileUrl: json.url, fileName: json.fileName ?? file.name })
+            }
+        } catch {
+            setUploadError("Erro de conexão. Tente novamente.")
+        } finally {
+            setUploading(false)
+            if (ref.current) ref.current.value = ""
+        }
     }
 
     return (
-        <div className="ff-upload" onClick={() => ref.current?.click()}>
-            <input ref={ref} type="file" style={{ display: "none" }} onChange={handleChange} />
-            {fileData ? (
+        <div className="ff-upload" onClick={() => !uploading && ref.current?.click()}>
+            <input ref={ref} type="file" style={{ display: "none" }} onChange={handleChange} disabled={uploading} />
+            {uploading ? (
+                <div className="ff-upload-preview">
+                    <span className="ff-upload-uploading">⏳ Enviando arquivo...</span>
+                </div>
+            ) : fileData ? (
                 <div className="ff-upload-preview">
                     <span>📎 {fileData.fileName}</span>
                     <button className="ff-upload-clear" onClick={(e) => { e.stopPropagation(); onChange(null) }}>✕</button>
@@ -523,6 +550,7 @@ function FileUploadInput({ value, onChange }: InputProps) {
                 <>
                     <div className="ff-upload-icon">📁</div>
                     <p>Clique ou arraste um arquivo aqui</p>
+                    {uploadError && <p className="ff-upload-error">{uploadError}</p>}
                 </>
             )}
         </div>
@@ -925,6 +953,7 @@ export function FormRenderer({
                             value={currentAnswer}
                             onChange={setAnswer}
                             onSubmit={goNext}
+                            formId={form.id}
                         />
                     </div>
 
