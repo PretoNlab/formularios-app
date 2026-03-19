@@ -11,7 +11,7 @@ import {
   Loader2, Globe, Trash2, Copy, CheckCircle2, AlertCircle, BarChart3,
   Webhook, Zap, MessageCircle, CreditCard, Building2, Share2,
   Image as ImageIcon, AlignLeft as AlignLeftIcon, AlignCenter, AlignRight, X, PaintBucket, Palette, Type as TypeIcon,
-  Table2, ChevronDown as ChevronDownIcon, ExternalLink, RefreshCw, Download
+  Table2, ChevronDown as ChevronDownIcon, ExternalLink, RefreshCw, Download, Upload
 } from "lucide-react"
 import {
   DndContext,
@@ -1810,6 +1810,85 @@ function QuestionCard({ question, index, isSelected, onSelect, onDelete, onDupli
 
 // ─── Properties Panel ─────────────────────────────────────────────────────────
 
+// ─── Download URL Editor ──────────────────────────────────────────────────────
+
+function DownloadUrlEditor({ question }: { question: Question }) {
+  const updateQuestion = useBuilderStore((s) => s.updateQuestion)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("O arquivo excede o limite de 10MB.")
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const res = await fetch("/api/upload/completion-file", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Erro no upload")
+      }
+
+      const { url } = await res.json()
+      updateQuestion(question.id, {
+        properties: { ...question.properties, downloadUrl: url },
+      })
+    } catch (err: any) {
+      alert(err.message || "Erro ao fazer upload do arquivo.")
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-muted-foreground">Arquivo</label>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="h-6 text-[10px] px-2"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+        >
+          {isUploading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
+          {isUploading ? "Enviando..." : "Fazer Upload"}
+        </Button>
+      </div>
+      <Input
+        value={question.properties.downloadUrl ?? ""}
+        onChange={(e) =>
+          updateQuestion(question.id, { properties: { ...question.properties, downloadUrl: e.target.value || undefined } })
+        }
+        placeholder="https://... ou faça upload"
+        className="text-sm h-9"
+        type="url"
+        disabled={isUploading}
+      />
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        onChange={handleUpload}
+        accept=".pdf,.doc,.docx,.zip,image/png,image/jpeg,image/webp"
+      />
+    </div>
+  )
+}
+
 function PropertiesPanel({ question }: { question: Question }) {
   const updateQuestion = useBuilderStore((s) => s.updateQuestion)
   const deleteQuestion = useBuilderStore((s) => s.deleteQuestion)
@@ -1887,18 +1966,7 @@ function PropertiesPanel({ question }: { question: Question }) {
         <>
           <Separator />
           <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">URL do Arquivo</label>
-              <Input
-                value={question.properties.downloadUrl ?? ""}
-                onChange={(e) =>
-                  updateQuestion(question.id, { properties: { ...question.properties, downloadUrl: e.target.value || undefined } })
-                }
-                placeholder="https://..."
-                className="text-sm h-9"
-                type="url"
-              />
-            </div>
+            <DownloadUrlEditor question={question} />
             <div className="space-y-2">
               <label className="text-xs font-medium text-muted-foreground">Tamanho do Botão</label>
               <select
