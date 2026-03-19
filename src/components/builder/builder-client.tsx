@@ -11,7 +11,7 @@ import {
   Loader2, Globe, Trash2, Copy, CheckCircle2, AlertCircle, BarChart3,
   Webhook, Zap, MessageCircle, CreditCard, Building2, Share2,
   Image as ImageIcon, AlignLeft as AlignLeftIcon, AlignCenter, AlignRight, X, PaintBucket, Palette, Type as TypeIcon,
-  Table2, ChevronDown as ChevronDownIcon, ExternalLink, RefreshCw, Download, Upload
+  Table2, ChevronDown as ChevronDownIcon, ExternalLink, RefreshCw, Download, Upload, Smartphone
 } from "lucide-react"
 import {
   DndContext,
@@ -283,6 +283,8 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
 
   const [sidebarTab, setSidebarTab] = useState<"fields" | "config" | "webhooks" | "theme">("fields")
   const [builderMode, setBuilderMode] = useState<"editor" | "logic" | "preview">("editor")
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop")
+  const [previewKey, setPreviewKey] = useState<number>(Date.now())
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [copied, setCopied] = useState(false)
   const [isPublishing, startPublishTransition] = useTransition()
@@ -498,13 +500,43 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
         </div>
 
         {builderMode === "preview" ? (
-          <div className="absolute inset-0 overflow-auto">
-            <FormRenderer
-              form={form}
-              onSubmit={async () => {
-                alert("Em modo preview as respostas não são salvas.")
-              }}
-            />
+          <div className="absolute inset-0 overflow-hidden flex items-center justify-center bg-muted/30 p-4 lg:p-8">
+            {previewDevice === "mobile" ? (
+               <div className="relative w-[375px] h-[812px] max-h-full rounded-[3rem] border-[8px] border-zinc-900 bg-background shadow-2xl overflow-hidden shadow-black/20 flex flex-col shrink-0 transition-all duration-300 ring-1 ring-border/20">
+                 {/* Notch Mock */}
+                 <div className="absolute top-0 inset-x-0 h-6 flex justify-center z-50 pointer-events-none">
+                   <div className="w-32 h-6 bg-zinc-900 rounded-b-3xl"></div>
+                 </div>
+                 <FormRenderer
+                   key={`mobile-${previewKey}`}
+                   form={form}
+                   onSubmit={async () => {
+                     alert("🎉 Preview concluído. Em modo preview as respostas não são salvas.")
+                   }}
+                 />
+               </div>
+            ) : (
+               <div className="relative w-full max-w-4xl h-full rounded-xl border bg-background shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ring-1 ring-border/5">
+                 {/* Browser Top Bar Mock */}
+                 <div className="h-10 border-b flex items-center px-4 gap-1.5 bg-muted/40 shrink-0">
+                   <div className="w-3 h-3 rounded-full bg-red-400/80"></div>
+                   <div className="w-3 h-3 rounded-full bg-yellow-400/80"></div>
+                   <div className="w-3 h-3 rounded-full bg-green-400/80"></div>
+                   <div className="ml-4 flex-1 max-w-md bg-background rounded text-[10px] text-muted-foreground/60 px-2 py-1 select-none flex items-center justify-center border font-mono tracking-widest">
+                     seusite.com/f/{form.slug || "meu-form"}
+                   </div>
+                 </div>
+                 <div className="flex-1 relative overflow-auto">
+                   <FormRenderer
+                     key={`desktop-${previewKey}`}
+                     form={form}
+                     onSubmit={async () => {
+                       alert("🎉 Preview concluído. Em modo preview as respostas não são salvas.")
+                     }}
+                   />
+                 </div>
+               </div>
+            )}
           </div>
         ) : (
           <ScrollArea className="flex-1 p-8 pt-24">
@@ -596,11 +628,45 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
               </div>
             )
           ) : builderMode === "preview" ? (
-            <div className="flex h-full flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                <Eye className="h-8 w-8 mb-4 opacity-20" />
-                <p className="text-sm">Você está no <strong className="text-foreground">Modo Preview</strong>.</p>
-                <p className="text-xs mt-2">Altere o <b>Tema</b> na barra esquerda para ver as mudanças refletirem na hora.</p>
+            <div className="flex h-full flex-col p-4 space-y-6">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Dispositivo</p>
+                <div className="flex bg-muted p-1 rounded-lg">
+                  <button
+                    className={`flex-1 flex justify-center items-center py-1.5 text-xs font-medium rounded-md transition-colors ${previewDevice === "desktop" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                    onClick={() => setPreviewDevice("desktop")}
+                  >
+                    <Globe className="h-3.5 w-3.5 mr-1.5" /> Desktop
+                  </button>
+                  <button
+                    className={`flex-1 flex justify-center items-center py-1.5 text-xs font-medium rounded-md transition-colors ${previewDevice === "mobile" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                    onClick={() => setPreviewDevice("mobile")}
+                  >
+                    <Smartphone className="h-3.5 w-3.5 mr-1.5" /> Mobile
+                  </button>
+                </div>
               </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Ações</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs h-8"
+                  onClick={() => setPreviewKey(Date.now())}
+                >
+                  <RefreshCw className="h-3.5 w-3.5 mr-2" />
+                  Reiniciar formulário
+                </Button>
+              </div>
+
+              <div className="mt-8 rounded-md bg-blue-500/10 border border-blue-500/20 p-4">
+                <p className="text-[11px] leading-relaxed text-blue-700 dark:text-blue-400">
+                  <span className="font-semibold block mb-1">Modo interativo</span>
+                  Navegue pelo formulário exatamente como o seu usuário final fará. As regras de visibilidade e desvios lógicos estão ativas nativamente. Respostas não são salvas aqui no Builder.
+                </p>
+              </div>
+            </div>
           ) : (
             selectedQuestion ? (
               <PropertiesPanel question={selectedQuestion} />
