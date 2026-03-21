@@ -19,22 +19,22 @@ describe("DropdownField", () => {
   })
 
   it("displays the current selected value", () => {
-    render(<DropdownField question={question} value="rj" onChange={noop} onSubmit={noop} />)
-    expect(screen.getByRole("combobox")).toHaveValue("rj")
+    render(<DropdownField question={question} value="Rio de Janeiro" onChange={noop} onSubmit={noop} />)
+    expect(screen.getByRole("combobox")).toHaveValue("Rio de Janeiro")
   })
 
   it("calls onChange with selected option id", () => {
     const onChange = vi.fn()
     render(<DropdownField question={question} value="" onChange={onChange} onSubmit={noop} />)
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "sp" } })
-    expect(onChange).toHaveBeenCalledWith("sp")
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "São Paulo" } })
+    expect(onChange).toHaveBeenCalledWith("São Paulo")
   })
 
   it("calls onSubmit after 200ms when an option is selected", () => {
     vi.useFakeTimers()
     const onSubmit = vi.fn()
     render(<DropdownField question={question} value="" onChange={noop} onSubmit={onSubmit} />)
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "sp" } })
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "São Paulo" } })
     expect(onSubmit).not.toHaveBeenCalled()
     vi.advanceTimersByTime(200)
     expect(onSubmit).toHaveBeenCalledTimes(1)

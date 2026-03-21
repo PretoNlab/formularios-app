@@ -22,7 +22,7 @@ describe("MultipleChoiceField", () => {
   })
 
   it("marks the selected option as checked", () => {
-    render(<MultipleChoiceField question={question} value="b" onChange={noop} onSubmit={noop} />)
+    render(<MultipleChoiceField question={question} value="Opção B" onChange={noop} onSubmit={noop} />)
     const radios = screen.getAllByRole("radio")
     expect(radios[1]).toHaveAttribute("aria-checked", "true")
     expect(radios[0]).toHaveAttribute("aria-checked", "false")
@@ -32,7 +32,7 @@ describe("MultipleChoiceField", () => {
     const onChange = vi.fn()
     render(<MultipleChoiceField question={question} value={null} onChange={onChange} onSubmit={noop} />)
     fireEvent.click(screen.getAllByRole("radio")[2])
-    expect(onChange).toHaveBeenCalledWith("c")
+    expect(onChange).toHaveBeenCalledWith("Opção C")
   })
 
   it("calls onSubmit after 280ms delay on click", () => {

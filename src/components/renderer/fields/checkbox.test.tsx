@@ -17,7 +17,7 @@ describe("CheckboxField", () => {
   })
 
   it("marks selected options as checked", () => {
-    render(<CheckboxField question={question} value={["x", "z"]} onChange={noop} onSubmit={noop} />)
+    render(<CheckboxField question={question} value={["X", "Z"]} onChange={noop} onSubmit={noop} />)
     const checkboxes = screen.getAllByRole("checkbox")
     expect(checkboxes[0]).toHaveAttribute("aria-checked", "true")
     expect(checkboxes[1]).toHaveAttribute("aria-checked", "false")
@@ -26,16 +26,16 @@ describe("CheckboxField", () => {
 
   it("calls onChange with added id when an unchecked option is clicked", async () => {
     const onChange = vi.fn()
-    render(<CheckboxField question={question} value={["x"]} onChange={onChange} onSubmit={noop} />)
+    render(<CheckboxField question={question} value={["X"]} onChange={onChange} onSubmit={noop} />)
     await userEvent.click(screen.getAllByRole("checkbox")[1]) // click Y
-    expect(onChange).toHaveBeenCalledWith(["x", "y"])
+    expect(onChange).toHaveBeenCalledWith(["X", "Y"])
   })
 
   it("calls onChange with id removed when a checked option is clicked", async () => {
     const onChange = vi.fn()
-    render(<CheckboxField question={question} value={["x", "y"]} onChange={onChange} onSubmit={noop} />)
+    render(<CheckboxField question={question} value={["X", "Y"]} onChange={onChange} onSubmit={noop} />)
     await userEvent.click(screen.getAllByRole("checkbox")[0]) // uncheck X
-    expect(onChange).toHaveBeenCalledWith(["y"])
+    expect(onChange).toHaveBeenCalledWith(["Y"])
   })
 
   it("does NOT call onSubmit when an option is toggled", async () => {
