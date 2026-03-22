@@ -44,10 +44,9 @@ function LoginForm() {
         </p>
       </div>
 
-      {/* Google OAuth */}
+      {/* Google OAuth (Temporarily disabled for Beta)
       <GoogleLoginButton next={next} />
 
-      {/* Separator */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t" />
@@ -56,6 +55,7 @@ function LoginForm() {
           <span className="bg-background px-2 text-muted-foreground">ou continue com e-mail</span>
         </div>
       </div>
+      */}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <input type="hidden" name="next" value={next} />
