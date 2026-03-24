@@ -265,14 +265,16 @@ export async function submitResponseCore(params: {
 
   // 12. Append to Google Sheets (fire-and-forget)
   const { data: sheetsIntegrations } = await getIntegrationsByForm(formId, "google_sheets")
+  console.log("[Google Sheets] integrations found:", sheetsIntegrations?.length ?? 0, "formId:", formId)
   if (sheetsIntegrations && sheetsIntegrations.length > 0) {
     const questionOrder = formQuestions
       .filter((q) => !NON_INPUT_TYPES.has(q.type))
       .map((q) => ({ id: q.id, title: q.title, order: q.order }))
 
     for (const integration of sheetsIntegrations) {
-      if (!integration.enabled) continue
       const config = integration.config as IntegrationConfig
+      console.log("[Google Sheets] integration:", { id: integration.id, enabled: integration.enabled, hasAccessToken: !!config.accessToken, hasRefreshToken: !!config.refreshToken, spreadsheetId: config.spreadsheetId, sheetName: config.sheetName })
+      if (!integration.enabled) continue
       if (!config.accessToken || !config.refreshToken || !config.spreadsheetId || !config.sheetName) continue
       appendGoogleSheetsRow({
         accessToken: config.accessToken,
