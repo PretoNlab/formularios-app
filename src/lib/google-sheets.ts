@@ -176,7 +176,7 @@ export async function appendGoogleSheetsRow({
   await sheets.spreadsheets.values.append({
     spreadsheetId,
     range,
-    valueInputOption: "RAW",
+    valueInputOption: "USER_ENTERED",
     requestBody: { values: [row] },
   })
 }
