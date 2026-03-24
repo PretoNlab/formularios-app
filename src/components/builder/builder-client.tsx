@@ -53,7 +53,7 @@ import {
   configureGoogleSheetsAction,
   disconnectGoogleSheetsAction,
 } from "@/app/actions/integrations"
-import type { Form, Question, QuestionType, ThemeConfig, LogicRule, LogicOperator } from "@/lib/types/form"
+import type { Form, Question, QuestionType, QuestionProperties, ThemeConfig, LogicRule, LogicOperator } from "@/lib/types/form"
 import { QUESTION_TYPES } from "@/lib/types/form"
 import type { IntegrationRow } from "@/lib/db/queries/integrations"
 import { PRESET_THEMES, AVAILABLE_FONTS } from "@/config/themes"
@@ -239,16 +239,46 @@ const SIDEBAR_TYPES: QuestionType[] = [
 
 function createQuestion(type: QuestionType, formId: string, order: number): Question {
   const hasOptions = ["multiple_choice", "checkbox", "dropdown"].includes(type)
+
+  const defaultProperties: Record<string, QuestionProperties> = {
+    multiple_choice: { options: [{ id: crypto.randomUUID(), label: "Opção 1" }, { id: crypto.randomUUID(), label: "Opção 2" }, { id: crypto.randomUUID(), label: "Opção 3" }] },
+    checkbox:        { options: [{ id: crypto.randomUUID(), label: "Opção 1" }, { id: crypto.randomUUID(), label: "Opção 2" }, { id: crypto.randomUUID(), label: "Opção 3" }] },
+    dropdown:        { options: [{ id: crypto.randomUUID(), label: "Opção 1" }, { id: crypto.randomUUID(), label: "Opção 2" }, { id: crypto.randomUUID(), label: "Opção 3" }] },
+    rating:          { ratingStyle: "stars", ratingMax: 5 },
+    scale:           { scaleMin: 1, scaleMax: 10, scaleMinLabel: "Ruim", scaleMaxLabel: "Ótimo" },
+    nps:             { scaleMin: 0, scaleMax: 10, scaleMinLabel: "Nada provável", scaleMaxLabel: "Muito provável" },
+    email:           { placeholder: "seu@email.com" },
+    phone:           { placeholder: "(00) 00000-0000" },
+    number:          { placeholder: "0" },
+    short_text:      { placeholder: "Digite aqui..." },
+    long_text:       { placeholder: "Escreva sua resposta..." },
+    url:             { placeholder: "https://" },
+  }
+
+  const defaultTitles: Partial<Record<QuestionType, string>> = {
+    nps:             "Em uma escala de 0 a 10, qual a probabilidade de você nos recomendar?",
+    rating:          "Como você avalia nossa experiência?",
+    scale:           "Como você avalia nosso serviço?",
+    email:           "Qual é o seu e-mail?",
+    phone:           "Qual é o seu telefone?",
+    short_text:      "Qual é o seu nome?",
+    yes_no:          "Você concorda com os termos?",
+    file_upload:     "Envie um arquivo",
+    signature:       "Assine abaixo",
+    welcome:         "Bem-vindo(a)!",
+    thank_you:       "Obrigado pela sua resposta!",
+  }
+
   return {
     id: crypto.randomUUID(),
     formId,
     type,
-    title: QUESTION_TYPES[type].label,
+    title: defaultTitles[type] ?? QUESTION_TYPES[type].label,
     required: false,
     order,
     properties: hasOptions
-      ? { options: [{ id: crypto.randomUUID(), label: "Opção 1" }, { id: crypto.randomUUID(), label: "Opção 2" }] }
-      : {},
+      ? defaultProperties[type] ?? { options: [{ id: crypto.randomUUID(), label: "Opção 1" }, { id: crypto.randomUUID(), label: "Opção 2" }] }
+      : defaultProperties[type] ?? {},
     logicRules: [],
   }
 }
@@ -288,7 +318,49 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [copied, setCopied] = useState(false)
   const [isPublishing, startPublishTransition] = useTransition()
+  const [fieldSearch, setFieldSearch] = useState("")
   const selectedQuestion = form.questions.find((q) => q.id === selectedQuestionId) ?? null
+
+  const undo = useBuilderStore((s) => s.undo)
+  const redo = useBuilderStore((s) => s.redo)
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      const isTyping = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable
+
+      const mod = e.metaKey || e.ctrlKey
+
+      if (mod && e.key === "z" && !e.shiftKey) { e.preventDefault(); undo(); return }
+      if (mod && (e.key === "y" || (e.key === "z" && e.shiftKey))) { e.preventDefault(); redo(); return }
+
+      if (isTyping) return
+
+      if (mod && e.key === "d" && selectedQuestionId) { e.preventDefault(); duplicateQuestion(selectedQuestionId); return }
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedQuestionId) {
+        e.preventDefault()
+        deleteQuestion(selectedQuestionId)
+        selectQuestion(null)
+        return
+      }
+      if (e.key === "Escape") { selectQuestion(null); return }
+      if (e.key === "ArrowUp" && selectedQuestionId) {
+        e.preventDefault()
+        const idx = form.questions.findIndex((q) => q.id === selectedQuestionId)
+        if (idx > 0) selectQuestion(form.questions[idx - 1].id)
+        return
+      }
+      if (e.key === "ArrowDown" && selectedQuestionId) {
+        e.preventDefault()
+        const idx = form.questions.findIndex((q) => q.id === selectedQuestionId)
+        if (idx < form.questions.length - 1) selectQuestion(form.questions[idx + 1].id)
+        return
+      }
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [selectedQuestionId, form.questions, undo, redo, duplicateQuestion, deleteQuestion, selectQuestion])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -342,49 +414,99 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
 
         <ScrollArea className="flex-1">
           {sidebarTab === "fields" && (
-            <div className="p-4 space-y-6">
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Adicionar Campo</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {SIDEBAR_TYPES.map((type) => {
-                    const Icon = TYPE_ICONS[type] ?? Type
-                    return (
-                      <Button
-                        key={type}
-                        variant="outline"
-                        size="sm"
-                        className="h-20 flex-col gap-2 border-dashed bg-muted/20 hover:bg-muted/50 hover:border-solid hover:text-foreground text-muted-foreground transition-all"
-                        onClick={() => handleAddQuestion(type)}
-                      >
-                        <Icon className="h-5 w-5" />
-                        <span className="text-[10px] leading-tight text-center">{QUESTION_TYPES[type].label}</span>
-                      </Button>
-                    )
-                  })}
-                </div>
+            <div className="p-4 space-y-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={fieldSearch}
+                  onChange={(e) => setFieldSearch(e.target.value)}
+                  placeholder="Buscar campo..."
+                  className="w-full h-8 rounded-md border border-input bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+                <Type className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                {fieldSearch && (
+                  <button onClick={() => setFieldSearch("")} className="absolute right-2 top-2 text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
 
-              <Separator />
+              {(() => {
+                const filtered = SIDEBAR_TYPES.filter((type) =>
+                  !fieldSearch || QUESTION_TYPES[type].label.toLowerCase().includes(fieldSearch.toLowerCase())
+                )
+                const filteredSpecial = (["welcome", "statement", "thank_you"] as QuestionType[]).filter((type) =>
+                  !fieldSearch || QUESTION_TYPES[type].label.toLowerCase().includes(fieldSearch.toLowerCase())
+                )
+                if (filtered.length === 0 && filteredSpecial.length === 0) {
+                  return <p className="text-sm text-muted-foreground text-center py-4">Nenhum campo encontrado</p>
+                }
+                return (
+                  <>
+                    {filtered.length > 0 && (
+                      <div className="space-y-3">
+                        {!fieldSearch && <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Adicionar Campo</h4>}
+                        <div className="grid grid-cols-2 gap-2">
+                          {filtered.map((type) => {
+                            const Icon = TYPE_ICONS[type] ?? Type
+                            return (
+                              <Button
+                                key={type}
+                                variant="outline"
+                                size="sm"
+                                className="h-20 flex-col gap-2 border-dashed bg-muted/20 hover:bg-muted/50 hover:border-solid hover:text-foreground text-muted-foreground transition-all"
+                                onClick={() => { handleAddQuestion(type); setFieldSearch("") }}
+                              >
+                                <Icon className="h-5 w-5" />
+                                <span className="text-[10px] leading-tight text-center">{QUESTION_TYPES[type].label}</span>
+                              </Button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
 
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Páginas Especiais</h4>
-                <div className="space-y-2">
-                  {(["welcome", "statement", "thank_you"] as QuestionType[]).map((type) => {
-                    const Icon = TYPE_ICONS[type] ?? Type
-                    return (
-                      <Button
-                        key={type}
-                        variant="outline"
-                        className="w-full justify-start text-sm h-10 border-dashed"
-                        onClick={() => handleAddQuestion(type)}
-                      >
-                        <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                        {QUESTION_TYPES[type].label}
-                      </Button>
-                    )
-                  })}
+                    {filteredSpecial.length > 0 && (
+                      <>
+                        {filtered.length > 0 && <Separator />}
+                        <div className="space-y-3">
+                          {!fieldSearch && <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Páginas Especiais</h4>}
+                          <div className="space-y-2">
+                            {filteredSpecial.map((type) => {
+                              const Icon = TYPE_ICONS[type] ?? Type
+                              return (
+                                <Button
+                                  key={type}
+                                  variant="outline"
+                                  className="w-full justify-start text-sm h-10 border-dashed"
+                                  onClick={() => { handleAddQuestion(type); setFieldSearch("") }}
+                                >
+                                  <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                  {QUESTION_TYPES[type].label}
+                                </Button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )
+              })()}
+
+              {!fieldSearch && (
+                <div className="rounded-md bg-muted/50 p-2.5 space-y-1">
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Atalhos</p>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
+                    <span><kbd className="font-mono">↑↓</kbd> Navegar</span>
+                    <span><kbd className="font-mono">Ctrl+D</kbd> Duplicar</span>
+                    <span><kbd className="font-mono">Del</kbd> Excluir</span>
+                    <span><kbd className="font-mono">Ctrl+Z</kbd> Desfazer</span>
+                    <span><kbd className="font-mono">Esc</kbd> Desselecionar</span>
+                    <span><kbd className="font-mono">Ctrl+Y</kbd> Refazer</span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
