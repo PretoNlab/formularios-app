@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { eq, desc, sql, getTableColumns } from "drizzle-orm"
 import { db } from "../client"
 import { forms, questions } from "../schema"
@@ -64,28 +65,28 @@ export async function getFormsByWorkspace(
  * Fetches a published form by slug for the public renderer.
  * Includes all questions ordered by `order` asc.
  */
-export async function getFormBySlug(
-  slug: string
-): Promise<ApiResponse<FormWithQuestions | null>> {
-  try {
-    const form = await db.query.forms.findFirst({
-      where: eq(forms.slug, slug),
-      with: {
-        questions: { orderBy: (q, { asc }) => [asc(q.order)] },
-      },
-    })
+export const getFormBySlug = cache(
+  async (slug: string): Promise<ApiResponse<FormWithQuestions | null>> => {
+    try {
+      const form = await db.query.forms.findFirst({
+        where: eq(forms.slug, slug),
+        with: {
+          questions: { orderBy: (q, { asc }) => [asc(q.order)] },
+        },
+      })
 
-    return { success: true, data: form ?? null }
-  } catch (error) {
-    return {
-      success: false,
-      error: {
-        code: "DB_ERROR",
-        message: error instanceof Error ? error.message : "Database error",
-      },
+      return { success: true, data: form ?? null }
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: "DB_ERROR",
+          message: error instanceof Error ? error.message : "Database error",
+        },
+      }
     }
   }
-}
+)
 
 /**
  * Fetches a form by ID for the builder.

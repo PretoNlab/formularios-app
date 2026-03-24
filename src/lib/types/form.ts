@@ -60,6 +60,7 @@ export interface QuestionProperties {
   allowedFileTypes?: string[]
   maxFileSize?: number
   defaultCountry?: string
+  contentAlign?: "left" | "center" | "right"
   buttonText?: string
   imageUrl?: string
   videoUrl?: string

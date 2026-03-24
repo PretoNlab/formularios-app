@@ -1090,11 +1090,16 @@ function AnswerDisplay({ value, type }: { value: unknown; type?: string }) {
   if (Array.isArray(value)) {
     return (
       <div className="flex flex-wrap gap-1.5">
-        {(value as unknown[]).map((item, i) => (
-          <span key={i} className="rounded-full bg-primary/10 text-primary text-xs font-medium px-3 py-1">
-            {String(item)}
-          </span>
-        ))}
+        {(value as unknown[]).map((item, i) => {
+          const label = typeof item === "string" && item.startsWith("__other__")
+            ? `Outro: ${item.slice(9)}`
+            : String(item)
+          return (
+            <span key={i} className="rounded-full bg-primary/10 text-primary text-xs font-medium px-3 py-1">
+              {label}
+            </span>
+          )
+        })}
       </div>
     )
   }
@@ -1120,7 +1125,8 @@ function AnswerDisplay({ value, type }: { value: unknown; type?: string }) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={value} alt="Assinatura" className="max-h-20 border rounded bg-white" />
   }
-  const text = String(value)
+  const raw = String(value)
+  const text = raw.startsWith("__other__") ? `Outro: ${raw.slice(9)}` : raw
   return (
     <p className={`text-sm leading-relaxed ${text.length > 80 ? "whitespace-pre-wrap" : ""}`}>
       {text}
@@ -1374,14 +1380,19 @@ function ResponsesTable({ responses, questions, onOpen }: {
   )
 }
 
+function stripOther(s: unknown): string {
+  const str = String(s)
+  return str.startsWith("__other__") ? `Outro: ${str.slice(9)}` : str
+}
+
 function formatAnswerValue(value: unknown): string {
   if (value === null || value === undefined) return "—"
   if (typeof value === "boolean") return value ? "Sim" : "Não"
-  if (Array.isArray(value)) return value.join(", ")
+  if (Array.isArray(value)) return value.map(stripOther).join(", ")
   if (typeof value === "object" && "fileName" in (value as object)) {
     return `📎 ${(value as { fileName: string }).fileName}`
   }
-  return String(value)
+  return stripOther(value)
 }
 
 // ─── Response Filters ─────────────────────────────────────────────────────────

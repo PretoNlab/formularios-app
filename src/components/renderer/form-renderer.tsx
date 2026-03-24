@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useRef, useState } from "react"
+import { preload } from "react-dom"
 import type {
     AnswerValue,
     Form,
@@ -507,15 +508,40 @@ function DownloadInput({ question, onChange }: InputProps) {
     )
 }
 
-function FileUploadInput({ value, onChange, formId }: InputProps) {
+function FileUploadInput({ question, value, onChange, formId }: InputProps) {
     const ref = useRef<HTMLInputElement>(null)
     const fileData = value as { fileUrl: string; fileName: string } | null
     const [uploading, setUploading] = useState(false)
     const [uploadError, setUploadError] = useState<string | null>(null)
 
+    const { allowedFileTypes, maxFileSize } = question.properties
+    const accept = allowedFileTypes?.join(",") ?? undefined
+
     const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
+
+        if (maxFileSize && file.size > maxFileSize * 1024 * 1024) {
+            setUploadError(`O arquivo excede o tamanho máximo de ${maxFileSize} MB.`)
+            return
+        }
+
+        if (allowedFileTypes && allowedFileTypes.length > 0) {
+            const isAllowed = allowedFileTypes.some(type => {
+                if (type.endsWith('/*')) {
+                    return file.type.startsWith(type.replace('/*', '/'))
+                }
+                if (type.includes(',')) {
+                    return type.split(',').some(t => t.trim() === file.type)
+                }
+                return type === file.type
+            })
+
+            if (!isAllowed && file.type !== "") {
+                setUploadError("Tipo de arquivo não permitido.")
+                return
+            }
+        }
 
         setUploadError(null)
         setUploading(true)
@@ -542,7 +568,7 @@ function FileUploadInput({ value, onChange, formId }: InputProps) {
 
     return (
         <div className="ff-upload" onClick={() => !uploading && ref.current?.click()}>
-            <input ref={ref} type="file" style={{ display: "none" }} onChange={handleChange} disabled={uploading} />
+            <input ref={ref} type="file" accept={accept} style={{ display: "none" }} onChange={handleChange} disabled={uploading} />
             {uploading ? (
                 <div className="ff-upload-preview">
                     <span className="ff-upload-uploading">⏳ Enviando arquivo...</span>
@@ -556,7 +582,21 @@ function FileUploadInput({ value, onChange, formId }: InputProps) {
                 <>
                     <div className="ff-upload-icon">📁</div>
                     <p>Clique ou arraste um arquivo aqui</p>
-                    {uploadError && <p className="ff-upload-error">{uploadError}</p>}
+                    {((allowedFileTypes?.length ?? 0) > 0 || maxFileSize) && (
+                        <p className="ff-upload-hint" style={{ fontSize: "0.8rem", marginTop: "8px", opacity: 0.7 }}>
+                            {(allowedFileTypes?.length ?? 0) > 0 && (
+                                <>Formatos: {allowedFileTypes!.map((t) =>
+                                    t === "image/*" ? "Imagens" :
+                                    t === "video/*" ? "Vídeos" :
+                                    t === "audio/*" ? "Áudio" :
+                                    t === "application/pdf" ? "PDF" :
+                                    t.includes("word") ? "Word" : t
+                                ).join(", ")}</>
+                            )}
+                            {maxFileSize ? (allowedFileTypes?.length ? ` • Máx ${maxFileSize} MB` : `Máx ${maxFileSize} MB`) : ""}
+                        </p>
+                    )}
+                    {uploadError && <p className="ff-upload-error" style={{ color: "#ef4444", marginTop: "8px", fontSize: "0.9rem" }}>{uploadError}</p>}
                 </>
             )}
         </div>
@@ -590,9 +630,9 @@ function SignatureInput({ value, onChange }: InputProps) {
             onChange(canvas.toDataURL())
         }
 
-        canvas.addEventListener("pointerdown", start)
-        canvas.addEventListener("pointermove", draw)
-        canvas.addEventListener("pointerup", stop)
+        canvas.addEventListener("pointerdown", start, { passive: true })
+        canvas.addEventListener("pointermove", draw, { passive: true })
+        canvas.addEventListener("pointerup", stop, { passive: true })
         return () => {
             canvas.removeEventListener("pointerdown", start)
             canvas.removeEventListener("pointermove", draw)
@@ -735,6 +775,7 @@ export function FormRenderer({
     // Direction for the slide animation
     const [direction, setDirection] = useState<"up" | "down">("up")
     const [animating, setAnimating] = useState(false)
+    const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const currentQ = questions[state.currentQuestionIndex]
     const isLastQuestion = state.currentQuestionIndex >= questions.length - 1
@@ -799,7 +840,8 @@ export function FormRenderer({
 
         setDirection("up")
         setAnimating(true)
-        setTimeout(() => {
+        if (animTimerRef.current) clearTimeout(animTimerRef.current)
+        animTimerRef.current = setTimeout(() => {
             setState((s) => ({
                 ...s,
                 currentQuestionIndex: nextIdx,
@@ -807,7 +849,8 @@ export function FormRenderer({
             }))
             setAnimating(false)
         }, 220)
-    }, [currentQ, isLastQuestion, isValid, onProgress, onSubmit, questions, state])
+    }, [currentQ, isLastQuestion, isValid, onProgress, onSubmit, questions,
+        state.isComplete, state.answers, state.currentQuestionIndex])
 
     // ── Navigate back ──
     const goBack = useCallback(() => {
@@ -817,11 +860,12 @@ export function FormRenderer({
         while (prevIdx > 0 && hidden.has(questions[prevIdx].id)) prevIdx--
         setDirection("down")
         setAnimating(true)
-        setTimeout(() => {
+        if (animTimerRef.current) clearTimeout(animTimerRef.current)
+        animTimerRef.current = setTimeout(() => {
             setState((s) => ({ ...s, currentQuestionIndex: prevIdx }))
             setAnimating(false)
         }, 220)
-    }, [questions, state])
+    }, [questions, state.currentQuestionIndex, state.answers])
 
     // ── Keyboard shortcut: Enter to advance ──
     useEffect(() => {
@@ -836,6 +880,13 @@ export function FormRenderer({
         window.addEventListener("keydown", handler)
         return () => window.removeEventListener("keydown", handler)
     }, [goNext, isLayoutQ])
+
+    // ── Cleanup animation timer on unmount ──
+    useEffect(() => {
+        return () => {
+            if (animTimerRef.current) clearTimeout(animTimerRef.current)
+        }
+    }, [])
 
     // ── CSS variables from theme ──
     const cssVars = getThemeCSSVariables(theme)
@@ -918,7 +969,7 @@ export function FormRenderer({
             )}
 
             <div className={`ff-screen ${slideClass}`}>
-                <div className="ff-card">
+                <div className="ff-card" style={currentQ.properties.contentAlign ? { textAlign: currentQ.properties.contentAlign } : undefined}>
                     {questionNumber != null && (
                         <div className="ff-question-number">
                             {questionNumber} <span className="ff-question-arrow">→</span>
@@ -938,13 +989,40 @@ export function FormRenderer({
                         <p className="ff-question-desc">{currentQ.description}</p>
                     )}
 
-                    {currentQ.properties.imageUrl && (
+                    {currentQ.properties.videoUrl ? (
+                        <video
+                            src={currentQ.properties.videoUrl}
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="ff-question-image"
+                            style={{
+                                display: "block",
+                                maxWidth: "100%",
+                                borderRadius: "8px",
+                                marginTop: "0",
+                                marginBottom: "24px",
+                                marginLeft: currentQ.properties.contentAlign === "center" || currentQ.properties.contentAlign === "right" ? "auto" : "0",
+                                marginRight: currentQ.properties.contentAlign === "center" || currentQ.properties.contentAlign === "left" || !currentQ.properties.contentAlign ? "auto" : "0",
+                            }}
+                        />
+                    ) : currentQ.properties.imageUrl ? (
                         <img
                             src={currentQ.properties.imageUrl}
                             alt=""
                             className="ff-question-image"
+                            style={{
+                                display: "block",
+                                maxWidth: "100%",
+                                borderRadius: "8px",
+                                marginTop: "0",
+                                marginBottom: "24px",
+                                marginLeft: currentQ.properties.contentAlign === "center" || currentQ.properties.contentAlign === "right" ? "auto" : "0",
+                                marginRight: currentQ.properties.contentAlign === "center" || currentQ.properties.contentAlign === "left" || !currentQ.properties.contentAlign ? "auto" : "0",
+                            }}
                         />
-                    )}
+                    ) : null}
 
                     <div className="ff-answer-area">
                         <Renderer
@@ -989,7 +1067,7 @@ export function FormRenderer({
 // ─── Scoped Styles ─────────────────────────────────────────────────────────────
 // Injected once into the document head so the component is self-contained.
 
-function FormStyles({ headingFont, bodyFont }: { headingFont: string; bodyFont: string }) {
+export function FormStyles({ headingFont, bodyFont }: { headingFont: string; bodyFont: string }) {
     useEffect(() => {
         const id = "ff-renderer-styles"
         if (!document.getElementById(id)) {
@@ -1001,19 +1079,23 @@ function FormStyles({ headingFont, bodyFont }: { headingFont: string; bodyFont: 
         return () => { document.getElementById("ff-renderer-styles")?.remove() }
     }, [])
 
+    const families = [headingFont, bodyFont]
+        .map((f) => `family=${encodeURIComponent(f)}:wght@400;600;700`)
+        .join("&")
+    const fontHref = `https://fonts.googleapis.com/css2?${families}&display=swap`
+    preload(fontHref, { as: "style" })
+
     useEffect(() => {
-        const id = "ff-google-fonts"
-        document.getElementById(id)?.remove()
-        const link = document.createElement("link")
-        link.id = id
-        link.rel = "stylesheet"
-        const families = [headingFont, bodyFont]
-            .map((f) => `family=${encodeURIComponent(f)}:wght@400;600;700`)
-            .join("&")
-        link.href = `https://fonts.googleapis.com/css2?${families}&display=swap`
-        document.head.appendChild(link)
-        return () => { document.getElementById("ff-google-fonts")?.remove() }
-    }, [headingFont, bodyFont])
+        const id = "ff-font-stylesheet"
+        if (!document.getElementById(id)) {
+            const link = document.createElement("link")
+            link.id = id
+            link.rel = "stylesheet"
+            link.href = fontHref
+            document.head.appendChild(link)
+        }
+        return () => { document.getElementById("ff-font-stylesheet")?.remove() }
+    }, [fontHref])
 
     return null
 }
@@ -1290,7 +1372,7 @@ const FF_CSS = `
 .ff-download-btn {
   display: inline-flex; align-items: center; gap: 8px;
   margin-top: 24px; padding: 12px 24px; border-radius: 8px;
-  background: var(--ff-accent); color: #fff;
+  background: var(--ff-accent); color: var(--ff-bg);
   font-size: 0.95rem; font-weight: 600; text-decoration: none;
   transition: opacity 0.15s;
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useTransition, useState, useRef } from "react"
+import { useEffect, useTransition, useState, useRef, useMemo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -41,6 +41,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { FormRenderer } from "@/components/renderer/form-renderer"
 
 import { useBuilderStore } from "@/stores/builder-store"
+import { useShallow } from "zustand/react/shallow"
 import { useAutoSave } from "@/lib/hooks/use-auto-save"
 import { publishFormAction } from "@/app/actions/forms"
 import {
@@ -124,13 +125,10 @@ function BuilderDiagram({ highlight }: { highlight: "left" | "center" | "top" })
 }
 
 function BuilderTour() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(
+    () => typeof window !== "undefined" && !localStorage.getItem(BUILDER_TOUR_KEY)
+  )
   const [step, setStep] = useState(0)
-
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    if (!localStorage.getItem(BUILDER_TOUR_KEY)) setOpen(true)
-  }, [])
 
   function dismiss() {
     localStorage.setItem(BUILDER_TOUR_KEY, "done")
@@ -286,8 +284,9 @@ function createQuestion(type: QuestionType, formId: string, order: number): Ques
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function BuilderClient({ initialForm }: { initialForm: Form }) {
-  const storeForm = useBuilderStore((s) => s.form)
-  const setForm = useBuilderStore((s) => s.setForm)
+  const { storeForm, setForm } = useBuilderStore(
+    useShallow((s) => ({ storeForm: s.form, setForm: s.setForm }))
+  )
 
   useEffect(() => {
     setForm(initialForm)
@@ -297,19 +296,33 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
   const form = (storeForm as unknown as Form | null) ?? initialForm
 
   const { isSaving } = useAutoSave()
-  const hasUnsavedChanges = useBuilderStore((s) => s.hasUnsavedChanges)
-  const selectedQuestionId = useBuilderStore((s) => s.selectedQuestionId)
-  const selectQuestion = useBuilderStore((s) => s.selectQuestion)
-  const addQuestion = useBuilderStore((s) => s.addQuestion)
-  const deleteQuestion = useBuilderStore((s) => s.deleteQuestion)
-  const duplicateQuestion = useBuilderStore((s) => s.duplicateQuestion)
-  const updateFormStatus = useBuilderStore((s) => s.updateFormStatus)
-  const updateFormTitle = useBuilderStore((s) => s.updateFormTitle)
-  const updateFormDescription = useBuilderStore((s) => s.updateFormDescription)
-  const updateFormSettings = useBuilderStore((s) => s.updateFormSettings)
-  const updateFormSlug = useBuilderStore((s) => s.updateFormSlug)
-  const updateFormTheme = useBuilderStore((s) => s.updateFormTheme)
-  const reorderQuestions = useBuilderStore((s) => s.reorderQuestions)
+
+  const { hasUnsavedChanges, selectedQuestionId } = useBuilderStore(
+    useShallow((s) => ({ hasUnsavedChanges: s.hasUnsavedChanges, selectedQuestionId: s.selectedQuestionId }))
+  )
+
+  const {
+    selectQuestion, addQuestion, deleteQuestion, duplicateQuestion,
+    updateFormStatus, updateFormTitle, updateFormDescription,
+    updateFormSettings, updateFormSlug, updateFormTheme,
+    reorderQuestions, undo, redo,
+  } = useBuilderStore(
+    useShallow((s) => ({
+      selectQuestion: s.selectQuestion,
+      addQuestion: s.addQuestion,
+      deleteQuestion: s.deleteQuestion,
+      duplicateQuestion: s.duplicateQuestion,
+      updateFormStatus: s.updateFormStatus,
+      updateFormTitle: s.updateFormTitle,
+      updateFormDescription: s.updateFormDescription,
+      updateFormSettings: s.updateFormSettings,
+      updateFormSlug: s.updateFormSlug,
+      updateFormTheme: s.updateFormTheme,
+      reorderQuestions: s.reorderQuestions,
+      undo: s.undo,
+      redo: s.redo,
+    }))
+  )
 
   const [sidebarTab, setSidebarTab] = useState<"fields" | "config" | "webhooks" | "theme">("fields")
   const [builderMode, setBuilderMode] = useState<"editor" | "logic" | "preview">("editor")
@@ -320,9 +333,6 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
   const [isPublishing, startPublishTransition] = useTransition()
   const [fieldSearch, setFieldSearch] = useState("")
   const selectedQuestion = form.questions.find((q) => q.id === selectedQuestionId) ?? null
-
-  const undo = useBuilderStore((s) => s.undo)
-  const redo = useBuilderStore((s) => s.redo)
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -396,6 +406,16 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
 
   const shareLink = `${typeof window !== "undefined" ? window.location.origin : "https://formularios.ia"}/f/${form.slug}`
 
+  const filteredFields = useMemo(() =>
+    SIDEBAR_TYPES.filter((type) =>
+      !fieldSearch || QUESTION_TYPES[type].label.toLowerCase().includes(fieldSearch.toLowerCase())
+    ), [fieldSearch])
+
+  const filteredSpecialFields = useMemo(() =>
+    (["welcome", "statement", "thank_you"] as QuestionType[]).filter((type) =>
+      !fieldSearch || QUESTION_TYPES[type].label.toLowerCase().includes(fieldSearch.toLowerCase())
+    ), [fieldSearch])
+
   return (
     <div className="flex h-full w-full">
 
@@ -431,68 +451,59 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
                 )}
               </div>
 
-              {(() => {
-                const filtered = SIDEBAR_TYPES.filter((type) =>
-                  !fieldSearch || QUESTION_TYPES[type].label.toLowerCase().includes(fieldSearch.toLowerCase())
-                )
-                const filteredSpecial = (["welcome", "statement", "thank_you"] as QuestionType[]).filter((type) =>
-                  !fieldSearch || QUESTION_TYPES[type].label.toLowerCase().includes(fieldSearch.toLowerCase())
-                )
-                if (filtered.length === 0 && filteredSpecial.length === 0) {
-                  return <p className="text-sm text-muted-foreground text-center py-4">Nenhum campo encontrado</p>
-                }
-                return (
-                  <>
-                    {filtered.length > 0 && (
+              {filteredFields.length === 0 && filteredSpecialFields.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhum campo encontrado</p>
+              ) : (
+                <>
+                  {filteredFields.length > 0 && (
+                    <div className="space-y-3">
+                      {!fieldSearch && <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Adicionar Campo</h4>}
+                      <div className="grid grid-cols-2 gap-2">
+                        {filteredFields.map((type) => {
+                          const Icon = TYPE_ICONS[type] ?? Type
+                          return (
+                            <Button
+                              key={type}
+                              variant="outline"
+                              size="sm"
+                              className="h-20 flex-col gap-2 border-dashed bg-muted/20 hover:bg-muted/50 hover:border-solid hover:text-foreground text-muted-foreground transition-all"
+                              onClick={() => { handleAddQuestion(type); setFieldSearch("") }}
+                            >
+                              <Icon className="h-5 w-5" />
+                              <span className="text-[10px] leading-tight text-center">{QUESTION_TYPES[type].label}</span>
+                            </Button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {filteredSpecialFields.length > 0 && (
+                    <>
+                      {filteredFields.length > 0 && <Separator />}
                       <div className="space-y-3">
-                        {!fieldSearch && <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Adicionar Campo</h4>}
-                        <div className="grid grid-cols-2 gap-2">
-                          {filtered.map((type) => {
+                        {!fieldSearch && <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Páginas Especiais</h4>}
+                        <div className="space-y-2">
+                          {filteredSpecialFields.map((type) => {
                             const Icon = TYPE_ICONS[type] ?? Type
                             return (
                               <Button
                                 key={type}
                                 variant="outline"
-                                size="sm"
-                                className="h-20 flex-col gap-2 border-dashed bg-muted/20 hover:bg-muted/50 hover:border-solid hover:text-foreground text-muted-foreground transition-all"
+                                className="w-full justify-start text-sm h-10 border-dashed"
                                 onClick={() => { handleAddQuestion(type); setFieldSearch("") }}
                               >
-                                <Icon className="h-5 w-5" />
-                                <span className="text-[10px] leading-tight text-center">{QUESTION_TYPES[type].label}</span>
+                                <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                {QUESTION_TYPES[type].label}
                               </Button>
                             )
                           })}
                         </div>
                       </div>
-                    )}
-
-                    {filteredSpecial.length > 0 && (
-                      <>
-                        {filtered.length > 0 && <Separator />}
-                        <div className="space-y-3">
-                          {!fieldSearch && <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Páginas Especiais</h4>}
-                          <div className="space-y-2">
-                            {filteredSpecial.map((type) => {
-                              const Icon = TYPE_ICONS[type] ?? Type
-                              return (
-                                <Button
-                                  key={type}
-                                  variant="outline"
-                                  className="w-full justify-start text-sm h-10 border-dashed"
-                                  onClick={() => { handleAddQuestion(type); setFieldSearch("") }}
-                                >
-                                  <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                                  {QUESTION_TYPES[type].label}
-                                </Button>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </>
-                )
-              })()}
+                    </>
+                  )}
+                </>
+              )}
 
               {!fieldSearch && (
                 <div className="rounded-md bg-muted/50 p-2.5 space-y-1">
@@ -661,8 +672,11 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
             )}
           </div>
         ) : (
-          <ScrollArea className="flex-1 p-8 pt-24">
-            <div className="mx-auto max-w-2xl space-y-4">
+          <ScrollArea className="flex-1">
+            <div
+              className="min-h-full p-8 pt-24 bg-muted/30"
+            >
+              <div className="mx-auto max-w-2xl space-y-4">
               {/* Logotipo do formulário */}
             {form.theme.logo?.url && (
               <div 
@@ -724,7 +738,8 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
               <Plus className="mr-2 h-4 w-4" /> Adicionar campo de texto curto
             </Button>
           </div>
-        </ScrollArea>
+            </div>
+          </ScrollArea>
         )}
       </main>
 
@@ -1888,7 +1903,6 @@ function GoogleSheetsPanel({ formId }: { formId: string }) {
   )
 }
 
-// ─── Question Card ─────────────────────────────────────────────────────────────
 
 interface QuestionCardProps {
   question: Question
@@ -1900,10 +1914,9 @@ interface QuestionCardProps {
 }
 
 function QuestionCard({ question, index, isSelected, onSelect, onDelete, onDuplicate }: QuestionCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: question.id })
   const Icon = TYPE_ICONS[question.type] ?? Type
   const typeLabel = QUESTION_TYPES[question.type as QuestionType]?.label ?? question.type
-
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: question.id })
 
   return (
     <div
@@ -1911,44 +1924,57 @@ function QuestionCard({ question, index, isSelected, onSelect, onDelete, onDupli
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
       onClick={onSelect}
       className={cn(
-        "group relative flex items-center gap-4 rounded-xl border p-4 transition-all cursor-pointer bg-card hover:border-primary/50 hover:shadow-sm",
-        isSelected ? "border-primary ring-1 ring-primary shadow-sm" : "border-border",
-        isDragging && "shadow-xl z-10"
+        "group relative cursor-pointer rounded-xl transition-all",
+        isSelected ? "ring-2 ring-primary shadow-lg" : "ring-1 ring-transparent hover:ring-primary/30 hover:shadow-md",
+        isDragging && "shadow-2xl z-10"
       )}
     >
-      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground shrink-0">
-        {index + 1}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="secondary" className="text-[10px] uppercase font-semibold text-muted-foreground gap-1">
-            <Icon className="h-3 w-3" />{typeLabel}
-          </Badge>
-          {question.required && (
-            <Badge variant="outline" className="text-[10px] text-destructive border-destructive/30">Obrigatório</Badge>
-          )}
-          {index === 0 && <Badge className="text-[10px] bg-blue-500 hover:bg-blue-600">Primeira pergunta</Badge>}
+      {/* Overlaid controls - appear on hover/select */}
+      <div className={cn(
+        "absolute -top-3 right-3 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
+        isSelected && "opacity-100"
+      )}>
+        <div className="bg-background rounded-md shadow-md border flex items-center divide-x">
+          <span className="px-2 py-1 text-[10px] font-semibold text-muted-foreground">
+            {index + 1}
+          </span>
+          <button
+            className="px-2 py-1 text-muted-foreground hover:text-foreground transition-colors"
+            onClick={(e) => { e.stopPropagation(); onDuplicate() }}
+            title="Duplicar"
+          >
+            <Copy className="h-3 w-3" />
+          </button>
+          <button
+            className="px-2 py-1 text-muted-foreground hover:text-destructive transition-colors"
+            onClick={(e) => { e.stopPropagation(); onDelete() }}
+            title="Excluir"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+          <div
+            className="px-2 py-1 text-muted-foreground/50 cursor-grab active:cursor-grabbing"
+            {...attributes}
+            {...listeners}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical className="h-3 w-3" />
+          </div>
         </div>
-        <h3 className={cn("mt-2 font-medium text-sm truncate", isSelected ? "text-foreground" : "text-muted-foreground")}>
-          {question.title || "(sem título)"}
-        </h3>
       </div>
-      <div className="opacity-0 transition-opacity group-hover:opacity-100 flex items-center gap-1 shrink-0">
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground"
-          onClick={(e) => { e.stopPropagation(); onDuplicate() }} title="Duplicar">
-          <Copy className="h-3.5 w-3.5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive"
-          onClick={(e) => { e.stopPropagation(); onDelete() }} title="Excluir">
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-        <div
-          className="h-7 w-7 flex items-center justify-center text-muted-foreground/40 cursor-grab active:cursor-grabbing"
-          {...attributes}
-          {...listeners}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <GripVertical className="h-4 w-4" />
+      {/* Simple card body */}
+      <div className="bg-card border rounded-xl px-4 py-3 flex items-center gap-3">
+        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
+          <Icon className="h-4 w-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{typeLabel}</span>
+            {question.required && <span className="text-[10px] text-destructive font-bold">*</span>}
+          </div>
+          <p className="text-sm font-medium leading-snug truncate text-foreground">
+            {question.title || <span className="italic text-muted-foreground/50">Sem título</span>}
+          </p>
         </div>
       </div>
     </div>
@@ -2036,6 +2062,117 @@ function DownloadUrlEditor({ question }: { question: Question }) {
   )
 }
 
+function MediaUrlEditor({ question }: { question: Question }) {
+  const updateQuestion = useBuilderStore((s) => s.updateQuestion)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const hasMedia = !!question.properties.imageUrl || !!question.properties.videoUrl
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("O arquivo excede o limite de 10MB.")
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const res = await fetch("/api/upload/completion-file", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Erro no upload")
+      }
+
+      const { url } = await res.json()
+      if (file.type.startsWith("video/")) {
+        updateQuestion(question.id, {
+          properties: { ...question.properties, videoUrl: url, imageUrl: undefined },
+        })
+      } else {
+        updateQuestion(question.id, {
+          properties: { ...question.properties, imageUrl: url, videoUrl: undefined },
+        })
+      }
+    } catch (err: any) {
+      alert(err.message || "Erro ao fazer upload da mídia.")
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
+  const handleRemove = () => {
+    updateQuestion(question.id, {
+      properties: { ...question.properties, imageUrl: undefined, videoUrl: undefined },
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      {hasMedia ? (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground">Mídia atual</label>
+          <div className="relative group rounded-md border bg-muted/30 overflow-hidden flex items-center justify-center min-h-[120px] p-2">
+            {question.properties.videoUrl ? (
+              <video src={question.properties.videoUrl} className="max-w-full max-h-48 object-contain" muted controls playsInline />
+            ) : (
+              <img src={question.properties.imageUrl} alt="Mídia" className="max-w-full max-h-48 object-contain rounded-md" />
+            )}
+            <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              <Button size="sm" variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                Trocar
+              </Button>
+              <Button size="sm" variant="destructive" onClick={handleRemove}>
+                Remover
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+           <label className="text-xs font-medium text-muted-foreground">Adicionar mídia</label>
+           <Button 
+             variant="outline" 
+             className="w-full h-24 border-dashed"
+             onClick={() => fileInputRef.current?.click()}
+             disabled={isUploading}
+           >
+             {isUploading ? (
+               <div className="flex flex-col items-center text-muted-foreground">
+                 <Loader2 className="h-4 w-4 mb-2 animate-spin" />
+                 <span className="text-xs">Enviando...</span>
+               </div>
+             ) : (
+               <div className="flex flex-col items-center text-muted-foreground">
+                 <Upload className="h-4 w-4 mb-2" />
+                 <span className="text-xs">Clique para fazer upload</span>
+                 <span className="text-[10px] mt-0.5">JPG, PNG, GIF, MP4 ou WEBM (máx 10MB)</span>
+               </div>
+             )}
+           </Button>
+        </div>
+      )}
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        onChange={handleUpload}
+        accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,video/mp4,video/webm"
+      />
+    </div>
+  )
+}
+
 function PropertiesPanel({ question }: { question: Question }) {
   const updateQuestion = useBuilderStore((s) => s.updateQuestion)
   const deleteQuestion = useBuilderStore((s) => s.deleteQuestion)
@@ -2105,6 +2242,35 @@ function PropertiesPanel({ question }: { question: Question }) {
               placeholder="Adicionar texto..."
               className="text-sm h-9"
             />
+          </div>
+        </>
+      )}
+
+      {["welcome", "statement", "thank_you"].includes(question.type) && (
+        <>
+          <Separator />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Alinhamento do Conteúdo</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(["left", "center", "right"] as const).map((align) => {
+                  const current = question.properties.contentAlign ?? "left"
+                  return (
+                    <Button
+                      key={align}
+                      variant={current === align ? "default" : "outline"}
+                      size="sm"
+                      className="h-8 text-xs capitalize"
+                      onClick={() => updateQuestion(question.id, { properties: { ...question.properties, contentAlign: align } })}
+                    >
+                      {align === "left" ? <AlignLeft className="h-3 w-3 mr-1" /> : align === "center" ? <AlignCenter className="h-3 w-3 mr-1" /> : <AlignRight className="h-3 w-3 mr-1" />}
+                      {align === "left" ? "Esquerda" : align === "center" ? "Centro" : "Direita"}
+                    </Button>
+                  )
+                })}
+              </div>
+            </div>
+            <MediaUrlEditor question={question} />
           </div>
         </>
       )}

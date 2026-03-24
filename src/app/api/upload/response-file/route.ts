@@ -5,18 +5,7 @@ import { forms } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 
 const BUCKET = "form-responses"
-const MAX_SIZE_BYTES = 5 * 1024 * 1024 // 5MB
-const MIME_TO_EXT: Record<string, string> = {
-  "application/pdf": "pdf",
-  "application/msword": "doc",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-  "application/zip": "zip",
-  "image/png": "png",
-  "image/jpeg": "jpg",
-  "image/jpg": "jpg",
-  "image/webp": "webp",
-}
-const ALLOWED_TYPES = new Set(Object.keys(MIME_TO_EXT))
+const MAX_SIZE_BYTES = 10 * 1024 * 1024 // 10MB
 
 function serviceClient() {
   return createClient(
@@ -46,10 +35,19 @@ export async function POST(req: NextRequest) {
   }
 
   if (file.size > MAX_SIZE_BYTES) {
-    return NextResponse.json({ error: "Arquivo excede o limite de 5MB." }, { status: 400 })
+    return NextResponse.json({ error: "Arquivo excede o limite de 10MB." }, { status: 400 })
   }
 
-  if (!ALLOWED_TYPES.has(file.type)) {
+  const isAllowedType =
+    file.type.startsWith("image/") ||
+    file.type.startsWith("video/") ||
+    file.type.startsWith("audio/") ||
+    file.type === "application/pdf" ||
+    file.type === "application/msword" ||
+    file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    file.type === "application/zip";
+
+  if (!isAllowedType) {
     return NextResponse.json({ error: "Tipo de arquivo não permitido." }, { status: 400 })
   }
 
@@ -59,11 +57,12 @@ export async function POST(req: NextRequest) {
     columns: { id: true, status: true },
   })
 
-  if (!form || form.status !== "published") {
-    return NextResponse.json({ error: "Formulário não encontrado ou não publicado." }, { status: 404 })
+  if (!form) {
+    return NextResponse.json({ error: "Formulário não encontrado." }, { status: 404 })
   }
 
-  const ext = MIME_TO_EXT[file.type] ?? "bin"
+  const extParts = file.name.split('.')
+  const ext = extParts.length > 1 ? extParts.pop() : "bin"
   const randomHex = Math.random().toString(16).slice(2, 10)
   const path = `${formId}/${Date.now()}-${randomHex}.${ext}`
 

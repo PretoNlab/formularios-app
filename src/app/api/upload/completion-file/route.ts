@@ -13,6 +13,10 @@ const MIME_TO_EXT: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/jpg": "jpg",
   "image/webp": "webp",
+  "image/gif": "gif",
+  "image/svg+xml": "svg",
+  "video/mp4": "mp4",
+  "video/webm": "webm",
 }
 const ALLOWED_TYPES = new Set(Object.keys(MIME_TO_EXT))
 

@@ -8,10 +8,12 @@ export function MultipleChoiceField({ question, value, onChange, onSubmit }: Fie
     const allowOther = question.properties.allowOther ?? false
     const randomize = question.properties.randomizeOptions ?? false
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const options = useMemo(() => {
         if (!randomize) return rawOptions
         return [...rawOptions].sort(() => Math.random() - 0.5)
-    }, [rawOptions, randomize])
+    // Depend on stable option IDs so order is fixed for the lifetime of the component
+    }, [randomize, rawOptions.map((o) => o.id).join(",")])
 
     const selected = (value as string) ?? null
     const [otherText, setOtherText] = useState(selected?.startsWith("__other__") ? selected.slice(9) : "")

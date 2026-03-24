@@ -141,10 +141,11 @@ Trade-off: queries em JSON são mais lentas, mas para o volume atual é irreleva
 
 1. **Registrar o tipo** em `src/lib/types/form.ts` → array `QUESTION_TYPES` e type `QuestionType`
 2. **Criar o schema Zod** das properties em `src/lib/types/form.ts` → `questionPropertiesSchema`
-3. **Criar o componente de campo** em `src/components/renderer/fields/[tipo].tsx`
-4. **Registrar no renderer** em `src/components/renderer/form-renderer.tsx` → switch de tipos
-5. **Criar editor do campo** no builder (configurações do tipo)
-6. **Adicionar ao analytics** em `src/lib/db/queries/responses.ts` se tiver visualização especial
+3. **Criar o componente de campo** em `src/components/renderer/fields/[tipo].tsx` (implementa `FieldProps`)
+4. **Registrar no renderer** em `src/components/renderer/form-renderer.tsx` → objeto `RENDERERS` (mapa `QuestionType → ComponentType`)
+5. **Adicionar ícone e valor padrão** em `builder-client.tsx` → `TYPE_ICONS` e `createQuestion()`
+6. **Criar configurações do campo** no painel direito do builder (propriedades específicas do tipo)
+7. **Adicionar ao analytics** em `src/lib/db/queries/responses.ts` se tiver visualização especial
 
 ---
 
@@ -163,7 +164,7 @@ No formulário público, as cores do tema são injetadas como CSS custom propert
 
 Os componentes de campo usam `var(--form-bg)` etc., então todos respondem ao tema automaticamente.
 
-Fontes são carregadas via Google Fonts com `next/font/google` no layout do formulário público.
+Fontes são carregadas via Google Fonts usando `preload()` do `react-dom` dentro do componente `FormStyles` em `form-renderer.tsx`. Isso emite um `<link rel="preload">` cedo no ciclo de render, reduzindo FOUT (flash de texto sem estilo).
 
 ---
 
@@ -199,5 +200,25 @@ WHERE formId = X
   AND metadata->>'ipHash' = SHA256(clientIP)
   AND createdAt > NOW() - INTERVAL '60 minutes'
 ```
+
+Limite: 5 submissões por IP por formulário por hora.
+
+---
+
+## Padrões de performance (Vercel React Best Practices)
+
+Decisões ativas de performance no codebase:
+
+| Padrão | Onde | Por quê |
+|--------|------|---------|
+| `React.cache()` em `getFormBySlug` | `lib/db/queries/forms.ts` | Deduplica a query de slug entre `generateMetadata` e o Page component — ambos chamavam o banco separadamente |
+| `after()` em `incrementViewCount` | `app/f/[slug]/page.tsx` | Garante execução após a resposta HTTP ser enviada; `void` podia ser cancelado pela serverless |
+| `Promise.all` em `/builder/[formId]` | `app/builder/[formId]/page.tsx` | `ensureUserExists` e `getFormById` não dependem um do outro — rodavam sequencialmente sem necessidade |
+| `mapDbForm` centralizado | `lib/utils/map-db-form.ts` | Função estava duplicada em dois pages; única fonte de verdade evita divergência |
+| `useShallow` no BuilderClient | `components/builder/builder-client.tsx` | Consolida 25 subscriptions Zustand em 3, reduzindo re-renders por mudança de store |
+| `useMemo` no sidebar de campos | `components/builder/builder-client.tsx` | Filtragem de tipos de campo re-executava em todo render do pai |
+| `preload()` do `react-dom` | `components/renderer/form-renderer.tsx` | Emite `<link rel="preload">` para Google Fonts antes da hidratação, eliminando FOUT |
+| Deps primitivas em `goNext`/`goBack` | `components/renderer/form-renderer.tsx` | Evita recriar callbacks de navegação quando apenas `animating` ou `direction` mudam |
+| Cleanup de timers de animação | `components/renderer/form-renderer.tsx` | Previne `setState` em componente desmontado durante transição de pergunta |
 
 Limite: 5 submissões por IP por formulário por hora.

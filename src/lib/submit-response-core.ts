@@ -268,7 +268,6 @@ export async function submitResponseCore(params: {
 
   // 12. Append to Google Sheets (fire-and-forget)
   const { data: sheetsIntegrations } = await getIntegrationsByForm(formId, "google_sheets")
-  console.log("[Google Sheets] integrations found:", sheetsIntegrations?.length ?? 0, "formId:", formId)
   if (sheetsIntegrations && sheetsIntegrations.length > 0) {
     const questionOrder = formQuestions
       .filter((q) => !NON_INPUT_TYPES.has(q.type))

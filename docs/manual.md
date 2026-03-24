@@ -134,8 +134,9 @@ Segure o ícone de arrastar (⠿) à esquerda de qualquer pergunta no canvas e a
 
 | Tipo | Descrição |
 |------|-----------|
-| **Upload de arquivo** | Em breve — disponível na próxima versão |
-| **Assinatura** | Área de assinatura digital a dedo ou mouse |
+| **Upload de arquivo** | Permite ao respondente enviar um arquivo (PDF, imagem, vídeo, etc.). Configurável com tipos permitidos e tamanho máximo. |
+| **Download** | Exibe um botão para o respondente baixar um arquivo. Configurável com URL, texto, tamanho e alinhamento do botão. |
+| **Assinatura** | Área de assinatura digital a dedo ou mouse. Salva como imagem base64. |
 
 ### Campos de layout
 

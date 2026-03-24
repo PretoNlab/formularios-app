@@ -114,7 +114,11 @@ function formatValue(value: unknown): string {
   if (typeof value === "boolean") return value ? "Sim" : "Não"
   if (Array.isArray(value)) return (value as unknown[]).join("; ")
   if (typeof value === "object" && "fileName" in (value as object)) {
-    return (value as { fileName: string }).fileName
+    const v = value as { fileName: string; fileUrl?: string }
+    if (v.fileUrl) {
+      return `=HYPERLINK("${v.fileUrl}", "${v.fileName}")`
+    }
+    return v.fileName
   }
   return String(value)
 }

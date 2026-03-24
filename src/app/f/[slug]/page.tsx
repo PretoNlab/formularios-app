@@ -1,62 +1,12 @@
 import { notFound } from "next/navigation"
+import { after } from "next/server"
 import { getFormBySlug, incrementViewCount } from "@/lib/db/queries/forms"
 import { FormRendererPage } from "@/components/renderer/form-renderer-page"
-import type { Form, Question, QuestionType } from "@/lib/types/form"
-import type { FormWithQuestions } from "@/lib/db/queries/forms"
+import { mapDbForm } from "@/lib/utils/map-db-form"
+import type { Form } from "@/lib/types/form"
 import type { Metadata, ResolvingMetadata } from "next"
 
 export const dynamic = "force-dynamic"
-
-// ─── DB → domain type mapper ──────────────────────────────────────────────────
-
-function mapDbForm(dbForm: FormWithQuestions): Form {
-  return {
-    id: dbForm.id,
-    workspaceId: dbForm.workspaceId,
-    createdById: dbForm.createdById,
-    title: dbForm.title,
-    description: dbForm.description ?? undefined,
-    slug: dbForm.slug,
-    status: dbForm.status,
-    theme: dbForm.theme ?? {
-      id: "midnight",
-      colors: { bg: "#0f0f1a", card: "#1a1a2e", accent: "#6c63ff", text: "#e8e8f0", muted: "#6b6b8d" },
-      font: { heading: "Fraunces", body: "DM Sans" },
-      borderRadius: "12px",
-    },
-    settings: dbForm.settings ?? {
-      showProgressBar: true,
-      showQuestionNumbers: true,
-      allowPartialResponses: true,
-      notifyOnResponse: false,
-      notificationEmail: null,
-      redirectUrl: null,
-      closeMessage: "Este formulário não está mais aceitando respostas.",
-      responseLimit: null,
-      closedAt: null,
-      downloadUrl: null,
-      downloadLabel: null,
-    },
-    questions: dbForm.questions.map(
-      (q): Question => ({
-        id: q.id,
-        formId: q.formId,
-        type: q.type as QuestionType,
-        title: q.title,
-        description: q.description ?? undefined,
-        required: q.required,
-        order: q.order,
-        properties: q.properties ?? {},
-        logicRules: q.logicRules ?? [],
-      })
-    ),
-    responseCount: dbForm.responseCount,
-    viewCount: dbForm.viewCount,
-    createdAt: dbForm.createdAt.toISOString(),
-    updatedAt: dbForm.updatedAt.toISOString(),
-    publishedAt: dbForm.publishedAt?.toISOString(),
-  }
-}
 
 // ─── Metadata ──────────────────────────────────────────────────────────────────
 
@@ -124,7 +74,7 @@ export default async function PublicFormPage({
   if (!dbForm || (!isPreview && dbForm.status !== "published")) notFound()
 
   // Only count real visits
-  if (!isPreview) void incrementViewCount(slug)
+  if (!isPreview) after(() => incrementViewCount(slug))
 
   const form = mapDbForm(dbForm)
 

@@ -176,7 +176,7 @@ Documentação detalhada em [`/docs`](./docs/):
 
 **Layout:** `welcome`, `statement`, `thank_you`
 
-**Avançado:** `file_upload`, `signature`
+**Avançado:** `file_upload`, `download`, `signature`
 
 ---
 
