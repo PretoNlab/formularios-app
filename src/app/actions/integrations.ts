@@ -115,7 +115,17 @@ export async function listSheetTabsAction(
   }
 
   const spreadsheetId = extractSpreadsheetId(spreadsheetUrlOrId)
-  return listSheetTabs(config.accessToken, config.refreshToken, spreadsheetId, config.tokenExpiry)
+  return listSheetTabs(
+    config.accessToken,
+    config.refreshToken,
+    spreadsheetId,
+    config.tokenExpiry,
+    (newAccessToken, newExpiry) => {
+      updateIntegration(integration.id, {
+        config: { ...config, accessToken: newAccessToken, tokenExpiry: newExpiry },
+      }).catch(() => {})
+    }
+  )
 }
 
 /**

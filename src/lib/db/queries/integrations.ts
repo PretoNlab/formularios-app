@@ -54,7 +54,7 @@ export async function createIntegration(
 
 export async function updateIntegration(
   id: string,
-  input: Partial<Pick<IntegrationInsert, "name" | "enabled" | "config">>
+  input: Partial<Pick<IntegrationInsert, "name" | "enabled" | "config" | "lastTriggeredAt">>
 ): Promise<ApiResponse<IntegrationRow>> {
   try {
     const [updated] = await db

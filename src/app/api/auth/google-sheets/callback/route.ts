@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
-import { exchangeCode } from "@/lib/google-sheets"
+import { exchangeCode, createSpreadsheet } from "@/lib/google-sheets"
 import { createIntegration, getIntegrationsByForm, deleteIntegration } from "@/lib/db/queries/integrations"
 import { getFormById } from "@/lib/db/queries/forms"
 import { ensureUserExists } from "@/lib/db/queries/users"
@@ -51,15 +51,34 @@ export async function GET(req: NextRequest) {
       await deleteIntegration(integration.id)
     }
 
+    // Build header row from form questions
+    const NON_DISPLAY_TYPES = new Set(["welcome", "thank_you", "statement"])
+    const inputQuestions = (form.questions ?? [])
+      .filter((q) => !NON_DISPLAY_TYPES.has(q.type))
+      .sort((a, b) => a.order - b.order)
+    const headers = [
+      "Timestamp",
+      ...inputQuestions.map((q, i) => q.title || `Pergunta ${i + 1}`),
+    ]
+
+    const spreadsheetTitle = form.title || "Formulário sem título"
+    const { spreadsheetId, sheetName } = await createSpreadsheet(
+      accessToken,
+      refreshToken,
+      spreadsheetTitle,
+      headers,
+      tokenExpiry
+    )
+
     await createIntegration({
       formId,
       type: "google_sheets",
       name: "Google Sheets",
-      enabled: false, // becomes true after user configures spreadsheet + tab
-      config: { accessToken, refreshToken, tokenExpiry },
+      enabled: true,
+      config: { accessToken, refreshToken, tokenExpiry, spreadsheetId, spreadsheetTitle, sheetName },
     })
 
-    return NextResponse.redirect(new URL(`/builder/${formId}?sheets=connected`, req.url))
+    return NextResponse.redirect(new URL(`/builder/${formId}?sheets=created`, req.url))
   } catch (error) {
     console.error("Google Sheets OAuth callback error:", error)
     return NextResponse.redirect(new URL(`/builder/${formId}?sheets=error`, req.url))

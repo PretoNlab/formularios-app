@@ -3,7 +3,7 @@ import { eq, asc, and, gte, sql } from "drizzle-orm"
 import { createHash } from "crypto"
 import { db } from "@/lib/db/client"
 import { forms, questions, responses, answers, users } from "@/lib/db/schema"
-import { getIntegrationsByForm } from "@/lib/db/queries/integrations"
+import { getIntegrationsByForm, updateIntegration } from "@/lib/db/queries/integrations"
 import { sendResponseNotification, sendFirstResponseEmail } from "@/lib/email"
 import { appendGoogleSheetsRow } from "@/lib/google-sheets"
 import type { AnswerValue, FormSettings, IntegrationConfig } from "@/lib/db/schema"
@@ -282,7 +282,25 @@ export async function submitResponseCore(params: {
         sheetName: config.sheetName,
         questionOrder,
         answers: sanitizedAnswers as Record<string, unknown>,
-      }).catch(() => {})
+        onTokenRefresh: (newAccessToken, newExpiry) => {
+          updateIntegration(integration.id, {
+            config: { ...config, accessToken: newAccessToken, tokenExpiry: newExpiry },
+          }).catch(() => {})
+        },
+      })
+        .then(() => {
+          const { lastError: _e, lastErrorAt: _ea, ...cleanConfig } = config
+          updateIntegration(integration.id, {
+            lastTriggeredAt: new Date(),
+            config: cleanConfig,
+          }).catch(() => {})
+        })
+        .catch((err: unknown) => {
+          const msg = err instanceof Error ? err.message : "Erro desconhecido"
+          updateIntegration(integration.id, {
+            config: { ...config, lastError: msg, lastErrorAt: new Date().toISOString() },
+          }).catch(() => {})
+        })
     }
   }
 }

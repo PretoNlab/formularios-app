@@ -35,13 +35,27 @@ export async function exchangeCode(code: string): Promise<{
   }
 }
 
-function buildAuthenticatedClient(accessToken: string, refreshToken: string, tokenExpiry?: number) {
+type OnTokenRefresh = (accessToken: string, tokenExpiry: number) => void
+
+function buildAuthenticatedClient(
+  accessToken: string,
+  refreshToken: string,
+  tokenExpiry?: number,
+  onTokenRefresh?: OnTokenRefresh
+) {
   const client = getOAuthClient()
   client.setCredentials({
     access_token: accessToken,
     refresh_token: refreshToken,
     expiry_date: tokenExpiry,
   })
+  if (onTokenRefresh) {
+    client.on("tokens", (tokens) => {
+      if (tokens.access_token) {
+        onTokenRefresh(tokens.access_token, tokens.expiry_date ?? Date.now() + 3600_000)
+      }
+    })
+  }
   return client
 }
 
@@ -49,14 +63,45 @@ export async function listSheetTabs(
   accessToken: string,
   refreshToken: string,
   spreadsheetId: string,
-  tokenExpiry?: number
+  tokenExpiry?: number,
+  onTokenRefresh?: OnTokenRefresh
 ): Promise<string[]> {
-  const auth = buildAuthenticatedClient(accessToken, refreshToken, tokenExpiry)
+  const auth = buildAuthenticatedClient(accessToken, refreshToken, tokenExpiry, onTokenRefresh)
   const sheets = google.sheets({ version: "v4", auth })
   const res = await sheets.spreadsheets.get({ spreadsheetId })
   return (res.data.sheets ?? [])
     .map((s) => s.properties?.title ?? "")
     .filter(Boolean)
+}
+
+export async function createSpreadsheet(
+  accessToken: string,
+  refreshToken: string,
+  title: string,
+  headers: string[],
+  tokenExpiry?: number,
+  onTokenRefresh?: OnTokenRefresh
+): Promise<{ spreadsheetId: string; sheetName: string }> {
+  const auth = buildAuthenticatedClient(accessToken, refreshToken, tokenExpiry, onTokenRefresh)
+  const sheets = google.sheets({ version: "v4", auth })
+
+  const res = await sheets.spreadsheets.create({
+    requestBody: { properties: { title } },
+  })
+
+  const spreadsheetId = res.data.spreadsheetId!
+  const sheetName = res.data.sheets?.[0]?.properties?.title ?? "Plan1"
+
+  if (headers.length > 0) {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `'${sheetName}'!A1`,
+      valueInputOption: "RAW",
+      requestBody: { values: [headers] },
+    })
+  }
+
+  return { spreadsheetId, sheetName }
 }
 
 export function extractSpreadsheetId(urlOrId: string): string {
@@ -82,6 +127,7 @@ export async function appendGoogleSheetsRow({
   sheetName,
   questionOrder,
   answers,
+  onTokenRefresh,
 }: {
   accessToken: string
   refreshToken: string
@@ -90,8 +136,9 @@ export async function appendGoogleSheetsRow({
   sheetName: string
   questionOrder: Array<{ id: string; title: string; order: number }>
   answers: Record<string, unknown>
+  onTokenRefresh?: OnTokenRefresh
 }): Promise<void> {
-  const auth = buildAuthenticatedClient(accessToken, refreshToken, tokenExpiry)
+  const auth = buildAuthenticatedClient(accessToken, refreshToken, tokenExpiry, onTokenRefresh)
   const sheets = google.sheets({ version: "v4", auth })
 
   const orderedQuestions = [...questionOrder].sort((a, b) => a.order - b.order)

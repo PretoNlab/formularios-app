@@ -1610,35 +1610,29 @@ function GoogleSheetsPanel({ formId }: { formId: string }) {
   const router = useRouter()
   const [integration, setIntegration] = useState<IntegrationRow | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [spreadsheetUrl, setSpreadsheetUrl] = useState("")
-  const [tabs, setTabs] = useState<string[]>([])
-  const [selectedTab, setSelectedTab] = useState("")
-  const [isFetchingTabs, setIsFetchingTabs] = useState(false)
   const [isSaving, startSaveTransition] = useTransition()
   const [isConnecting, startConnectTransition] = useTransition()
-  const [tabError, setTabError] = useState("")
 
-  // Detect ?sheets=connected redirect from OAuth callback
+  // Detect ?sheets=created redirect from OAuth callback and reload integration
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    if (params.get("sheets") === "connected" || params.get("sheets") === "error") {
+    const result = params.get("sheets")
+    if (result === "created" || result === "connected" || result === "error") {
+      getFormIntegrationsAction(formId).then((rows) => {
+        setIntegration(rows.find((r) => r.type === "google_sheets") ?? null)
+        setIsLoading(false)
+      })
       const url = new URL(window.location.href)
       url.searchParams.delete("sheets")
       router.replace(url.pathname + url.search)
     }
-  }, [router])
+  }, [router, formId])
 
   // Load existing google_sheets integration
   useEffect(() => {
     getFormIntegrationsAction(formId)
       .then((rows) => {
-        const gs = rows.find((r) => r.type === "google_sheets") ?? null
-        setIntegration(gs)
-        if (gs) {
-          const config = gs.config as { spreadsheetId?: string; sheetName?: string }
-          if (config.spreadsheetId) setSpreadsheetUrl(config.spreadsheetId)
-          if (config.sheetName) setSelectedTab(config.sheetName)
-        }
+        setIntegration(rows.find((r) => r.type === "google_sheets") ?? null)
       })
       .finally(() => setIsLoading(false))
   }, [formId])
@@ -1650,44 +1644,16 @@ function GoogleSheetsPanel({ formId }: { formId: string }) {
     })
   }
 
-  async function handleFetchTabs() {
-    if (!spreadsheetUrl.trim()) return
-    setTabError("")
-    setIsFetchingTabs(true)
-    try {
-      const result = await listSheetTabsAction(formId, spreadsheetUrl.trim())
-      setTabs(result)
-      if (result.length > 0 && !selectedTab) setSelectedTab(result[0])
-    } catch (err) {
-      setTabError(err instanceof Error ? err.message : "Erro ao carregar abas.")
-    } finally {
-      setIsFetchingTabs(false)
-    }
-  }
-
-  function handleSave() {
-    if (!spreadsheetUrl.trim() || !selectedTab) return
-    startSaveTransition(async () => {
-      await configureGoogleSheetsAction(formId, spreadsheetUrl.trim(), selectedTab)
-      // Refresh integration state
-      const rows = await getFormIntegrationsAction(formId)
-      const gs = rows.find((r) => r.type === "google_sheets") ?? null
-      setIntegration(gs)
-    })
-  }
-
   function handleDisconnect() {
     startSaveTransition(async () => {
       await disconnectGoogleSheetsAction(formId)
       setIntegration(null)
-      setSpreadsheetUrl("")
-      setSelectedTab("")
-      setTabs([])
     })
   }
 
-  const config = integration?.config as { spreadsheetId?: string; sheetName?: string } | undefined
+  const config = integration?.config as { spreadsheetId?: string; spreadsheetTitle?: string; sheetName?: string; lastError?: string; lastErrorAt?: string } | undefined
   const isConfigured = integration?.enabled && config?.spreadsheetId && config?.sheetName
+  const lastTriggeredAt = integration?.lastTriggeredAt ? new Date(integration.lastTriggeredAt) : null
 
   return (
     <div className="p-4 space-y-4 border-t">
@@ -1705,13 +1671,33 @@ function GoogleSheetsPanel({ formId }: { formId: string }) {
           Carregando...
         </div>
       ) : isConfigured ? (
-        // ── State 3: Configured ──
+        // ── State 2: Configured ──
         <div className="rounded-lg border bg-green-500/5 border-green-500/20 p-3 space-y-2">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-            <div className="min-w-0">
-              <p className="text-xs font-medium truncate">Planilha configurada</p>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1">
+                <p className="text-xs font-medium truncate">{config!.spreadsheetTitle ?? "Planilha configurada"}</p>
+                <a
+                  href={`https://docs.google.com/spreadsheets/d/${config!.spreadsheetId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 text-muted-foreground hover:text-foreground"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
               <p className="text-[11px] text-muted-foreground truncate">Aba: <span className="font-medium">{config!.sheetName}</span></p>
+              {lastTriggeredAt && !config?.lastError && (
+                <p className="text-[11px] text-muted-foreground truncate">
+                  Última sync: {lastTriggeredAt.toLocaleString("pt-BR")}
+                </p>
+              )}
+              {config?.lastError && (
+                <p className="text-[11px] text-destructive truncate" title={config.lastError}>
+                  Erro: {config.lastError.length > 40 ? config.lastError.slice(0, 40) + "…" : config.lastError}
+                </p>
+              )}
             </div>
           </div>
           <Button
@@ -1724,67 +1710,6 @@ function GoogleSheetsPanel({ formId }: { formId: string }) {
             {isSaving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Trash2 className="h-3 w-3 mr-1" />}
             Desconectar
           </Button>
-        </div>
-      ) : integration ? (
-        // ── State 2: Connected, not yet configured ──
-        <div className="space-y-3">
-          <div className="flex items-center gap-1.5 text-[11px] text-green-600 font-medium">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            Conta Google conectada
-          </div>
-          <div className="space-y-2">
-            <div className="flex gap-1.5">
-              <Input
-                placeholder="URL ou ID da planilha"
-                value={spreadsheetUrl}
-                onChange={(e) => { setSpreadsheetUrl(e.target.value); setTabs([]); setSelectedTab("") }}
-                className="text-xs h-8 flex-1"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-xs shrink-0"
-                onClick={handleFetchTabs}
-                disabled={!spreadsheetUrl.trim() || isFetchingTabs}
-              >
-                {isFetchingTabs ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-              </Button>
-            </div>
-            {tabError && (
-              <p className="text-[11px] text-destructive">{tabError}</p>
-            )}
-            {tabs.length > 0 && (
-              <select
-                value={selectedTab}
-                onChange={(e) => setSelectedTab(e.target.value)}
-                className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                {tabs.map((tab) => (
-                  <option key={tab} value={tab}>{tab}</option>
-                ))}
-              </select>
-            )}
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                className="h-8 text-xs flex-1"
-                onClick={handleSave}
-                disabled={!spreadsheetUrl.trim() || !selectedTab || isSaving}
-              >
-                {isSaving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                Salvar
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 text-xs text-destructive hover:text-destructive"
-                onClick={handleDisconnect}
-                disabled={isSaving}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
         </div>
       ) : (
         // ── State 1: Not connected ──
