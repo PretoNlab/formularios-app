@@ -273,37 +273,32 @@ export async function submitResponseCore(params: {
 
     for (const integration of sheetsIntegrations) {
       const config = integration.config as IntegrationConfig
-      console.log("[Google Sheets] integration:", { id: integration.id, enabled: integration.enabled, hasAccessToken: !!config.accessToken, hasRefreshToken: !!config.refreshToken, spreadsheetId: config.spreadsheetId, sheetName: config.sheetName })
       if (!integration.enabled) continue
       if (!config.accessToken || !config.refreshToken || !config.spreadsheetId || !config.sheetName) continue
-      appendGoogleSheetsRow({
-        accessToken: config.accessToken,
-        refreshToken: config.refreshToken,
-        tokenExpiry: config.tokenExpiry,
-        spreadsheetId: config.spreadsheetId,
-        sheetName: config.sheetName,
-        questionOrder,
-        answers: sanitizedAnswers as Record<string, unknown>,
-        onTokenRefresh: (newAccessToken, newExpiry) => {
-          updateIntegration(integration.id, {
-            config: { ...config, accessToken: newAccessToken, tokenExpiry: newExpiry },
-          }).catch(() => {})
-        },
-      })
-        .then(() => {
-          const { lastError: _e, lastErrorAt: _ea, ...cleanConfig } = config
-          updateIntegration(integration.id, {
-            lastTriggeredAt: new Date(),
-            config: cleanConfig,
-          }).catch(() => {})
+      try {
+        await appendGoogleSheetsRow({
+          accessToken: config.accessToken,
+          refreshToken: config.refreshToken,
+          tokenExpiry: config.tokenExpiry,
+          spreadsheetId: config.spreadsheetId,
+          sheetName: config.sheetName,
+          questionOrder,
+          answers: sanitizedAnswers as Record<string, unknown>,
+          onTokenRefresh: (newAccessToken, newExpiry) => {
+            updateIntegration(integration.id, {
+              config: { ...config, accessToken: newAccessToken, tokenExpiry: newExpiry },
+            }).catch(() => {})
+          },
         })
-        .catch((err: unknown) => {
-          const msg = err instanceof Error ? err.message : "Erro desconhecido"
-          console.error("[Google Sheets] Falha ao appender linha:", msg, { integrationId: integration.id, spreadsheetId: config.spreadsheetId, sheetName: config.sheetName })
-          updateIntegration(integration.id, {
-            config: { ...config, lastError: msg, lastErrorAt: new Date().toISOString() },
-          }).catch(() => {})
+        const { lastError: _e, lastErrorAt: _ea, ...cleanConfig } = config
+        await updateIntegration(integration.id, { lastTriggeredAt: new Date(), config: cleanConfig })
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Erro desconhecido"
+        console.error("[Google Sheets] Falha ao appender linha:", msg, { integrationId: integration.id, spreadsheetId: config.spreadsheetId })
+        await updateIntegration(integration.id, {
+          config: { ...config, lastError: msg, lastErrorAt: new Date().toISOString() },
         })
+      }
     }
   }
 }
