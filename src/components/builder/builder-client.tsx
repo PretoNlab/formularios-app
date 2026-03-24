@@ -1431,6 +1431,47 @@ function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSettingsC
       <Separator />
 
       <div className="space-y-4">
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Controle de acesso</h4>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">Salvar respostas parciais</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Salva progresso mesmo sem concluir</p>
+          </div>
+          <Switch
+            checked={form.settings.allowPartialResponses}
+            onCheckedChange={(v) => onSettingsChange({ allowPartialResponses: v })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground">Limite de respostas</label>
+          <Input
+            type="number"
+            min={1}
+            value={form.settings.responseLimit ?? ""}
+            onChange={(e) => onSettingsChange({ responseLimit: e.target.value ? Number(e.target.value) : null })}
+            placeholder="Ilimitado"
+            className="text-sm h-9"
+          />
+          <p className="text-[11px] text-muted-foreground">Fecha automaticamente ao atingir o número.</p>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground">Encerrar em</label>
+          <Input
+            type="datetime-local"
+            value={form.settings.closedAt ? new Date(form.settings.closedAt).toISOString().slice(0, 16) : ""}
+            onChange={(e) => onSettingsChange({ closedAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
+            className="text-sm h-9"
+          />
+          <p className="text-[11px] text-muted-foreground">Fecha automaticamente na data e hora definidas.</p>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-4">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notificações</h4>
 
         <div className="flex items-center justify-between">

@@ -115,11 +115,14 @@ export async function submitResponseCore(params: {
 
   const settings = form.settings as FormSettings
 
-  // 2. Check response limit
+  // 2. Check response limit and closure date
   if (settings.responseLimit !== null && settings.responseLimit !== undefined) {
     if (form.responseCount >= settings.responseLimit) {
       throw new Error("Este formulário atingiu o limite de respostas.")
     }
+  }
+  if (settings.closedAt && new Date(settings.closedAt) < new Date()) {
+    throw new Error("Este formulário foi encerrado e não aceita mais respostas.")
   }
 
   // 3. Fetch questions for required-field validation + ID allowlist
