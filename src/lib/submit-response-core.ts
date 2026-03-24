@@ -297,6 +297,7 @@ export async function submitResponseCore(params: {
         })
         .catch((err: unknown) => {
           const msg = err instanceof Error ? err.message : "Erro desconhecido"
+          console.error("[Google Sheets] Falha ao appender linha:", msg, { integrationId: integration.id, spreadsheetId: config.spreadsheetId, sheetName: config.sheetName })
           updateIntegration(integration.id, {
             config: { ...config, lastError: msg, lastErrorAt: new Date().toISOString() },
           }).catch(() => {})
