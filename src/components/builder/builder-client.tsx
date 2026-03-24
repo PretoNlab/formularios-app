@@ -1613,29 +1613,22 @@ function GoogleSheetsPanel({ formId }: { formId: string }) {
   const [isSaving, startSaveTransition] = useTransition()
   const [isConnecting, startConnectTransition] = useTransition()
 
-  // Detect ?sheets=created redirect from OAuth callback and reload integration
+  // Load integration on mount; clean up ?sheets= param if present
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const result = params.get("sheets")
-    if (result === "created" || result === "connected" || result === "error") {
-      getFormIntegrationsAction(formId).then((rows) => {
-        setIntegration(rows.find((r) => r.type === "google_sheets") ?? null)
-        setIsLoading(false)
-      })
+    if (params.has("sheets")) {
       const url = new URL(window.location.href)
       url.searchParams.delete("sheets")
       router.replace(url.pathname + url.search)
     }
-  }, [router, formId])
 
-  // Load existing google_sheets integration
-  useEffect(() => {
     getFormIntegrationsAction(formId)
       .then((rows) => {
         setIntegration(rows.find((r) => r.type === "google_sheets") ?? null)
       })
+      .catch(() => {})
       .finally(() => setIsLoading(false))
-  }, [formId])
+  }, [formId, router])
 
   function handleConnect() {
     startConnectTransition(async () => {
