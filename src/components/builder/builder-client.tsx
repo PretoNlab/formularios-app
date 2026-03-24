@@ -293,7 +293,7 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialForm.id])
 
-  const form = (storeForm as unknown as Form | null) ?? initialForm
+  const form = storeForm?.id === initialForm.id ? storeForm : initialForm
 
   const { isSaving } = useAutoSave()
 
