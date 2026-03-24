@@ -231,8 +231,8 @@ const SIDEBAR_TYPES: QuestionType[] = [
   "phone", "whatsapp",
   "cpf", "cnpj",
   "multiple_choice", "checkbox", "dropdown", "yes_no",
-  "rating", "nps",
-  "download", "file_upload",
+  "rating", "scale", "nps",
+  "download", "file_upload", "signature",
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -2001,6 +2001,191 @@ function PropertiesPanel({ question }: { question: Question }) {
         </>
       )}
 
+      {question.type === "number" && (
+        <>
+          <Separator />
+          <div className="space-y-3">
+            <label className="text-xs font-medium text-muted-foreground">Limites do número</label>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <label className="text-[11px] text-muted-foreground">Mínimo</label>
+                <Input
+                  type="number"
+                  value={question.properties.min ?? ""}
+                  onChange={(e) => updateQuestion(question.id, { properties: { ...question.properties, min: e.target.value ? Number(e.target.value) : undefined } })}
+                  placeholder="—"
+                  className="text-sm h-8"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[11px] text-muted-foreground">Máximo</label>
+                <Input
+                  type="number"
+                  value={question.properties.max ?? ""}
+                  onChange={(e) => updateQuestion(question.id, { properties: { ...question.properties, max: e.target.value ? Number(e.target.value) : undefined } })}
+                  placeholder="—"
+                  className="text-sm h-8"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[11px] text-muted-foreground">Passo</label>
+                <Input
+                  type="number"
+                  value={question.properties.step ?? ""}
+                  onChange={(e) => updateQuestion(question.id, { properties: { ...question.properties, step: e.target.value ? Number(e.target.value) : undefined } })}
+                  placeholder="1"
+                  className="text-sm h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {question.type === "rating" && (
+        <>
+          <Separator />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Estilo</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {(["stars", "hearts", "thumbs", "numbers"] as const).map((style) => (
+                  <button
+                    key={style}
+                    onClick={() => updateQuestion(question.id, { properties: { ...question.properties, ratingStyle: style } })}
+                    className={cn(
+                      "flex flex-col items-center gap-1 rounded-md border p-2 text-xs transition-colors",
+                      (question.properties.ratingStyle ?? "stars") === style
+                        ? "border-primary bg-primary/5 text-primary font-medium"
+                        : "border-input hover:border-primary/50 text-muted-foreground"
+                    )}
+                  >
+                    <span className="text-base">{style === "stars" ? "★" : style === "hearts" ? "♥" : style === "thumbs" ? "👍" : "1"}</span>
+                    <span className="truncate w-full text-center">{style === "stars" ? "Estrelas" : style === "hearts" ? "Corações" : style === "thumbs" ? "Polegar" : "Números"}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Máximo de estrelas</label>
+              <select
+                value={question.properties.ratingMax ?? 5}
+                onChange={(e) => updateQuestion(question.id, { properties: { ...question.properties, ratingMax: Number(e.target.value) } })}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {[3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </>
+      )}
+
+      {question.type === "scale" && (
+        <>
+          <Separator />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Faixa da escala</label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-[11px] text-muted-foreground">De</label>
+                  <select
+                    value={question.properties.scaleMin ?? 1}
+                    onChange={(e) => updateQuestion(question.id, { properties: { ...question.properties, scaleMin: Number(e.target.value) } })}
+                    className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {[0, 1].map((n) => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] text-muted-foreground">Até</label>
+                  <select
+                    value={question.properties.scaleMax ?? 10}
+                    onChange={(e) => updateQuestion(question.id, { properties: { ...question.properties, scaleMax: Number(e.target.value) } })}
+                    className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {[5, 6, 7, 8, 9, 10].map((n) => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-[11px] text-muted-foreground">Label início</label>
+                <Input
+                  value={question.properties.scaleMinLabel ?? ""}
+                  onChange={(e) => updateQuestion(question.id, { properties: { ...question.properties, scaleMinLabel: e.target.value || undefined } })}
+                  placeholder="ex: Ruim"
+                  className="text-sm h-8"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[11px] text-muted-foreground">Label fim</label>
+                <Input
+                  value={question.properties.scaleMaxLabel ?? ""}
+                  onChange={(e) => updateQuestion(question.id, { properties: { ...question.properties, scaleMaxLabel: e.target.value || undefined } })}
+                  placeholder="ex: Ótimo"
+                  className="text-sm h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {question.type === "file_upload" && (
+        <>
+          <Separator />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Tipos permitidos</label>
+              <div className="space-y-2">
+                {([
+                  { value: "image/*", label: "Imagens (JPG, PNG, GIF...)" },
+                  { value: "application/pdf", label: "PDF" },
+                  { value: "application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document", label: "Word (.doc, .docx)" },
+                  { value: "video/*", label: "Vídeos" },
+                  { value: "audio/*", label: "Áudio" },
+                ] as const).map(({ value, label }) => {
+                  const current = question.properties.allowedFileTypes ?? []
+                  const checked = current.includes(value)
+                  return (
+                    <label key={value} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          const next = checked ? current.filter((t) => t !== value) : [...current, value]
+                          updateQuestion(question.id, { properties: { ...question.properties, allowedFileTypes: next.length ? next : undefined } })
+                        }}
+                        className="rounded border-input"
+                      />
+                      <span className="text-sm">{label}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Tamanho máximo</label>
+              <select
+                value={question.properties.maxFileSize ?? 10}
+                onChange={(e) => updateQuestion(question.id, { properties: { ...question.properties, maxFileSize: Number(e.target.value) } })}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value={1}>1 MB</option>
+                <option value={5}>5 MB</option>
+                <option value={10}>10 MB</option>
+                <option value={25}>25 MB</option>
+                <option value={50}>50 MB</option>
+              </select>
+            </div>
+          </div>
+        </>
+      )}
+
       <Separator />
 
       <Button
@@ -2059,6 +2244,26 @@ function OptionsEditor({ question }: { question: Question }) {
       <Button variant="outline" size="sm" className="w-full h-8 text-xs" onClick={addOption} disabled={options.length >= 20}>
         <Plus className="mr-1.5 h-3 w-3" /> Adicionar opção
       </Button>
+
+      {["multiple_choice", "checkbox"].includes(question.type) && (
+        <div className="flex items-center justify-between rounded-md border px-3 py-2">
+          <label className="text-sm cursor-pointer" htmlFor={`allowOther-${question.id}`}>Opção "Outro"</label>
+          <Switch
+            id={`allowOther-${question.id}`}
+            checked={question.properties.allowOther ?? false}
+            onCheckedChange={(v) => updateQuestion(question.id, { properties: { ...question.properties, allowOther: v || undefined } })}
+          />
+        </div>
+      )}
+
+      <div className="flex items-center justify-between rounded-md border px-3 py-2">
+        <label className="text-sm cursor-pointer" htmlFor={`randomize-${question.id}`}>Embaralhar opções</label>
+        <Switch
+          id={`randomize-${question.id}`}
+          checked={question.properties.randomizeOptions ?? false}
+          onCheckedChange={(v) => updateQuestion(question.id, { properties: { ...question.properties, randomizeOptions: v || undefined } })}
+        />
+      </div>
     </div>
   )
 }

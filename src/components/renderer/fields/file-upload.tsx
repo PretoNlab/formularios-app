@@ -111,9 +111,17 @@ export function FileUploadField({ question, value, onChange }: FieldProps & { fo
         <>
           <div className="ff-upload-icon" aria-hidden>📁</div>
           <p className="ff-upload-label">Clique ou arraste um arquivo aqui</p>
-          {(allowedFileTypes?.length ?? 0) > 0 && (
+          {((allowedFileTypes?.length ?? 0) > 0 || maxFileSize) && (
             <p className="ff-upload-hint">
-              Formatos: {allowedFileTypes!.join(", ")}
+              {(allowedFileTypes?.length ?? 0) > 0 && (
+                <>Formatos: {allowedFileTypes!.map((t) =>
+                  t === "image/*" ? "Imagens" :
+                  t === "video/*" ? "Vídeos" :
+                  t === "audio/*" ? "Áudio" :
+                  t === "application/pdf" ? "PDF" :
+                  t.includes("word") ? "Word" : t
+                ).join(", ")}</>
+              )}
               {maxFileSize ? ` • Máx ${maxFileSize} MB` : ""}
             </p>
           )}
