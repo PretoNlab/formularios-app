@@ -12,59 +12,65 @@ import { getThemeCSSVariables } from "@/config/themes"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function resolveNextIndex(
-    current: number,
-    questions: Question[],
-    answers: Record<string, AnswerValue>
-): number {
-    const q = questions[current]
-    if (!q?.logicRules?.length) return current + 1
+import type { LogicCondition, LogicRule } from "@/lib/types/form"
 
-    for (const rule of q.logicRules) {
-        const { condition, action } = rule
-        const answerVal = answers[condition.questionId]
+function evaluateCondition(condition: LogicCondition, answers: Record<string, AnswerValue>): boolean {
+    const answerVal = answers[condition.questionId]
+    switch (condition.operator) {
+        case "equals":      return answerVal == condition.value
+        case "not_equals":  return answerVal != condition.value
+        case "contains":    return typeof answerVal === "string" && answerVal.includes(String(condition.value))
+        case "not_contains":return typeof answerVal === "string" && !answerVal.includes(String(condition.value))
+        case "greater_than":return Number(answerVal) > Number(condition.value)
+        case "less_than":   return Number(answerVal) < Number(condition.value)
+        case "is_empty":    return answerVal == null || answerVal === ""
+        case "is_not_empty":return answerVal != null && answerVal !== ""
+        default:            return false
+    }
+}
 
-        let matches = false
-        switch (condition.operator) {
-            case "equals":
-                matches = answerVal == condition.value
-                break
-            case "not_equals":
-                matches = answerVal != condition.value
-                break
-            case "contains":
-                matches =
-                    typeof answerVal === "string" &&
-                    answerVal.includes(String(condition.value))
-                break
-            case "not_contains":
-                matches =
-                    typeof answerVal === "string" &&
-                    !answerVal.includes(String(condition.value))
-                break
-            case "greater_than":
-                matches = Number(answerVal) > Number(condition.value)
-                break
-            case "less_than":
-                matches = Number(answerVal) < Number(condition.value)
-                break
-            case "is_empty":
-                matches = answerVal == null || answerVal === ""
-                break
-            case "is_not_empty":
-                matches = answerVal != null && answerVal !== ""
-                break
-        }
+function evaluateRule(rule: LogicRule, answers: Record<string, AnswerValue>): boolean {
+    const conditions = rule.conditions?.length ? rule.conditions : [rule.condition]
+    const op = rule.conditionOperator ?? "and"
+    return op === "and"
+        ? conditions.every((c) => evaluateCondition(c, answers))
+        : conditions.some((c) => evaluateCondition(c, answers))
+}
 
-        if (matches) {
-            if (action.type === "end_form") return questions.length
-            if (action.type === "jump_to" && action.targetQuestionId) {
-                const idx = questions.findIndex((x) => x.id === action.targetQuestionId)
-                if (idx !== -1) return idx
+function computeHiddenQuestions(questions: Question[], answers: Record<string, AnswerValue>): Set<string> {
+    const hidden = new Set<string>()
+    for (const q of questions) {
+        for (const rule of q.logicRules ?? []) {
+            if (evaluateRule(rule, answers) && rule.action.type === "hide_question" && rule.action.targetQuestionId) {
+                hidden.add(rule.action.targetQuestionId)
             }
         }
     }
-    return current + 1
+    return hidden
+}
+
+function resolveNextIndex(
+    current: number,
+    questions: Question[],
+    answers: Record<string, AnswerValue>,
+    hidden: Set<string>
+): number {
+    const q = questions[current]
+    if (q?.logicRules?.length) {
+        for (const rule of q.logicRules) {
+            if (evaluateRule(rule, answers)) {
+                if (rule.action.type === "end_form") return questions.length
+                if (rule.action.type === "jump_to" && rule.action.targetQuestionId) {
+                    const idx = questions.findIndex((x) => x.id === rule.action.targetQuestionId)
+                    if (idx !== -1) return idx
+                }
+            }
+        }
+    }
+    // advance past hidden questions
+    let next = current + 1
+    while (next < questions.length && hidden.has(questions[next].id)) next++
+    return next
 }
 
 // ─── Individual Question Renderers ────────────────────────────────────────────
@@ -764,20 +770,15 @@ export function FormRenderer({
     // ── Navigate forward ──
     const goNext = useCallback(async () => {
         if (!isValid()) return
-
         if (state.isComplete) return
 
-        const nextIdx = resolveNextIndex(
-            state.currentQuestionIndex,
-            questions,
-            state.answers
-        )
+        const hidden = computeHiddenQuestions(questions, state.answers)
+        const nextIdx = resolveNextIndex(state.currentQuestionIndex, questions, state.answers, hidden)
 
         const nextQuestion = questions[nextIdx]
         const isNextThankYou = nextQuestion?.type === "thank_you"
 
         if (nextIdx >= questions.length || isLastQuestion || isNextThankYou) {
-            // Submit answers, then navigate to thank_you if it exists
             setState((s) => ({ ...s, isSubmitting: true }))
             try {
                 await onSubmit?.(state.answers)
@@ -786,14 +787,12 @@ export function FormRenderer({
                     ...s,
                     isSubmitting: false,
                     isComplete: true,
-                    // Navigate into the thank_you screen so it renders
                     ...(isNextThankYou ? { currentQuestionIndex: nextIdx } : {}),
                 }))
             }
             return
         }
 
-        // Report partial progress for this question
         if (currentQ && onProgress) {
             onProgress(currentQ.id, state.answers[currentQ.id] ?? null)
         }
@@ -813,16 +812,16 @@ export function FormRenderer({
     // ── Navigate back ──
     const goBack = useCallback(() => {
         if (state.currentQuestionIndex === 0) return
+        const hidden = computeHiddenQuestions(questions, state.answers)
+        let prevIdx = state.currentQuestionIndex - 1
+        while (prevIdx > 0 && hidden.has(questions[prevIdx].id)) prevIdx--
         setDirection("down")
         setAnimating(true)
         setTimeout(() => {
-            setState((s) => ({
-                ...s,
-                currentQuestionIndex: s.currentQuestionIndex - 1,
-            }))
+            setState((s) => ({ ...s, currentQuestionIndex: prevIdx }))
             setAnimating(false)
         }, 220)
-    }, [state.currentQuestionIndex])
+    }, [questions, state])
 
     // ── Keyboard shortcut: Enter to advance ──
     useEffect(() => {

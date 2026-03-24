@@ -2524,6 +2524,69 @@ function LogicPanel({ question, allQuestions }: { question: Question; allQuestio
   )
 }
 
+function ConditionInput({
+  condition,
+  question,
+  onChange,
+  onDelete,
+  canDelete,
+}: {
+  condition: LogicRule["condition"]
+  question: Question
+  onChange: (partial: Partial<LogicRule["condition"]>) => void
+  onDelete: () => void
+  canDelete: boolean
+}) {
+  const operators = getOperatorsForType(question.type)
+  const showValue = !["is_empty", "is_not_empty"].includes(condition.operator)
+  const isNumeric = ["number", "rating", "scale", "nps"].includes(question.type)
+  const isChoice = ["multiple_choice", "dropdown"].includes(question.type)
+  const isYesNo = question.type === "yes_no"
+  const options = question.properties.options ?? []
+  const selectClass = "w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+
+  return (
+    <div className="space-y-1.5 relative">
+      <div className="flex gap-1">
+        <select className={cn(selectClass, "flex-1")} value={condition.operator}
+          onChange={(e) => onChange({ operator: e.target.value as LogicOperator, value: "" })}>
+          {operators.map((op) => (
+            <option key={op} value={op}>{OPERATOR_LABELS[op]}</option>
+          ))}
+        </select>
+        {canDelete && (
+          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive" onClick={onDelete}>
+            <X className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+      {showValue && (
+        isYesNo ? (
+          <select className={selectClass} value={String(condition.value)}
+            onChange={(e) => onChange({ value: e.target.value })}>
+            <option value="true">Sim</option>
+            <option value="false">Não</option>
+          </select>
+        ) : isChoice && options.length > 0 ? (
+          <select className={selectClass} value={String(condition.value)}
+            onChange={(e) => onChange({ value: e.target.value })}>
+            <option value="">Escolha uma opção...</option>
+            {options.map((opt) => (
+              <option key={opt.id} value={opt.label}>{opt.label}</option>
+            ))}
+          </select>
+        ) : (
+          <input type={isNumeric ? "number" : "text"} className={selectClass}
+            placeholder="Valor..."
+            value={String(condition.value)}
+            onChange={(e) => onChange({ value: isNumeric ? Number(e.target.value) : e.target.value })}
+          />
+        )
+      )}
+    </div>
+  )
+}
+
 function RuleEditor({
   index,
   rule,
@@ -2539,15 +2602,25 @@ function RuleEditor({
   onUpdate: (partial: Partial<LogicRule>) => void
   onDelete: () => void
 }) {
-  const operators = getOperatorsForType(question.type)
-  const showValue = !["is_empty", "is_not_empty"].includes(rule.condition.operator)
-  const isNumeric = ["number", "rating", "scale", "nps"].includes(question.type)
-  const isChoice = ["multiple_choice", "dropdown"].includes(question.type)
-  const isYesNo = question.type === "yes_no"
-  const options = question.properties.options ?? []
+  // Normalize to conditions array
+  const conditions: LogicRule["condition"][] = rule.conditions?.length ? rule.conditions : [rule.condition]
+  const conditionOperator = rule.conditionOperator ?? "and"
 
-  function updateCondition(partial: Partial<LogicRule["condition"]>) {
-    onUpdate({ condition: { ...rule.condition, ...partial } })
+  function setConditions(next: LogicRule["condition"][]) {
+    onUpdate({ conditions: next, condition: next[0] })
+  }
+
+  function updateConditionAt(i: number, partial: Partial<LogicRule["condition"]>) {
+    const next = conditions.map((c, idx) => idx === i ? { ...c, ...partial } : c)
+    setConditions(next)
+  }
+
+  function deleteConditionAt(i: number) {
+    setConditions(conditions.filter((_, idx) => idx !== i))
+  }
+
+  function addCondition() {
+    setConditions([...conditions, { questionId: question.id, operator: "equals" as LogicOperator, value: "" }])
   }
 
   function updateAction(partial: Partial<LogicRule["action"]>) {
@@ -2566,37 +2639,30 @@ function RuleEditor({
       </div>
 
       {/* WHEN */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Quando a resposta</p>
-        <select className={selectClass} value={rule.condition.operator}
-          onChange={(e) => updateCondition({ operator: e.target.value as LogicOperator, value: "" })}>
-          {operators.map((op) => (
-            <option key={op} value={op}>{OPERATOR_LABELS[op]}</option>
-          ))}
-        </select>
-        {showValue && (
-          isYesNo ? (
-            <select className={selectClass} value={String(rule.condition.value)}
-              onChange={(e) => updateCondition({ value: e.target.value })}>
-              <option value="true">Sim</option>
-              <option value="false">Não</option>
-            </select>
-          ) : isChoice && options.length > 0 ? (
-            <select className={selectClass} value={String(rule.condition.value)}
-              onChange={(e) => updateCondition({ value: e.target.value })}>
-              <option value="">Escolha uma opção...</option>
-              {options.map((opt) => (
-                <option key={opt.id} value={opt.label}>{opt.label}</option>
-              ))}
-            </select>
-          ) : (
-            <input type={isNumeric ? "number" : "text"} className={selectClass}
-              placeholder="Valor..."
-              value={String(rule.condition.value)}
-              onChange={(e) => updateCondition({ value: isNumeric ? Number(e.target.value) : e.target.value })}
+        {conditions.map((cond, i) => (
+          <div key={i}>
+            {i > 0 && (
+              <button
+                onClick={() => onUpdate({ conditionOperator: conditionOperator === "and" ? "or" : "and" })}
+                className="text-[10px] font-semibold text-primary hover:underline my-1"
+              >
+                {conditionOperator === "and" ? "E" : "OU"}
+              </button>
+            )}
+            <ConditionInput
+              condition={cond}
+              question={question}
+              onChange={(partial) => updateConditionAt(i, partial)}
+              onDelete={() => deleteConditionAt(i)}
+              canDelete={conditions.length > 1}
             />
-          )
-        )}
+          </div>
+        ))}
+        <Button variant="ghost" size="sm" className="h-6 text-[10px] text-muted-foreground px-1" onClick={addCondition}>
+          <Plus className="h-3 w-3 mr-1" /> Adicionar condição
+        </Button>
       </div>
 
       {/* THEN */}
@@ -2605,12 +2671,13 @@ function RuleEditor({
         <select className={selectClass} value={rule.action.type}
           onChange={(e) => updateAction({ type: e.target.value as LogicRule["action"]["type"], targetQuestionId: undefined })}>
           <option value="jump_to">Pular para</option>
+          <option value="hide_question">Ocultar pergunta</option>
           <option value="end_form">Encerrar formulário</option>
         </select>
-        {rule.action.type === "jump_to" && (
+        {(rule.action.type === "jump_to" || rule.action.type === "hide_question") && (
           <select className={selectClass} value={rule.action.targetQuestionId ?? ""}
             onChange={(e) => updateAction({ targetQuestionId: e.target.value || undefined })}>
-            <option value="">Escolha a pergunta destino...</option>
+            <option value="">Escolha a pergunta...</option>
             {otherQuestions.map((q, i) => (
               <option key={q.id} value={q.id}>
                 {i + 1}. {(q.title || "(sem título)").slice(0, 40)}

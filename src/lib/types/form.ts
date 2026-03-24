@@ -77,6 +77,8 @@ export interface QuestionOption {
 export interface LogicRule {
   id: string
   condition: LogicCondition
+  conditions?: LogicCondition[]
+  conditionOperator?: "and" | "or"
   action: LogicAction
 }
 
