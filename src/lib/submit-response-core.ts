@@ -150,8 +150,12 @@ export async function submitResponseCore(params: {
   }
 
   // 5. Sanitize: only save answers for questions that belong to this form
+  // Also strip the "__uploading__" sentinel that the renderer uses to block
+  // navigation during an in-progress file upload.
   const sanitizedAnswers = Object.fromEntries(
-    Object.entries(parsedAnswers).filter(([qId]) => validQuestionIds.has(qId))
+    Object.entries(parsedAnswers).filter(
+      ([qId, v]) => validQuestionIds.has(qId) && v !== "__uploading__"
+    )
   ) as Record<string, AnswerValue>
 
   // 6. Rate limit check

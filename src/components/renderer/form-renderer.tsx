@@ -510,7 +510,9 @@ function DownloadInput({ question, onChange }: InputProps) {
 
 function FileUploadInput({ question, value, onChange, formId }: InputProps) {
     const ref = useRef<HTMLInputElement>(null)
-    const fileData = value as { fileUrl: string; fileName: string } | null
+    const fileData = (value && typeof value === "object" && "fileUrl" in value)
+        ? value as { fileUrl: string; fileName: string }
+        : null
     const [uploading, setUploading] = useState(false)
     const [uploadError, setUploadError] = useState<string | null>(null)
 
@@ -545,6 +547,7 @@ function FileUploadInput({ question, value, onChange, formId }: InputProps) {
 
         setUploadError(null)
         setUploading(true)
+        onChange("__uploading__")
 
         const data = new FormData()
         data.append("file", file)
@@ -555,11 +558,13 @@ function FileUploadInput({ question, value, onChange, formId }: InputProps) {
             const json = await res.json() as { url?: string; fileName?: string; error?: string }
             if (!res.ok || !json.url) {
                 setUploadError(json.error ?? "Falha ao enviar arquivo.")
+                onChange(null)
             } else {
                 onChange({ fileUrl: json.url, fileName: json.fileName ?? file.name })
             }
         } catch {
             setUploadError("Erro de conexão. Tente novamente.")
+            onChange(null)
         } finally {
             setUploading(false)
             if (ref.current) ref.current.value = ""
@@ -801,8 +806,10 @@ export function FormRenderer({
     // ── Validation ──
     const isValid = useCallback(() => {
         if (!currentQ) return true
-        if (!currentQ.required) return true
         const val = state.answers[currentQ.id]
+        // Block navigation while a file upload is in progress (required or not)
+        if (val === "__uploading__") return false
+        if (!currentQ.required) return true
         if (val == null || val === "") return false
         if (Array.isArray(val) && val.length === 0) return false
         return true
