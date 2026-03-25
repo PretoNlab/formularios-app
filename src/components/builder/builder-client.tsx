@@ -38,7 +38,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { FormRenderer } from "@/components/renderer/form-renderer"
+import { FormRenderer, FormStyles } from "@/components/renderer/form-renderer"
 
 import { useBuilderStore } from "@/stores/builder-store"
 import { useShallow } from "zustand/react/shallow"
@@ -57,7 +57,7 @@ import {
 import type { Form, Question, QuestionType, QuestionProperties, ThemeConfig, LogicRule, LogicOperator } from "@/lib/types/form"
 import { QUESTION_TYPES } from "@/lib/types/form"
 import type { IntegrationRow } from "@/lib/db/queries/integrations"
-import { PRESET_THEMES, AVAILABLE_FONTS } from "@/config/themes"
+import { PRESET_THEMES, AVAILABLE_FONTS, getThemeCSSVariables } from "@/config/themes"
 import { cn } from "@/lib/utils"
 
 // ─── Builder Tour ─────────────────────────────────────────────────────────────
@@ -422,7 +422,11 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────── */}
       <aside className="w-96 flex-shrink-0 border-r bg-card flex flex-col overflow-hidden">
         <div className="p-3 border-b">
-          <Tabs value={sidebarTab} onValueChange={(v) => setSidebarTab(v as typeof sidebarTab)}>
+          <Tabs value={sidebarTab} onValueChange={(v) => {
+            const tab = v as typeof sidebarTab
+            setSidebarTab(tab)
+            if (tab === "theme") setBuilderMode("preview")
+          }}>
             <TabsList className="grid w-full grid-cols-4 h-10">
               <TabsTrigger value="fields" className="text-xs px-1">Campos</TabsTrigger>
               <TabsTrigger value="theme" className="text-xs px-1">Tema</TabsTrigger>
@@ -634,7 +638,15 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
 
         {builderMode === "preview" ? (
           <div className="absolute inset-0 overflow-hidden flex items-center justify-center bg-muted/30 p-4 lg:p-8">
-            {previewDevice === "mobile" ? (
+            {form.questions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-4 text-center text-muted-foreground">
+                <Eye className="h-12 w-12 opacity-20" />
+                <div>
+                  <p className="font-medium">Nenhuma pergunta ainda</p>
+                  <p className="text-sm">Adicione campos no painel à esquerda para visualizar.</p>
+                </div>
+              </div>
+            ) : previewDevice === "mobile" ? (
                <div className="relative w-[375px] h-[812px] max-h-full rounded-[3rem] border-[8px] border-zinc-900 bg-background shadow-2xl overflow-hidden shadow-black/20 flex flex-col shrink-0 transition-all duration-300 ring-1 ring-border/20">
                  {/* Notch Mock */}
                  <div className="absolute top-0 inset-x-0 h-6 flex justify-center z-50 pointer-events-none">
@@ -643,6 +655,7 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
                  <FormRenderer
                    key={`mobile-${previewKey}`}
                    form={form}
+                   className="!min-h-full !justify-start"
                    onSubmit={async () => {
                      alert("🎉 Preview concluído. Em modo preview as respostas não são salvas.")
                    }}
@@ -663,6 +676,7 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
                    <FormRenderer
                      key={`desktop-${previewKey}`}
                      form={form}
+                     className="!min-h-full !justify-start"
                      onSubmit={async () => {
                        alert("🎉 Preview concluído. Em modo preview as respostas não são salvas.")
                      }}
@@ -672,11 +686,8 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
             )}
           </div>
         ) : (
-          <ScrollArea className="flex-1">
-            <div
-              className="min-h-full p-8 pt-24 bg-muted/30"
-            >
-              <div className="mx-auto max-w-2xl space-y-4">
+          <ScrollArea className="flex-1 p-8 pt-24">
+            <div className="mx-auto max-w-2xl space-y-4">
               {/* Logotipo do formulário */}
             {form.theme.logo?.url && (
               <div 
@@ -738,7 +749,6 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
               <Plus className="mr-2 h-4 w-4" /> Adicionar campo de texto curto
             </Button>
           </div>
-            </div>
           </ScrollArea>
         )}
       </main>
@@ -962,24 +972,37 @@ function ThemePickerPanel({
     }
   }
 
-  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    if (fileInputRef.current) fileInputRef.current.value = ""
 
-    if (file.size > 1024 * 1024) {
-      alert("A imagem não pode exceder 1MB.")
+    if (file.size > 2 * 1024 * 1024) {
+      alert("A imagem não pode exceder 2MB.")
       return
     }
 
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string
+    setIsUploadingLogo(true)
+    try {
+      const data = new FormData()
+      data.append("file", file)
+      const res = await fetch("/api/upload/completion-file", { method: "POST", body: data })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || "Erro no upload")
+      }
+      const { url } = await res.json()
       onUpdateLogo({
-        url: base64,
+        url,
         position: form.theme.logo?.position ?? "center"
       })
+    } catch (err: any) {
+      alert(err.message || "Erro ao fazer upload do logo.")
+    } finally {
+      setIsUploadingLogo(false)
     }
-    reader.readAsDataURL(file)
   }
 
   function handleCustomColorChange(key: keyof ThemeConfig["colors"], value: string) {
@@ -1049,16 +1072,19 @@ function ThemePickerPanel({
               </div>
             </div>
           ) : (
-            <div 
-              className="border-2 border-dashed rounded-xl p-6 text-center hover:bg-muted/50 transition-colors cursor-pointer flex flex-col items-center gap-2"
-              onClick={() => fileInputRef.current?.click()}
+            <div
+              className={cn(
+                "border-2 border-dashed rounded-xl p-6 text-center transition-colors flex flex-col items-center gap-2",
+                isUploadingLogo ? "opacity-60 cursor-not-allowed" : "hover:bg-muted/50 cursor-pointer"
+              )}
+              onClick={() => !isUploadingLogo && fileInputRef.current?.click()}
             >
               <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                <ImageIcon className="h-5 w-5" />
+                {isUploadingLogo ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
               </div>
               <div>
-                <p className="text-sm font-medium">Fazer upload do logo</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">JPG ou PNG, máx 1MB</p>
+                <p className="text-sm font-medium">{isUploadingLogo ? "Enviando..." : "Fazer upload do logo"}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">JPG ou PNG, máx 2MB</p>
               </div>
             </div>
           )}
@@ -1914,9 +1940,10 @@ interface QuestionCardProps {
 }
 
 function QuestionCard({ question, index, isSelected, onSelect, onDelete, onDuplicate }: QuestionCardProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: question.id })
   const Icon = TYPE_ICONS[question.type] ?? Type
   const typeLabel = QUESTION_TYPES[question.type as QuestionType]?.label ?? question.type
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: question.id })
 
   return (
     <div
@@ -1924,57 +1951,44 @@ function QuestionCard({ question, index, isSelected, onSelect, onDelete, onDupli
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
       onClick={onSelect}
       className={cn(
-        "group relative cursor-pointer rounded-xl transition-all",
-        isSelected ? "ring-2 ring-primary shadow-lg" : "ring-1 ring-transparent hover:ring-primary/30 hover:shadow-md",
-        isDragging && "shadow-2xl z-10"
+        "group relative flex items-center gap-4 rounded-xl border p-4 transition-all cursor-pointer bg-card hover:border-primary/50 hover:shadow-sm",
+        isSelected ? "border-primary ring-1 ring-primary shadow-sm" : "border-border",
+        isDragging && "shadow-xl z-10"
       )}
     >
-      {/* Overlaid controls - appear on hover/select */}
-      <div className={cn(
-        "absolute -top-3 right-3 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
-        isSelected && "opacity-100"
-      )}>
-        <div className="bg-background rounded-md shadow-md border flex items-center divide-x">
-          <span className="px-2 py-1 text-[10px] font-semibold text-muted-foreground">
-            {index + 1}
-          </span>
-          <button
-            className="px-2 py-1 text-muted-foreground hover:text-foreground transition-colors"
-            onClick={(e) => { e.stopPropagation(); onDuplicate() }}
-            title="Duplicar"
-          >
-            <Copy className="h-3 w-3" />
-          </button>
-          <button
-            className="px-2 py-1 text-muted-foreground hover:text-destructive transition-colors"
-            onClick={(e) => { e.stopPropagation(); onDelete() }}
-            title="Excluir"
-          >
-            <Trash2 className="h-3 w-3" />
-          </button>
-          <div
-            className="px-2 py-1 text-muted-foreground/50 cursor-grab active:cursor-grabbing"
-            {...attributes}
-            {...listeners}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <GripVertical className="h-3 w-3" />
-          </div>
-        </div>
+      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground shrink-0">
+        {index + 1}
       </div>
-      {/* Simple card body */}
-      <div className="bg-card border rounded-xl px-4 py-3 flex items-center gap-3">
-        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
-          <Icon className="h-4 w-4" />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge variant="secondary" className="text-[10px] uppercase font-semibold text-muted-foreground gap-1">
+            <Icon className="h-3 w-3" />{typeLabel}
+          </Badge>
+          {question.required && (
+            <Badge variant="outline" className="text-[10px] text-destructive border-destructive/30">Obrigatório</Badge>
+          )}
+          {index === 0 && <Badge className="text-[10px] bg-blue-500 hover:bg-blue-600">Primeira pergunta</Badge>}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{typeLabel}</span>
-            {question.required && <span className="text-[10px] text-destructive font-bold">*</span>}
-          </div>
-          <p className="text-sm font-medium leading-snug truncate text-foreground">
-            {question.title || <span className="italic text-muted-foreground/50">Sem título</span>}
-          </p>
+        <h3 className={cn("mt-2 font-medium text-sm truncate", isSelected ? "text-foreground" : "text-muted-foreground")}>
+          {question.title || "(sem título)"}
+        </h3>
+      </div>
+      <div className="opacity-0 transition-opacity group-hover:opacity-100 flex items-center gap-1 shrink-0">
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          onClick={(e) => { e.stopPropagation(); onDuplicate() }} title="Duplicar">
+          <Copy className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive"
+          onClick={(e) => { e.stopPropagation(); onDelete() }} title="Excluir">
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+        <div
+          className="h-7 w-7 flex items-center justify-center text-muted-foreground/40 cursor-grab active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="h-4 w-4" />
         </div>
       </div>
     </div>
