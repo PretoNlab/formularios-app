@@ -7,6 +7,23 @@ import { eq } from "drizzle-orm"
 const BUCKET = "form-responses"
 const MAX_SIZE_BYTES = 10 * 1024 * 1024 // 10MB
 
+const MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/gif": "gif",
+  "image/webp": "webp",
+  "image/svg+xml": "svg",
+  "video/mp4": "mp4",
+  "video/webm": "webm",
+  "audio/mpeg": "mp3",
+  "audio/ogg": "ogg",
+  "audio/wav": "wav",
+  "application/pdf": "pdf",
+  "application/msword": "doc",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+  "application/zip": "zip",
+}
+
 function serviceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -61,8 +78,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Formulário não encontrado." }, { status: 404 })
   }
 
-  const extParts = file.name.split('.')
-  const ext = extParts.length > 1 ? extParts.pop() : "bin"
+  if (form.status !== "published") {
+    return NextResponse.json({ error: "Formulário não disponível." }, { status: 403 })
+  }
+
+  const ext = MIME_TO_EXT[file.type] ?? "bin"
   const randomHex = Math.random().toString(16).slice(2, 10)
   const path = `${formId}/${Date.now()}-${randomHex}.${ext}`
 

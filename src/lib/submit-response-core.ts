@@ -43,8 +43,12 @@ export const submitBodySchema = z.object({
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function hashIp(ip: string): string {
+  const salt = process.env.IP_HASH_SALT
+  if (!salt && process.env.NODE_ENV === "production") {
+    throw new Error("IP_HASH_SALT must be set in production")
+  }
   return createHash("sha256")
-    .update(ip + (process.env.IP_HASH_SALT ?? process.env.NEXT_PUBLIC_SUPABASE_URL))
+    .update(ip + (salt ?? process.env.NEXT_PUBLIC_SUPABASE_URL))
     .digest("hex")
     .slice(0, 32)
 }

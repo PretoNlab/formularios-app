@@ -102,8 +102,6 @@ export type FormStatus = "draft" | "published" | "closed"
 
 export interface Form {
   id: string
-  workspaceId: string
-  createdById: string
   title: string
   description?: string
   slug: string

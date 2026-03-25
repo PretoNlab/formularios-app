@@ -15,6 +15,14 @@ import { getThemeCSSVariables } from "@/config/themes"
 
 import type { LogicCondition, LogicRule } from "@/lib/types/form"
 
+function isSafeUrl(url: string | null | undefined): boolean {
+    if (!url) return false
+    if (url.startsWith("/")) return true
+    try {
+        return new URL(url).protocol === "https:"
+    } catch { return false }
+}
+
 function evaluateCondition(condition: LogicCondition, answers: Record<string, AnswerValue>): boolean {
     const answerVal = answers[condition.questionId]
     switch (condition.operator) {
@@ -913,9 +921,9 @@ export function FormRenderer({
                                     ? "Você está offline. Sua resposta foi salva e será enviada automaticamente quando você tiver conexão."
                                     : settings.closeMessage || "Sua resposta foi registrada com sucesso."}
                             </p>
-                            {settings.downloadUrl && (
+                            {isSafeUrl(settings.downloadUrl) && (
                                 <a
-                                    href={settings.downloadUrl}
+                                    href={settings.downloadUrl!}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="ff-download-btn"
@@ -1041,9 +1049,9 @@ export function FormRenderer({
                         />
                     </div>
 
-                    {state.isComplete && settings.downloadUrl && (
+                    {state.isComplete && isSafeUrl(settings.downloadUrl) && (
                         <a
-                            href={settings.downloadUrl}
+                            href={settings.downloadUrl!}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="ff-download-btn"

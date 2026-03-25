@@ -25,8 +25,6 @@ const DEFAULT_SETTINGS: Form["settings"] = {
 export function mapDbForm(dbForm: FormWithQuestions): Form {
   return {
     id: dbForm.id,
-    workspaceId: dbForm.workspaceId,
-    createdById: dbForm.createdById,
     title: dbForm.title,
     description: dbForm.description ?? undefined,
     slug: dbForm.slug,
