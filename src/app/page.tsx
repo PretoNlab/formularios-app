@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import {
   Sparkles, ArrowRight, Zap, BarChart3, Globe, MessageCircle,
   CheckCircle2, Star, ChevronRight, MousePointer2, Shield, Layers,
-  Target, Download, ChevronDown, MessageSquare, Info
+  Target, Download, ChevronDown
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -39,9 +39,10 @@ export default async function HomePage() {
       <Hero />
       <Features />
       <HowItWorks />
-      <ComparisonTable />
+      <FounderOffer />
       <Testimonials />
       <Pricing />
+      <ComparisonTable />
       <FAQ />
       <FinalCTA />
       <Footer />
@@ -405,140 +406,111 @@ function Testimonials() {
 
 // ─── Pricing ──────────────────────────────────────────────────────────────────
 
-function Pricing() {
-  const topups = [
-    { name: "+500 respostas", price: "R$ 49", icon: MessageSquare },
-    { name: "+1.000 respostas", price: "R$ 79", icon: Zap },
-    { name: "+5 formulários ativos", price: "R$ 59", icon: Layers },
-  ]
+const PLANS = [
+  {
+    name: "Gratuito",
+    price: "R$ 0",
+    period: "para sempre",
+    description: "Para experimentar a plataforma sem compromisso.",
+    features: [
+      "Até 3 formulários publicados",
+      "Rascunhos ilimitados",
+      "50 respostas para testar",
+      "22 tipos de campo",
+      "Analytics básico",
+      "Link público compartilhável",
+    ],
+    cta: "Começar grátis",
+    href: "/signup",
+    highlight: false,
+  },
+  {
+    name: "Lote Fundador",
+    price: "R$ 499",
+    period: "por 12 meses",
+    description: "Pagamento único via Pix. Sem renovação automática.",
+    features: [
+      "Até 10 formulários publicados",
+      "Rascunhos ilimitados",
+      "Até 2.500 respostas por ano",
+      "Lógica condicional",
+      "Temas e customização",
+      "Exportação CSV / JSON",
+      "Webhooks e integrações",
+      "Suporte por e-mail",
+    ],
+    cta: "Garantir minha vaga",
+    href: "/signup?plan=founder",
+    highlight: true,
+  },
+]
 
+function Pricing() {
   return (
-    <section id="pricing" className="py-24 bg-muted/30 overflow-hidden">
+    <section id="pricing" className="py-24 bg-muted/30">
       <div className="container">
-        <div className="text-center mb-16 space-y-4">
-          <Badge variant="secondary" className="rounded-full border-violet-600/10 text-violet-600 font-bold uppercase tracking-wider px-4 py-1.5">
-            Preço Único
-          </Badge>
-          <h2 className="text-4xl md:text-6xl font-extrabold font-headline tracking-tight">
-            Cresça só quando precisar
+        <div className="text-center mb-16">
+          <Badge variant="secondary" className="rounded-full mb-4">Preços</Badge>
+          <h2 className="text-4xl font-bold tracking-tight mb-4">
+            Simples, transparente, justo
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Você começa com uma franquia anual e só compra mais capacidade quando fizer sentido para a sua operação.
+          <p className="text-xl text-muted-foreground">
+            Sem surpresas. Cancele quando quiser.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-12 gap-8 items-start max-w-6xl mx-auto">
-          {/* Main Plan Card */}
-          <div className="lg:col-span-7 relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-[3rem] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
-            <div className="relative bg-foreground text-background rounded-[2.5rem] p-8 md:p-12 shadow-2xl flex flex-col gap-10 border border-white/10">
-              <div className="flex justify-between items-start">
-                <div>
-                  <Badge className="bg-violet-600 text-white rounded-full px-4 py-1 mb-4 border-none font-bold uppercase tracking-widest text-[10px]">
-                    Lote Fundador
-                  </Badge>
-                  <h3 className="text-4xl font-extrabold font-headline">Plano Fundador</h3>
-                  <p className="text-background/60 mt-2 font-medium">Acesso total por 12 meses</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          {PLANS.map((plan) => (
+            <div
+              key={plan.name}
+              className={`relative rounded-2xl border p-8 flex flex-col gap-6 ${plan.highlight
+                ? "bg-foreground text-background border-foreground shadow-2xl scale-105"
+                : "bg-card"
+                }`}
+            >
+              {plan.highlight && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <Badge className="bg-violet-600 text-white rounded-full px-4">Mais popular</Badge>
                 </div>
-                <div className="text-right">
-                  <div className="flex items-baseline justify-end gap-1">
-                    <span className="text-5xl font-extrabold font-headline">R$ 499</span>
-                  </div>
-                  <p className="text-sm text-background/60 font-medium mt-1">Pagamento único via Pix</p>
-                </div>
-              </div>
+              )}
 
-              <div className="grid md:grid-cols-2 gap-8 py-8 border-y border-white/10">
-                <div className="space-y-4">
-                  <p className="text-xs font-bold uppercase tracking-widest text-violet-400">Incluso no plano</p>
-                  <ul className="space-y-3">
-                    {[
-                      "Até 10 formulários publicados",
-                      "Até 2.500 respostas / ano",
-                      "Respostas parciais nativas",
-                      "Exportação CSV / JSON",
-                    ].map((feature) => (
-                      <li key={feature} className="flex items-center gap-2 text-sm font-medium">
-                        <CheckCircle2 className="h-4 w-4 text-violet-500 shrink-0" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
+              <div>
+                <p className={`text-sm font-medium mb-1 ${plan.highlight ? "text-background/60" : "text-muted-foreground"}`}>
+                  {plan.name}
+                </p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">{plan.price}</span>
+                  <span className={`text-sm ${plan.highlight ? "text-background/60" : "text-muted-foreground"}`}>
+                    /{plan.period}
+                  </span>
                 </div>
-                <div className="space-y-4">
-                  <p className="text-xs font-bold uppercase tracking-widest text-violet-400">Poder da plataforma</p>
-                  <ul className="space-y-3">
-                    {[
-                      "Analytics avançado com IA",
-                      "Lógica condicional",
-                      "Lead magnet nativo",
-                      "Suporte prioritário",
-                    ].map((feature) => (
-                      <li key={feature} className="flex items-center gap-2 text-sm font-medium">
-                        <CheckCircle2 className="h-4 w-4 text-violet-500 shrink-0" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                <Link href="/signup?plan=founder">
-                  <Button className="w-full bg-white text-foreground hover:bg-white/90 py-8 rounded-full font-extrabold text-xl shadow-xl shadow-white/5 transition-transform hover:scale-[1.01]">
-                    Garantir minha vaga
-                  </Button>
-                </Link>
-                <p className="text-center text-xs text-background/40 font-medium">
-                  Sem taxas ocultas · Cancele a renovação quando quiser
+                <p className={`text-sm mt-2 ${plan.highlight ? "text-background/70" : "text-muted-foreground"}`}>
+                  {plan.description}
                 </p>
               </div>
-            </div>
-          </div>
 
-          {/* Top-ups Section */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-card rounded-[2.5rem] border p-8 md:p-10 shadow-xl border-border/50">
-              <h4 className="text-2xl font-bold font-headline mb-2">Recargas sugeridas</h4>
-              <p className="text-sm text-muted-foreground mb-8">
-                Se a sua operação pedir mais capacidade, você amplia depois de forma simples.
-              </p>
-
-              <div className="space-y-4">
-                {topups.map((topup) => (
-                  <div key={topup.name} className="flex items-center justify-between p-5 rounded-2xl border bg-muted/20 hover:bg-muted/40 transition-colors group cursor-pointer">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-xl bg-background border flex items-center justify-center group-hover:border-violet-600/50 transition-colors">
-                        <topup.icon className="h-5 w-5 text-violet-600" />
-                      </div>
-                      <span className="font-bold text-sm tracking-tight">{topup.name}</span>
-                    </div>
-                    <span className="text-lg font-extrabold font-headline">{topup.price}</span>
-                  </div>
+              <ul className="space-y-2.5 flex-1">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-2 text-sm">
+                    <CheckCircle2 className={`h-4 w-4 mt-0.5 shrink-0 ${plan.highlight ? "text-violet-400" : "text-green-500"}`} />
+                    <span className={plan.highlight ? "text-background/80" : ""}>{feature}</span>
+                  </li>
                 ))}
-              </div>
+              </ul>
 
-              <div className="mt-8 p-6 rounded-2xl bg-violet-600/5 border border-violet-600/10">
-                <div className="flex gap-3">
-                  <Info className="h-5 w-5 text-violet-600 shrink-0 mt-0.5" />
-                  <p className="text-xs leading-relaxed text-muted-foreground font-medium">
-                    <strong className="text-foreground">Como funciona:</strong> Cada resposta coletada consome 1 crédito da sua franquia. Se os créditos acabarem antes dos 12 meses, você pode recarregar separadamente.
-                  </p>
-                </div>
-              </div>
+              <Link href={plan.href}>
+                <Button
+                  className={`w-full rounded-full ${plan.highlight
+                    ? "bg-white text-foreground hover:bg-white/90"
+                    : ""
+                    }`}
+                  variant={plan.highlight ? "outline" : "default"}
+                >
+                  {plan.cta}
+                </Button>
+              </Link>
             </div>
-
-            {/* Hint Card */}
-            <div className="bg-violet-600 rounded-[2rem] p-8 text-white relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                <Sparkles className="h-24 w-24" />
-              </div>
-              <p className="text-sm font-bold uppercase tracking-widest opacity-80 mb-2">Créditos Vitalícios</p>
-              <p className="text-lg font-bold leading-snug">
-                Créditos extras de recarga nunca expiram. Use no seu ritmo, sem pressão.
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>
@@ -577,7 +549,7 @@ const FAQ_ITEMS = [
     answer: "Não. Seus dados e os dados dos seus respondentes pertencem exclusivamente a você. Não vendemos dados em hipótese alguma."
   },
   {
-    question: "O formulario.ia é compatível com a LGPD?",
+    question: "O formularios.ia é compatível com a LGPD?",
     answer: "Sim. A plataforma foi desenvolvida com boas práticas de privacidade: IPs anonimizados, dados armazenados em servidores no Brasil com criptografia e controle total do criador sobre seus dados."
   }
 ]
@@ -637,13 +609,72 @@ function FinalCTA() {
           </Link>
         </div>
         <p className="text-sm text-background/40 mt-6">
-          Grátis para sempre · Sem cartão de crédito · Ao continuar, você concorda com nossos <Link href="/terms" className="underline hover:text-white">Termos</Link> e <Link href="/privacy" className="underline hover:text-white">Privacidade</Link>
+          Comece grátis · Sem cartão de crédito · Ao continuar, você concorda com nossos <Link href="/terms" className="underline hover:text-white">Termos</Link> e <Link href="/privacy" className="underline hover:text-white">Privacidade</Link>
         </p>
       </div>
     </section>
   )
 }
 
+// ─── Founder Offer ────────────────────────────────────────────────────────────
+
+function FounderOffer() {
+  return (
+    <section className="py-24 bg-foreground text-background overflow-hidden">
+      <div className="container">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="space-y-8">
+            <h2 className="text-4xl md:text-5xl font-extrabold font-headline leading-tight text-white">
+              Um modelo diferente da maioria das ferramentas
+            </h2>
+            <p className="text-xl text-background/70 leading-relaxed">
+              Chega de ser refém de assinaturas recorrentes para ter o básico funcionando.
+            </p>
+            <div className="bg-violet-600/20 border border-violet-600/30 p-8 rounded-3xl">
+              <p className="text-2xl font-bold font-headline leading-snug">
+                O grande diferencial: <span className="text-violet-400">você paga R$ 499 uma vez e usa por 12 meses.</span>
+              </p>
+            </div>
+          </div>
+          <div className="relative">
+            <div className="bg-background rounded-[2.5rem] p-10 shadow-2xl text-foreground relative overflow-hidden">
+              <div className="absolute top-6 right-6 bg-violet-600 text-white text-[10px] font-extrabold px-4 py-1.5 rounded-full uppercase tracking-widest animate-pulse">
+                Lote Fundador
+              </div>
+              <div className="mb-8">
+                <p className="text-5xl font-extrabold font-headline text-violet-600">R$ 499</p>
+                <p className="text-muted-foreground font-medium">por 12 meses de acesso</p>
+              </div>
+              <ul className="space-y-4 mb-10">
+                {[
+                  "Até 10 formulários publicados",
+                  "Rascunhos ilimitados",
+                  "Até 2.500 respostas por ano",
+                  "Personalização básica de temas",
+                  "Exportação completa de respostas",
+                  "Suporte padrão por e-mail",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-3 font-medium text-sm">
+                    <CheckCircle2 className="h-5 w-5 text-violet-600 shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/signup?plan=founder">
+                <Button className="w-full bg-foreground text-background py-7 rounded-full font-extrabold text-lg transition-transform hover:scale-[1.02]">
+                  Quero entrar no lote fundador
+                </Button>
+              </Link>
+              <p className="text-center mt-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Pagamento único via Pix
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
 
 // ─── Comparison Table ─────────────────────────────────────────────────────────
 
@@ -664,7 +695,7 @@ function ComparisonTable() {
             Transparência total para você decidir o que faz sentido para o seu momento.
           </p>
         </div>
-        
+
         <div className="overflow-x-auto rounded-3xl border bg-card/50">
           <table className="w-full border-collapse">
             <thead>
