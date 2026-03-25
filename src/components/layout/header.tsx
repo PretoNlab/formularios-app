@@ -57,6 +57,7 @@ export async function Header() {
             <Link href="/analytics" className="text-foreground/60 transition-colors hover:text-foreground">Analytics</Link>
             <Link href="/settings" className="text-foreground/60 transition-colors hover:text-foreground">Settings</Link>
             <Link href="/billing" className="text-foreground/60 transition-colors hover:text-foreground">Créditos</Link>
+            <Link href="/help" className="text-foreground/60 transition-colors hover:text-foreground">Ajuda</Link>
           </nav>
         </div>
 
