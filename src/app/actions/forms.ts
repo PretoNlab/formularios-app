@@ -12,6 +12,9 @@ import {
   updateForm,
   type UpdateFormInput,
 } from "@/lib/db/queries/forms"
+import { db } from "@/lib/db/client"
+import { forms, users } from "@/lib/db/schema"
+import { eq, and, sql as drizzleSql } from "drizzle-orm"
 import { upsertQuestions, type UpsertQuestionInput } from "@/lib/db/queries/questions"
 import { FORM_TEMPLATES } from "@/config/templates"
 
@@ -75,9 +78,28 @@ export async function deleteFormAction(formId: string) {
 
 /**
  * Publishes a form (draft → published).
+ * Enforces the user's published form quota.
  */
 export async function publishFormAction(formId: string) {
-  await requireFormOwner(formId)
+  const { user } = await requireFormOwner(formId)
+
+  const [owner, publishedResult] = await Promise.all([
+    db.query.users.findFirst({
+      where: eq(users.id, user.id),
+      columns: { formQuota: true },
+    }),
+    db.select({ total: drizzleSql<number>`count(*)::int` }).from(forms).where(
+      and(eq(forms.createdById, user.id), eq(forms.status, "published"))
+    ),
+  ])
+
+  const publishedCount = publishedResult[0]?.total ?? 0
+  const quota = owner?.formQuota ?? 3
+
+  if (publishedCount >= quota) {
+    throw new Error(`Limite de ${quota} formulário${quota !== 1 ? "s" : ""} publicado${quota !== 1 ? "s" : ""} atingido. Faça uma recarga para publicar mais.`)
+  }
+
   const result = await publishForm(formId)
   if (!result.success) throw new Error("Falha ao publicar formulário.")
   revalidatePath("/dashboard")

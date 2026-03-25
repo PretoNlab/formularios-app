@@ -4,7 +4,7 @@ import { relations } from "drizzle-orm"
 // ─── Enums ───
 
 export const formStatusEnum = pgEnum("form_status", ["draft", "published", "closed"])
-export const planEnum = pgEnum("plan", ["free", "pro", "business"])
+export const planEnum = pgEnum("plan", ["free", "pro", "business", "founder"])
 
 // ─── Users & Workspaces ───
 
@@ -15,6 +15,12 @@ export const users = pgTable("users", {
   avatarUrl: text("avatar_url"),
   plan: planEnum("plan").default("free").notNull(),
   creditBalance: integer("credit_balance").default(0).notNull(),
+  // Quota-based billing
+  responseQuota: integer("response_quota").default(50).notNull(),
+  responseUsed:  integer("response_used").default(0).notNull(),
+  formQuota:     integer("form_quota").default(3).notNull(),
+  planStartedAt: timestamp("plan_started_at"),
+  planExpiresAt: timestamp("plan_expires_at"),
   supabaseAuthId: text("supabase_auth_id").notNull().unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

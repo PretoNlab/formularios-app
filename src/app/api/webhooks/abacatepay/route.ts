@@ -9,7 +9,6 @@ import { eq, sql } from "drizzle-orm"
 function verifySignature(body: Buffer, signature: string | null): boolean {
   const secret = process.env.ABACATEPAY_WEBHOOK_PUBLIC_KEY
   if (!secret) {
-    // Misconfiguration — reject all requests to prevent unsigned fraud
     console.error("[abacatepay webhook] ABACATEPAY_WEBHOOK_PUBLIC_KEY is not set")
     return false
   }
@@ -19,7 +18,6 @@ function verifySignature(body: Buffer, signature: string | null): boolean {
   try {
     return timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
   } catch {
-    // Buffers differ in length — signatures don't match
     return false
   }
 }
@@ -42,7 +40,6 @@ export async function POST(req: NextRequest) {
   const event = payload.event as string | undefined
   const data = payload.data as Record<string, unknown> | undefined
 
-  // Accept payment events from AbacatePay (event name may vary)
   const isPaid =
     event === "transparent.completed" ||
     event === "pixQrCode.paid" ||
@@ -50,13 +47,12 @@ export async function POST(req: NextRequest) {
 
   if (!isPaid || !data) return NextResponse.json({ ok: true })
 
-  // AbacatePay sends the QR code ID inside data
   const abacatepayId = (data.id ?? data.pixQrCodeId ?? data.referenceId) as string | undefined
   if (!abacatepayId) return NextResponse.json({ ok: true })
 
   const order = await db.query.creditOrders.findFirst({
     where: eq(creditOrders.abacatepayId, abacatepayId),
-    columns: { id: true, userId: true, credits: true, status: true },
+    columns: { id: true, userId: true, credits: true, packId: true, status: true },
   })
 
   if (!order || order.status === "paid") return NextResponse.json({ ok: true })
@@ -64,12 +60,35 @@ export async function POST(req: NextRequest) {
   try {
     await db.transaction(async (tx) => {
       await tx.update(creditOrders).set({ status: "paid", paidAt: new Date() }).where(eq(creditOrders.id, order.id))
-      await tx.update(users).set({ creditBalance: sql`${users.creditBalance} + ${order.credits}` }).where(eq(users.id, order.userId))
+
+      if (order.packId === "founder") {
+        const now = new Date()
+        const expiresAt = new Date(now)
+        expiresAt.setMonth(expiresAt.getMonth() + 12)
+        await tx.update(users).set({
+          plan: "founder",
+          planStartedAt: now,
+          planExpiresAt: expiresAt,
+          responseQuota: sql`${users.responseQuota} + 2500`,
+          responseUsed: 0,
+          formQuota: 10,
+        }).where(eq(users.id, order.userId))
+      } else if (order.packId === "responses_500" || order.packId === "responses_1000") {
+        const quota = order.packId === "responses_500" ? 500 : 1000
+        await tx.update(users).set({
+          responseQuota: sql`${users.responseQuota} + ${quota}`,
+        }).where(eq(users.id, order.userId))
+      } else if (order.packId === "forms_5") {
+        await tx.update(users).set({
+          formQuota: sql`${users.formQuota} + 5`,
+        }).where(eq(users.id, order.userId))
+      }
+
       await tx.insert(creditTransactions).values({
         userId: order.userId,
         amount: order.credits,
         type: "purchase",
-        metadata: { orderId: order.id },
+        metadata: { orderId: order.id, packId: order.packId },
       })
     })
   } catch (err) {

@@ -119,7 +119,20 @@ export async function submitResponseCore(params: {
 
   const settings = form.settings as FormSettings
 
-  // 2. Check response limit and closure date
+  // 2. Check owner response quota
+  const formOwner = await db.query.users.findFirst({
+    where: eq(users.id, form.createdById),
+    columns: { responseQuota: true, responseUsed: true, planExpiresAt: true },
+  })
+
+  if (formOwner) {
+    const planActive = !formOwner.planExpiresAt || formOwner.planExpiresAt > new Date()
+    if (!planActive || formOwner.responseUsed >= formOwner.responseQuota) {
+      throw new Error("Este formulário atingiu o limite de respostas disponíveis.")
+    }
+  }
+
+  // 3. Check response limit and closure date
   if (settings.responseLimit !== null && settings.responseLimit !== undefined) {
     if (form.responseCount >= settings.responseLimit) {
       throw new Error("Este formulário atingiu o limite de respostas.")
@@ -224,6 +237,11 @@ export async function submitResponseCore(params: {
       .update(forms)
       .set({ responseCount: sql`${forms.responseCount} + 1` })
       .where(eq(forms.id, formId))
+
+    await tx
+      .update(users)
+      .set({ responseUsed: sql`${users.responseUsed} + 1` })
+      .where(eq(users.id, form.createdById))
 
     const [row] = await tx
       .select()

@@ -2,11 +2,11 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { ensureUserExists } from "@/lib/db/queries/users"
 import { db } from "@/lib/db/client"
-import { creditTransactions } from "@/lib/db/schema"
-import { eq, desc } from "drizzle-orm"
+import { creditTransactions, forms } from "@/lib/db/schema"
+import { eq, desc, and, count } from "drizzle-orm"
 import { BillingClient } from "@/components/billing/billing-client"
 
-export const metadata = { title: "Créditos — formularios.ia" }
+export const metadata = { title: "Plano — formularios.ia" }
 
 export default async function BillingPage() {
   const supabase = await createClient()
@@ -20,16 +20,28 @@ export default async function BillingPage() {
   })
   if (!success || !user) redirect("/dashboard")
 
-  const transactions = await db.query.creditTransactions.findMany({
-    where: eq(creditTransactions.userId, user.id),
-    orderBy: [desc(creditTransactions.createdAt)],
-    columns: { id: true, amount: true, type: true, createdAt: true, metadata: true },
-    limit: 30,
-  })
+  const [transactions, publishedResult] = await Promise.all([
+    db.query.creditTransactions.findMany({
+      where: eq(creditTransactions.userId, user.id),
+      orderBy: [desc(creditTransactions.createdAt)],
+      columns: { id: true, amount: true, type: true, createdAt: true, metadata: true },
+      limit: 30,
+    }),
+    db.select({ count: count() }).from(forms).where(
+      and(eq(forms.createdById, user.id), eq(forms.status, "published"))
+    ),
+  ])
+
+  const publishedFormsCount = publishedResult[0]?.count ?? 0
 
   return (
     <BillingClient
-      creditBalance={user.creditBalance}
+      plan={user.plan}
+      planExpiresAt={user.planExpiresAt?.toISOString() ?? null}
+      responseQuota={user.responseQuota}
+      responseUsed={user.responseUsed}
+      formQuota={user.formQuota}
+      publishedFormsCount={publishedFormsCount}
       transactions={transactions.map((t) => ({
         ...t,
         createdAt: t.createdAt.toISOString(),

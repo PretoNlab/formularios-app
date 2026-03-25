@@ -4,7 +4,7 @@ import { ensureUserExists } from "@/lib/db/queries/users"
 import { db } from "@/lib/db/client"
 import { creditOrders } from "@/lib/db/schema"
 import { createPixQrCode } from "@/lib/abacatepay"
-import { getPackById } from "@/lib/credits"
+import { getProductById } from "@/lib/credits"
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -21,23 +21,23 @@ export async function POST(req: NextRequest) {
   let body: unknown
   try { body = await req.json() } catch { return NextResponse.json({ error: "JSON inválido." }, { status: 400 }) }
 
-  const packId = (body as Record<string, unknown>).packId as string
-  const pack = getPackById(packId)
-  if (!pack) return NextResponse.json({ error: "Pack inválido." }, { status: 400 })
+  const productId = (body as Record<string, unknown>).packId as string
+  const product = getProductById(productId)
+  if (!product) return NextResponse.json({ error: "Produto inválido." }, { status: 400 })
 
   try {
     const pix = await createPixQrCode({
-      amountCents: pack.priceCents,
-      description: `${pack.credits} créditos - formularios.ia`,
+      amountCents: product.priceCents,
+      description: `${product.name} - formularios.ia`,
     })
 
     const [order] = await db
       .insert(creditOrders)
       .values({
         userId: user.id,
-        packId: pack.id,
-        credits: pack.credits,
-        amountCents: pack.priceCents,
+        packId: product.id,
+        credits: product.responseQuota,
+        amountCents: product.priceCents,
         status: "pending",
         abacatepayId: pix.id,
         pixCode: pix.brCode,

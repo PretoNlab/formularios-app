@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import {
   Sparkles, ArrowRight, Zap, BarChart3, Globe, MessageCircle,
   CheckCircle2, Star, ChevronRight, MousePointer2, Shield, Layers,
-  Target, Download, ChevronDown
+  Target, Download, ChevronDown, MessageSquare, Info
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -39,6 +39,7 @@ export default async function HomePage() {
       <Hero />
       <Features />
       <HowItWorks />
+      <ComparisonTable />
       <Testimonials />
       <Pricing />
       <FAQ />
@@ -65,6 +66,7 @@ function Nav() {
           <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Recursos</Link>
           <Link href="#how" className="text-muted-foreground hover:text-foreground transition-colors">Como funciona</Link>
           <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Preços</Link>
+          <Link href="#comparativo" className="text-muted-foreground hover:text-foreground transition-colors">Comparativo</Link>
           <Link href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</Link>
         </nav>
 
@@ -73,7 +75,7 @@ function Nav() {
             <Button variant="ghost" size="sm">Entrar</Button>
           </Link>
           <Link href="/signup">
-            <Button size="sm" className="rounded-full px-5">Começar grátis</Button>
+            <Button size="sm" className="rounded-full px-5 bg-foreground text-background hover:bg-foreground/90 font-bold">Garantir minha vaga</Button>
           </Link>
         </div>
       </div>
@@ -91,110 +93,107 @@ function Hero() {
       <div className="absolute -top-40 left-1/2 -translate-x-1/2 -z-10 h-[600px] w-[600px] rounded-full bg-violet-100/60 blur-3xl" />
 
       <div className="container flex flex-col items-center text-center pt-24 pb-20 gap-8">
-        <Badge variant="secondary" className="rounded-full px-4 py-1.5 text-sm gap-1.5">
-          <Zap className="h-3.5 w-3.5 text-violet-600" />
-          Formulários inteligentes para o Brasil
+        <Badge variant="secondary" className="rounded-full px-4 py-1.5 text-sm gap-1.5 border-violet-600/10 text-violet-600 font-bold uppercase tracking-wider">
+          <Zap className="h-3.5 w-3.5 fill-violet-600" />
+          Plano Fundador Aberto
         </Badge>
 
-        <h1 className="max-w-4xl text-5xl font-bold tracking-tight sm:text-7xl leading-[1.1]">
+        <h1 className="max-w-4xl text-5xl font-extrabold tracking-tight sm:text-7xl leading-[1.1] font-headline">
           Formulários que{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-blue-600">
+          <span className="text-violet-600">
             convertem
           </span>
           .<br />Dados que{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">
+          <span className="text-violet-600 italic">
             inspiram
           </span>
           .
         </h1>
 
         <p className="max-w-2xl text-xl text-muted-foreground leading-relaxed">
-          Crie formulários bonitos em minutos, colete respostas e descubra insights com IA.
-          Analytics avançado, lógica condicional, integração com WhatsApp e muito mais.
+          Pague 1 vez e use por 12 meses. Crie formulários, publique, colete respostas e use a plataforma ao longo do ano sem cobrança recorrente.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center gap-4">
-          <Link href="/signup">
-            <Button size="lg" className="rounded-full px-8 text-base h-12 gap-2">
-              Começar grátis
+          <Link href="/signup?plan=founder">
+            <Button size="lg" className="rounded-full px-10 text-base h-14 gap-2 bg-foreground text-background hover:bg-foreground/90 font-bold shadow-xl shadow-foreground/10 transition-transform hover:scale-[1.02]">
+              Garantir minha vaga
               <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
-          <Link href="/signup">
-            <Button variant="outline" size="lg" className="rounded-full px-8 text-base h-12">
-              Explorar grátis
             </Button>
           </Link>
         </div>
 
         <p className="text-sm text-muted-foreground">
-          Grátis para sempre · Setup em 2 minutos · Ao continuar, você concorda com nossos <Link href="/terms" className="underline">Termos</Link> e <Link href="/privacy" className="underline">Privacidade</Link>
+          Lote Fundador disponível para apenas 50 usuários · Setup em 2 minutos
         </p>
 
         {/* Mock UI */}
         <div className="relative w-full max-w-5xl mt-8">
-          <div className="rounded-2xl border bg-card shadow-2xl overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 border-b bg-muted/30">
+          <div className="rounded-[2.5rem] border bg-card shadow-2xl overflow-hidden ring-1 ring-border/50">
+            <div className="flex items-center gap-2 px-6 py-4 border-b bg-muted/30">
               <div className="h-3 w-3 rounded-full bg-red-400" />
               <div className="h-3 w-3 rounded-full bg-yellow-400" />
               <div className="h-3 w-3 rounded-full bg-green-400" />
               <div className="mx-auto text-xs text-muted-foreground font-mono">formularios.ia/f/pesquisa-nps</div>
             </div>
-            <div className="grid grid-cols-5 min-h-[340px]">
+            <div className="grid grid-cols-12 min-h-[400px]">
               {/* Sidebar preview */}
-              <div className="col-span-1 border-r bg-muted/20 p-3 space-y-1 hidden md:block">
+              <div className="col-span-3 border-r bg-muted/10 p-6 space-y-2 hidden md:block">
                 {["Boas-vindas", "Nome", "E-mail", "NPS", "Detalhar", "Obrigado"].map((item, i) => (
-                  <div key={item} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${i === 3 ? "bg-violet-100 text-violet-700 font-medium" : "text-muted-foreground"}`}>
-                    <span className="w-4 text-center">{i + 1}</span>
+                  <div key={item} className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${i === 3 ? "bg-violet-600/10 text-violet-700 font-bold" : "text-muted-foreground opacity-60"}`}>
+                    <span className="w-5 text-center font-mono text-xs">{i + 1}</span>
                     {item}
                   </div>
                 ))}
               </div>
               {/* Form preview */}
-              <div className="col-span-5 md:col-span-4 flex items-center justify-center p-8 bg-[#0f0f1a]">
-                <div className="w-full max-w-sm space-y-6 text-white">
-                  <div className="space-y-2">
-                    <p className="text-xs text-violet-400 font-medium tracking-wider uppercase">Pergunta 4 de 5</p>
-                    <h3 className="text-2xl font-bold">
-                      De 0 a 10, qual a probabilidade de você recomendar nossa empresa a um amigo?
-                    </h3>
+              <div className="col-span-12 md:col-span-9 flex items-center justify-center p-8 md:p-16 text-foreground">
+                <div className="w-full max-w-md space-y-10">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest">Pergunta 4 de 5</span>
+                    <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="w-[80%] h-full bg-violet-600" />
+                    </div>
                   </div>
-                  <div className="flex gap-1.5 flex-wrap">
+                  <h3 className="text-3xl font-bold font-headline leading-tight">
+                    Qual a probabilidade de você recomendar nosso serviço a um amigo?
+                  </h3>
+                  <div className="grid grid-cols-6 sm:grid-cols-11 gap-2">
                     {Array.from({ length: 11 }, (_, i) => (
-                      <button
+                      <div
                         key={i}
-                        className={`h-10 w-10 rounded-lg text-sm font-medium transition-colors ${i === 9 ? "bg-violet-600 text-white" : "bg-white/10 text-white/70 hover:bg-white/20"}`}
+                        className={`aspect-square border flex items-center justify-center rounded-xl text-xs font-bold transition-all cursor-pointer ${i === 9 ? "bg-violet-600/10 border-violet-600 text-violet-600 ring-2 ring-violet-600/20" : "hover:bg-violet-600 hover:text-white border-border"}`}
                       >
                         {i}
-                      </button>
+                      </div>
                     ))}
                   </div>
-                  <div className="flex items-center justify-between text-xs text-white/40">
-                    <span>Improvável</span>
-                    <span>Muito provável</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Pouco provável</span>
+                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Muito provável</span>
                   </div>
-                  <button className="flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 transition-colors">
-                    OK <ChevronRight className="h-4 w-4" />
-                  </button>
+                  <Button className="bg-violet-600 text-white px-12 py-6 rounded-full font-bold h-12 shadow-lg shadow-violet-600/20">
+                    OK
+                  </Button>
                 </div>
               </div>
             </div>
           </div>
           {/* Floating cards */}
-          <div className="absolute -right-4 top-8 hidden lg:block">
-            <div className="rounded-xl border bg-card shadow-lg px-4 py-3 text-sm w-48">
-              <div className="flex items-center gap-2 text-green-600 font-medium mb-1">
+          <div className="absolute -right-8 top-12 hidden lg:block translate-x-4">
+            <div className="rounded-2xl border bg-card shadow-xl px-6 py-4 text-sm w-56 backdrop-blur-sm bg-card/95">
+              <div className="flex items-center gap-2 text-green-600 font-bold mb-1">
                 <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                 127 respostas hoje
               </div>
-              <div className="text-xs text-muted-foreground">Taxa de conclusão: 84%</div>
+              <div className="text-xs text-muted-foreground font-medium">Taxa de conclusão: 84%</div>
             </div>
           </div>
-          <div className="absolute -left-4 bottom-8 hidden lg:block">
-            <div className="rounded-xl border bg-card shadow-lg px-4 py-3 text-sm w-44">
-              <div className="font-semibold mb-1">NPS Score</div>
-              <div className="text-3xl font-bold text-violet-600">72</div>
-              <div className="text-xs text-muted-foreground">↑ 8 pts este mês</div>
+          <div className="absolute -left-8 bottom-12 hidden lg:block -translate-x-4">
+            <div className="rounded-2xl border bg-card shadow-xl px-6 py-4 text-sm w-48 backdrop-blur-sm bg-card/95">
+              <div className="font-bold mb-1 uppercase text-[10px] text-muted-foreground tracking-widest">NPS Score</div>
+              <div className="text-4xl font-extrabold text-violet-600 font-headline">72</div>
+              <div className="text-xs text-green-600 font-bold mt-1">↑ 8 pts este mês</div>
             </div>
           </div>
         </div>
@@ -406,131 +405,140 @@ function Testimonials() {
 
 // ─── Pricing ──────────────────────────────────────────────────────────────────
 
-const PLANS = [
-  {
-    name: "Gratuito",
-    price: "R$ 0",
-    period: "para sempre",
-    description: "Para começar e experimentar.",
-    features: [
-      "Formulários ilimitados",
-      "Até 10 perguntas por form",
-      "100 respostas / mês",
-      "22 tipos de campo",
-      "Analytics básico",
-      "Link público compartilhável",
-    ],
-    cta: "Começar grátis",
-    href: "/signup",
-    highlight: false,
-  },
-  {
-    name: "Pro",
-    price: "R$ 49",
-    period: "por mês",
-    description: "Para times que levam dados a sério.",
-    features: [
-      "Tudo do Gratuito",
-      "Perguntas ilimitadas",
-      "Respostas ilimitadas",
-      "Analytics com IA",
-      "Lógica condicional avançada",
-      "Webhooks (Zapier, Make, n8n)",
-      "WhatsApp (em breve)",
-      "Remoção do branding",
-      "Exportação CSV / JSON",
-      "Suporte prioritário",
-    ],
-    cta: "Assinar Pro",
-    href: "/signup?plan=pro",
-    highlight: true,
-  },
-  {
-    name: "Business",
-    price: "R$ 149",
-    period: "por mês",
-    description: "Para empresas com múltiplos times.",
-    features: [
-      "Tudo do Pro",
-      "Múltiplos workspaces",
-      "Colaboração em equipe",
-      "SSO / SAML",
-      "SLA de uptime 99.9%",
-      "Onboarding dedicado",
-      "Faturamento em nota fiscal",
-    ],
-    cta: "Falar com vendas",
-    href: "mailto:contato@formularios.ia",
-    highlight: false,
-  },
-]
-
 function Pricing() {
+  const topups = [
+    { name: "+500 respostas", price: "R$ 49", icon: MessageSquare },
+    { name: "+1.000 respostas", price: "R$ 79", icon: Zap },
+    { name: "+5 formulários ativos", price: "R$ 59", icon: Layers },
+  ]
+
   return (
-    <section id="pricing" className="py-24 bg-muted/30">
+    <section id="pricing" className="py-24 bg-muted/30 overflow-hidden">
       <div className="container">
-        <div className="text-center mb-16">
-          <Badge variant="secondary" className="rounded-full mb-4">Preços</Badge>
-          <h2 className="text-4xl font-bold tracking-tight mb-4">
-            Simples, transparente, justo
+        <div className="text-center mb-16 space-y-4">
+          <Badge variant="secondary" className="rounded-full border-violet-600/10 text-violet-600 font-bold uppercase tracking-wider px-4 py-1.5">
+            Preço Único
+          </Badge>
+          <h2 className="text-4xl md:text-6xl font-extrabold font-headline tracking-tight">
+            Cresça só quando precisar
           </h2>
-          <p className="text-xl text-muted-foreground">
-            Sem surpresas. Cancele quando quiser.
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Você começa com uma franquia anual e só compra mais capacidade quando fizer sentido para a sua operação.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative rounded-2xl border p-8 flex flex-col gap-6 ${plan.highlight
-                  ? "bg-foreground text-background border-foreground shadow-2xl scale-105"
-                  : "bg-card"
-                }`}
-            >
-              {plan.highlight && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-violet-600 text-white rounded-full px-4">Mais popular</Badge>
+        <div className="grid lg:grid-cols-12 gap-8 items-start max-w-6xl mx-auto">
+          {/* Main Plan Card */}
+          <div className="lg:col-span-7 relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-[3rem] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200" />
+            <div className="relative bg-foreground text-background rounded-[2.5rem] p-8 md:p-12 shadow-2xl flex flex-col gap-10 border border-white/10">
+              <div className="flex justify-between items-start">
+                <div>
+                  <Badge className="bg-violet-600 text-white rounded-full px-4 py-1 mb-4 border-none font-bold uppercase tracking-widest text-[10px]">
+                    Lote Fundador
+                  </Badge>
+                  <h3 className="text-4xl font-extrabold font-headline">Plano Fundador</h3>
+                  <p className="text-background/60 mt-2 font-medium">Acesso total por 12 meses</p>
                 </div>
-              )}
-
-              <div>
-                <p className={`text-sm font-medium mb-1 ${plan.highlight ? "text-background/60" : "text-muted-foreground"}`}>
-                  {plan.name}
-                </p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className={`text-sm ${plan.highlight ? "text-background/60" : "text-muted-foreground"}`}>
-                    /{plan.period}
-                  </span>
+                <div className="text-right">
+                  <div className="flex items-baseline justify-end gap-1">
+                    <span className="text-5xl font-extrabold font-headline">R$ 499</span>
+                  </div>
+                  <p className="text-sm text-background/60 font-medium mt-1">Pagamento único via Pix</p>
                 </div>
-                <p className={`text-sm mt-2 ${plan.highlight ? "text-background/70" : "text-muted-foreground"}`}>
-                  {plan.description}
-                </p>
               </div>
 
-              <ul className="space-y-2.5 flex-1">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-sm">
-                    <CheckCircle2 className={`h-4 w-4 mt-0.5 shrink-0 ${plan.highlight ? "text-violet-400" : "text-green-500"}`} />
-                    <span className={plan.highlight ? "text-background/80" : ""}>{feature}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="grid md:grid-cols-2 gap-8 py-8 border-y border-white/10">
+                <div className="space-y-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-violet-400">Incluso no plano</p>
+                  <ul className="space-y-3">
+                    {[
+                      "Até 10 formulários publicados",
+                      "Até 2.500 respostas / ano",
+                      "Respostas parciais nativas",
+                      "Exportação CSV / JSON",
+                    ].map((feature) => (
+                      <li key={feature} className="flex items-center gap-2 text-sm font-medium">
+                        <CheckCircle2 className="h-4 w-4 text-violet-500 shrink-0" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="space-y-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-violet-400">Poder da plataforma</p>
+                  <ul className="space-y-3">
+                    {[
+                      "Analytics avançado com IA",
+                      "Lógica condicional",
+                      "Lead magnet nativo",
+                      "Suporte prioritário",
+                    ].map((feature) => (
+                      <li key={feature} className="flex items-center gap-2 text-sm font-medium">
+                        <CheckCircle2 className="h-4 w-4 text-violet-500 shrink-0" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
 
-              <Link href={plan.href}>
-                <Button
-                  className={`w-full rounded-full ${plan.highlight
-                      ? "bg-white text-foreground hover:bg-white/90"
-                      : ""
-                    }`}
-                  variant={plan.highlight ? "outline" : "default"}
-                >
-                  {plan.cta}
-                </Button>
-              </Link>
+              <div className="flex flex-col gap-4">
+                <Link href="/signup?plan=founder">
+                  <Button className="w-full bg-white text-foreground hover:bg-white/90 py-8 rounded-full font-extrabold text-xl shadow-xl shadow-white/5 transition-transform hover:scale-[1.01]">
+                    Garantir minha vaga
+                  </Button>
+                </Link>
+                <p className="text-center text-xs text-background/40 font-medium">
+                  Sem taxas ocultas · Cancele a renovação quando quiser
+                </p>
+              </div>
             </div>
-          ))}
+          </div>
+
+          {/* Top-ups Section */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="bg-card rounded-[2.5rem] border p-8 md:p-10 shadow-xl border-border/50">
+              <h4 className="text-2xl font-bold font-headline mb-2">Recargas sugeridas</h4>
+              <p className="text-sm text-muted-foreground mb-8">
+                Se a sua operação pedir mais capacidade, você amplia depois de forma simples.
+              </p>
+
+              <div className="space-y-4">
+                {topups.map((topup) => (
+                  <div key={topup.name} className="flex items-center justify-between p-5 rounded-2xl border bg-muted/20 hover:bg-muted/40 transition-colors group cursor-pointer">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-xl bg-background border flex items-center justify-center group-hover:border-violet-600/50 transition-colors">
+                        <topup.icon className="h-5 w-5 text-violet-600" />
+                      </div>
+                      <span className="font-bold text-sm tracking-tight">{topup.name}</span>
+                    </div>
+                    <span className="text-lg font-extrabold font-headline">{topup.price}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 p-6 rounded-2xl bg-violet-600/5 border border-violet-600/10">
+                <div className="flex gap-3">
+                  <Info className="h-5 w-5 text-violet-600 shrink-0 mt-0.5" />
+                  <p className="text-xs leading-relaxed text-muted-foreground font-medium">
+                    <strong className="text-foreground">Como funciona:</strong> Cada resposta coletada consome 1 crédito da sua franquia. Se os créditos acabarem antes dos 12 meses, você pode recarregar separadamente.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Hint Card */}
+            <div className="bg-violet-600 rounded-[2rem] p-8 text-white relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                <Sparkles className="h-24 w-24" />
+              </div>
+              <p className="text-sm font-bold uppercase tracking-widest opacity-80 mb-2">Créditos Vitalícios</p>
+              <p className="text-lg font-bold leading-snug">
+                Créditos extras de recarga nunca expiram. Use no seu ritmo, sem pressão.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -631,6 +639,58 @@ function FinalCTA() {
         <p className="text-sm text-background/40 mt-6">
           Grátis para sempre · Sem cartão de crédito · Ao continuar, você concorda com nossos <Link href="/terms" className="underline hover:text-white">Termos</Link> e <Link href="/privacy" className="underline hover:text-white">Privacidade</Link>
         </p>
+      </div>
+    </section>
+  )
+}
+
+
+// ─── Comparison Table ─────────────────────────────────────────────────────────
+
+function ComparisonTable() {
+  const features = [
+    { name: "Modelo de Cobrança", ia: "Pagamento único anual", respondi: "Assinatura mensal/anual", typeform: "Assinatura mensal/anual" },
+    { name: "Preço Base", ia: "R$ 499/ano", respondi: "R$ 147/mês", typeform: "US$ 50-83/mês" },
+    { name: "Funcionalidades", ia: "Essenciais completas", respondi: "Suíte robusta", typeform: "Operações globais" },
+    { name: "Ideal para", ia: "Simplicidade e previsibilidade", respondi: "Times de marketing", typeform: "Enterprise e Global" },
+  ]
+
+  return (
+    <section id="comparativo" className="py-24 container">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-16 space-y-4">
+          <h2 className="text-4xl font-extrabold font-headline">Compare pelo que importa</h2>
+          <p className="text-lg text-muted-foreground">
+            Transparência total para você decidir o que faz sentido para o seu momento.
+          </p>
+        </div>
+        
+        <div className="overflow-x-auto rounded-3xl border bg-card/50">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b">
+                <th className="p-6 text-left text-sm font-bold text-muted-foreground uppercase tracking-widest">Recurso</th>
+                <th className="p-6 text-center bg-violet-600/5">
+                  <span className="text-violet-600 font-extrabold font-headline">formularios.ia</span>
+                </th>
+                <th className="p-6 text-center text-muted-foreground font-bold">Respondi</th>
+                <th className="p-6 text-center text-muted-foreground font-bold">Typeform</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              {features.map((f, i) => (
+                <tr key={f.name} className={i !== features.length - 1 ? "border-b" : ""}>
+                  <td className="p-6 font-medium">{f.name}</td>
+                  <td className={`p-6 text-center bg-violet-600/5 font-bold text-violet-600 ${i === features.length - 1 ? "rounded-b-3xl" : ""}`}>
+                    {f.ia}
+                  </td>
+                  <td className="p-6 text-center text-muted-foreground">{f.respondi}</td>
+                  <td className="p-6 text-center text-muted-foreground">{f.typeform}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   )
