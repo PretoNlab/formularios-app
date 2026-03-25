@@ -28,6 +28,17 @@ const nextConfig = {
                     },
                 ],
             },
+            {
+                // Public forms can be embedded from the same origin
+                // (used by the share dialog iframe and for site embedding)
+                source: "/f/:path*",
+                headers: [
+                    {
+                        key: "X-Frame-Options",
+                        value: "SAMEORIGIN",
+                    },
+                ],
+            },
         ]
     },
 };
