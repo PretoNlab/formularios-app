@@ -994,7 +994,7 @@ function ThemePickerPanel({
     try {
       const data = new FormData()
       data.append("file", file)
-      const res = await fetch("/api/upload/completion-file", { method: "POST", body: data })
+      const res = await fetch("/api/upload/theme-asset", { method: "POST", body: data })
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.error || "Erro no upload")

@@ -263,6 +263,10 @@ export interface FormThemeConfig {
   borderRadius: string
   backgroundImage?: string
   customCSS?: string
+  logo?: {
+    url: string
+    position: "left" | "center" | "right"
+  }
 }
 
 export interface FormSettings {
