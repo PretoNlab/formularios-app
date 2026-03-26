@@ -1685,8 +1685,8 @@ function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSettingsC
 
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium">Notificar por e-mail</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Ao receber nova resposta</p>
+            <p className="text-sm font-medium">Encaminhar respostas</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Envia cópia das respostas por e-mail</p>
           </div>
           <Switch
             checked={form.settings.notifyOnResponse}
@@ -1696,7 +1696,7 @@ function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSettingsC
 
         {form.settings.notifyOnResponse && (
           <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">E-mail(s) para notificação <span className="font-normal">(sep. por vírgula)</span></label>
+            <label className="text-xs font-medium text-muted-foreground">E-mail(s) de destino <span className="font-normal">(sep. por vírgula)</span></label>
             <Input
               type="text"
               value={form.settings.notificationEmail ?? ""}

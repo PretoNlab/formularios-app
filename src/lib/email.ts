@@ -142,16 +142,48 @@ export async function sendFirstResponseEmail({
   })
 }
 
+type QA = { id: string; title: string; type: string; order: number }
+
+function formatEmailAnswer(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—"
+  if (typeof value === "boolean") return value ? "Sim" : "Não"
+  if (Array.isArray(value)) return value.map(String).join(", ")
+  if (typeof value === "object" && value !== null && "fileName" in value)
+    return (value as { fileName: string }).fileName
+  return String(value)
+}
+
 export async function sendResponseNotification({
   toEmail,
   formId,
   formTitle,
+  questions = [],
+  answers = {},
 }: {
   toEmail: string | string[]
   formId: string
   formTitle: string
+  questions?: QA[]
+  answers?: Record<string, unknown>
 }) {
   const responsesUrl = `${appUrl}/responses/${formId}`
+
+  const NON_INPUT = new Set(["welcome", "thank_you", "statement"])
+  const qaRows = [...questions]
+    .filter((q) => !NON_INPUT.has(q.type))
+    .sort((a, b) => a.order - b.order)
+    .map((q) => {
+      const display = escapeHtml(formatEmailAnswer(answers[q.id]))
+      return `<tr><td style="padding:10px 0;border-bottom:1px solid #f3f4f6;vertical-align:top;">
+        <p style="margin:0 0 3px;color:#6b7280;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;">${escapeHtml(q.title)}</p>
+        <p style="margin:0;color:#111827;font-size:14px;line-height:1.5;">${display}</p>
+      </td></tr>`
+    })
+    .join("")
+
+  const qaSection = qaRows
+    ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">${qaRows}</table>`
+    : ""
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -174,9 +206,7 @@ export async function sendResponseNotification({
             <p style="margin:0 0 8px;color:#6b7280;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Nova resposta recebida</p>
             <h1 style="margin:0 0 24px;color:#0f0f0f;font-size:22px;font-weight:700;line-height:1.3;">${escapeHtml(formTitle)}</h1>
 
-            <p style="margin:0 0 24px;color:#374151;font-size:14px;line-height:1.6;">
-              Seu formulário recebeu uma nova resposta completa.
-            </p>
+            ${qaSection}
 
             <!-- CTA -->
             <table cellpadding="0" cellspacing="0" style="margin-bottom:32px;">

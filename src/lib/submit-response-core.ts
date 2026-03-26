@@ -260,8 +260,13 @@ export async function submitResponseCore(params: {
       .map((e) => e.trim())
       .filter((e) => e.includes("@"))
     if (recipients.length > 0) {
-      sendResponseNotification({ toEmail: recipients, formId, formTitle: form.title })
-        .catch((err) => console.error("[email notification]", err))
+      sendResponseNotification({
+        toEmail: recipients,
+        formId,
+        formTitle: form.title,
+        questions: formQuestions.map((q) => ({ id: q.id, title: q.title, type: q.type, order: q.order })),
+        answers: sanitizedAnswers,
+      }).catch((err) => console.error("[email notification]", err))
     }
   }
 
