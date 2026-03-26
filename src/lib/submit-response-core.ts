@@ -253,13 +253,16 @@ export async function submitResponseCore(params: {
     throw new Error("Falha ao registrar resposta.")
   })
 
-  // 10. Send email notification (fire-and-forget)
+  // 10. Send email notification (fire-and-forget, supports comma-separated recipients)
   if (settings.notifyOnResponse && settings.notificationEmail) {
-    sendResponseNotification({
-      toEmail: settings.notificationEmail,
-      formId,
-      formTitle: form.title,
-    }).catch(() => {})
+    const recipients = settings.notificationEmail
+      .split(",")
+      .map((e) => e.trim())
+      .filter((e) => e.includes("@"))
+    for (const email of recipients) {
+      sendResponseNotification({ toEmail: email, formId, formTitle: form.title })
+        .catch((err) => console.error("[email notification]", err))
+    }
   }
 
   // 10b. First-response milestone email (fire-and-forget)

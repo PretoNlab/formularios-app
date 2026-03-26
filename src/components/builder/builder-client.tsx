@@ -1696,12 +1696,12 @@ function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSettingsC
 
         {form.settings.notifyOnResponse && (
           <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">E-mail para notificação</label>
+            <label className="text-xs font-medium text-muted-foreground">E-mail(s) para notificação <span className="font-normal">(sep. por vírgula)</span></label>
             <Input
-              type="email"
+              type="text"
               value={form.settings.notificationEmail ?? ""}
               onChange={(e) => onSettingsChange({ notificationEmail: e.target.value || null })}
-              placeholder="seu@email.com"
+              placeholder="email@exemplo.com, outro@exemplo.com"
               className="text-sm h-9"
             />
           </div>

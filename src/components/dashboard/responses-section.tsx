@@ -1326,11 +1326,15 @@ function ResponsesTable({ responses, questions, onOpen }: {
 
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
+      <p className="text-xs text-muted-foreground px-4 py-2.5 border-b bg-muted/20">
+        Clique em qualquer linha para ver os detalhes completos da resposta
+      </p>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/30">
             <th className="text-left p-4 font-semibold text-muted-foreground w-12">#</th>
             <th className="text-left p-4 font-semibold text-muted-foreground">Data</th>
+            <th className="text-left p-4 font-semibold text-muted-foreground">Prévia</th>
             <th className="text-left p-4 font-semibold text-muted-foreground">Respostas</th>
             <th className="text-left p-4 font-semibold text-muted-foreground">Tempo</th>
             <th className="text-left p-4 font-semibold text-muted-foreground">Status</th>
@@ -1345,31 +1349,36 @@ function ResponsesTable({ responses, questions, onOpen }: {
             return (
               <tr
                 key={r.id}
-                className="border-b last:border-0 hover:bg-muted/20 cursor-pointer transition-colors group"
+                className="border-b last:border-0 hover:bg-muted/40 cursor-pointer transition-colors group"
                 onClick={() => onOpen(i)}
               >
                 <td className="p-4 text-muted-foreground">{i + 1}</td>
-                <td className="p-4">{formatDate(r.startedAt)}</td>
+                <td className="p-4 whitespace-nowrap">{formatDate(r.startedAt)}</td>
+                <td className="p-4 max-w-[200px]">
+                  <span className="text-muted-foreground text-sm truncate block">
+                    {getResponsePreview(r, questions)}
+                  </span>
+                </td>
                 <td className="p-4">
                   <span className="tabular-nums">{r.answers.length}</span>
                   <span className="text-muted-foreground"> / {questions.length}</span>
                 </td>
-                <td className="p-4 text-muted-foreground tabular-nums">
+                <td className="p-4 text-muted-foreground tabular-nums whitespace-nowrap">
                   {duration != null ? formatDuration(duration) : "—"}
                 </td>
                 <td className="p-4">
                   {r.completedAt ? (
-                    <span className="inline-flex items-center gap-1.5 text-green-600">
+                    <span className="inline-flex items-center gap-1.5 text-green-600 whitespace-nowrap">
                       <CheckCircle2 className="h-3.5 w-3.5" />Completa
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5 text-muted-foreground whitespace-nowrap">
                       <Circle className="h-3.5 w-3.5" />Parcial
                     </span>
                   )}
                 </td>
                 <td className="p-4 pr-3">
-                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-30 group-hover:opacity-100 transition-opacity" />
                 </td>
               </tr>
             )
@@ -1378,6 +1387,20 @@ function ResponsesTable({ responses, questions, onOpen }: {
       </table>
     </div>
   )
+}
+
+function getResponsePreview(response: ResponseWithAnswers, questions: QuestionSummary[]): string {
+  const INPUT_TYPES: QuestionType[] = ["short_text", "long_text", "email", "phone", "number"]
+  const sorted = [...questions].sort((a, b) => a.order - b.order)
+  for (const q of sorted) {
+    if (!INPUT_TYPES.includes(q.type)) continue
+    const ans = response.answers.find((a) => a.questionId === q.id)
+    if (!ans || ans.value === null || ans.value === undefined || ans.value === "") continue
+    const str = String(ans.value).trim()
+    if (!str) continue
+    return str.length > 50 ? str.slice(0, 47) + "…" : str
+  }
+  return "—"
 }
 
 function stripOther(s: unknown): string {
@@ -1513,6 +1536,8 @@ export function ResponsesSection({
 
   const filteredResponses = useMemo(() => {
     return responses.filter((r) => {
+      // Never show partial responses with zero answers (e.g. opened form and left immediately)
+      if (!r.completedAt && r.answers.length === 0) return false
       if (filters.period !== "all") {
         const now = new Date()
         const cutoff = new Date()
