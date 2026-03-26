@@ -147,7 +147,7 @@ export async function sendResponseNotification({
   formId,
   formTitle,
 }: {
-  toEmail: string
+  toEmail: string | string[]
   formId: string
   formTitle: string
 }) {

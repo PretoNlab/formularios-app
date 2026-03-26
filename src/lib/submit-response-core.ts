@@ -259,8 +259,8 @@ export async function submitResponseCore(params: {
       .split(",")
       .map((e) => e.trim())
       .filter((e) => e.includes("@"))
-    for (const email of recipients) {
-      sendResponseNotification({ toEmail: email, formId, formTitle: form.title })
+    if (recipients.length > 0) {
+      sendResponseNotification({ toEmail: recipients, formId, formTitle: form.title })
         .catch((err) => console.error("[email notification]", err))
     }
   }
