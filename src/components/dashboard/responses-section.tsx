@@ -1520,7 +1520,7 @@ export function ResponsesSection({
   formId, formTitle, formStatus, formSlug,
   questions, responses, analytics,
 }: ResponsesSectionProps) {
-  const [tab, setTab] = useState<"responses" | "questions" | "analytics">("questions")
+  const [tab, setTab] = useState<"responses" | "analytics">("responses")
   const [copied, setCopied] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [filters, setFilters] = useState<ResponseFilters>(DEFAULT_FILTERS)
@@ -1644,9 +1644,6 @@ export function ResponsesSection({
       {/* Tabs */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <TabsList className="mb-6">
-          <TabsTrigger value="questions" disabled={questionStats.length === 0}>
-            Perguntas{questionStats.length > 0 ? ` (${questionStats.length})` : ""}
-          </TabsTrigger>
           <TabsTrigger value="responses">
             Respostas ({filteredResponses.length !== responses.length ? `${filteredResponses.length}/${responses.length}` : responses.length})
           </TabsTrigger>
@@ -1680,14 +1677,7 @@ export function ResponsesSection({
           onNavigate={setOpenResponseIndex}
         />
       )}
-      {tab === "questions" && (
-        <QuestionIntelligence
-          questionStats={questionStats}
-          questions={questions}
-          formId={formId}
-          dropoffByQuestion={analytics?.dropoffByQuestion ?? []}
-        />
-      )}
+
       {tab === "analytics" && (
         <AnalyticsView analytics={analytics} questions={questions} completionRate={completionRate} formId={formId} formTitle={formTitle} />
       )}
