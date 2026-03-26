@@ -6,7 +6,9 @@ import { createClient } from "@/lib/supabase/server"
 import { ensureUserExists } from "@/lib/db/queries/users"
 import {
   createForm,
+  closeForm,
   deleteForm,
+  duplicateForm,
   getFormById,
   publishForm,
   updateForm,
@@ -151,6 +153,26 @@ export async function createFormFromTemplateAction(templateId: string) {
   await upsertQuestions(formResult.data.id, questions)
 
   redirect(`/builder/${formResult.data.id}`)
+}
+
+/**
+ * Duplicates a form as a new draft and revalidates the dashboard.
+ */
+export async function duplicateFormAction(formId: string) {
+  const { user } = await requireFormOwner(formId)
+  const result = await duplicateForm(formId, user.defaultWorkspace.id, user.id)
+  if (!result.success) throw new Error("Falha ao duplicar formulário.")
+  revalidatePath("/dashboard")
+}
+
+/**
+ * Closes a published form (stops accepting responses).
+ */
+export async function closeFormAction(formId: string) {
+  await requireFormOwner(formId)
+  const result = await closeForm(formId)
+  if (!result.success) throw new Error("Falha ao encerrar formulário.")
+  revalidatePath("/dashboard")
 }
 
 /**

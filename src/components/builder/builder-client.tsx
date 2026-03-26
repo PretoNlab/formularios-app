@@ -339,6 +339,7 @@ export function BuilderClient({
   const [previewKey, setPreviewKey] = useState<number>(Date.now())
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [copiedEmbed, setCopiedEmbed] = useState(false)
   const [isPublishing, startPublishTransition] = useTransition()
   const [fieldSearch, setFieldSearch] = useState("")
   const selectedQuestion = form.questions.find((q) => q.id === selectedQuestionId) ?? null
@@ -411,6 +412,13 @@ export function BuilderClient({
     navigator.clipboard.writeText(link)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  function handleCopyEmbed() {
+    const code = `<iframe src="${shareLink}" width="100%" height="600" frameborder="0" style="border:0;border-radius:8px"></iframe>`
+    navigator.clipboard.writeText(code)
+    setCopiedEmbed(true)
+    setTimeout(() => setCopiedEmbed(false), 2000)
   }
 
   const shareLink = `${typeof window !== "undefined" ? window.location.origin : "https://formularios.ia"}/f/${form.slug}`
@@ -910,6 +918,22 @@ export function BuilderClient({
                       <Globe className="mr-2 h-4 w-4" />
                       Abrir formulário em nova aba
                     </a>
+                  </Button>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Incorporar no seu site</label>
+                  <pre className="w-full rounded-lg bg-muted p-3 text-[11px] font-mono text-muted-foreground leading-relaxed overflow-auto whitespace-pre-wrap break-all">
+{`<iframe src="${shareLink}" width="100%" height="600" frameborder="0" style="border:0;border-radius:8px"></iframe>`}
+                  </pre>
+                  <Button variant="outline" className="w-full h-10" onClick={handleCopyEmbed}>
+                    {copiedEmbed ? (
+                      <><CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />Copiado!</>
+                    ) : (
+                      <><Copy className="mr-2 h-4 w-4" />Copiar código de embed</>
+                    )}
                   </Button>
                 </div>
               </div>

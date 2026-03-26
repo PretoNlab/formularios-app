@@ -7,6 +7,7 @@ import {
   Search, BarChart3, Users, Zap, Link2,
   Trash2, Globe, FileText, Clock, ChevronRight,
   PlusCircle, Sparkles, MessageCircle, Check, X, Rocket,
+  Copy, Eye, PauseCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,7 +39,7 @@ import {
 import { PRESET_THEMES } from "@/config/themes"
 import { FORM_TEMPLATES, TEMPLATE_CATEGORIES, type FormTemplate } from "@/config/templates"
 import { CreateFormButton } from "./create-form-button"
-import { deleteFormAction, publishFormAction, createFormFromTemplateAction } from "@/app/actions/forms"
+import { deleteFormAction, publishFormAction, createFormFromTemplateAction, duplicateFormAction, closeFormAction } from "@/app/actions/forms"
 import type { FormListItem } from "@/lib/db/queries/forms"
 
 // ─── Welcome Modal ────────────────────────────────────────────────────────────
@@ -322,6 +323,14 @@ export function FormsSection({ forms }: FormsSectionProps) {
     startTransition(() => publishFormAction(formId))
   }
 
+  function handleDuplicate(formId: string) {
+    startTransition(() => duplicateFormAction(formId))
+  }
+
+  function handleClose(formId: string) {
+    startTransition(() => closeFormAction(formId))
+  }
+
   function handleUseTemplate(templateId: string) {
     startTransition(() => createFormFromTemplateAction(templateId))
   }
@@ -428,7 +437,7 @@ export function FormsSection({ forms }: FormsSectionProps) {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredForms.map((form) => (
-                  <FormCard key={form.id} form={form} onDelete={() => handleDelete(form.id)} onPublish={() => handlePublish(form.id)} />
+                  <FormCard key={form.id} form={form} onDelete={() => handleDelete(form.id)} onPublish={() => handlePublish(form.id)} onDuplicate={() => handleDuplicate(form.id)} onClose={() => handleClose(form.id)} />
                 ))}
               </div>
             )}
@@ -467,7 +476,7 @@ export function FormsSection({ forms }: FormsSectionProps) {
 
 // ─── Form Card ────────────────────────────────────────────────────────────────
 
-function FormCard({ form, onDelete, onPublish }: { form: FormListItem; onDelete: () => void; onPublish: () => void }) {
+function FormCard({ form, onDelete, onPublish, onDuplicate, onClose }: { form: FormListItem; onDelete: () => void; onPublish: () => void; onDuplicate: () => void; onClose: () => void }) {
   const themeId = (form.theme as { id?: string } | null)?.id ?? "midnight"
   const themeConfig = PRESET_THEMES.find((t) => t.id === themeId) ?? PRESET_THEMES[0]
 
@@ -495,7 +504,14 @@ function FormCard({ form, onDelete, onPublish }: { form: FormListItem; onDelete:
         <h3 className="font-heading text-xl font-bold line-clamp-1">{form.title}</h3>
         {form.description && <p className="mt-1 flex-1 text-sm text-muted-foreground line-clamp-2">{form.description}</p>}
         <div className="mt-6 flex items-center justify-between relative z-20">
-          <span className="flex h-7 items-center rounded-md bg-muted px-2.5 text-sm font-medium">{form.responseCount} respostas</span>
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 items-center rounded-md bg-muted px-2.5 text-sm font-medium">{form.responseCount} respostas</span>
+            {form.viewCount > 0 && (
+              <span className="flex h-7 items-center gap-1 rounded-md bg-muted/60 px-2.5 text-xs text-muted-foreground">
+                <Eye className="h-3 w-3" />{form.viewCount}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-1">
             {form.status === "draft" && (
               <Tooltip>
@@ -505,6 +521,16 @@ function FormCard({ form, onDelete, onPublish }: { form: FormListItem; onDelete:
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Publicar formulário</TooltipContent>
+              </Tooltip>
+            )}
+            {form.status === "published" && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-orange-500" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }}>
+                    <PauseCircle className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Encerrar coleta de respostas</TooltipContent>
               </Tooltip>
             )}
             <Tooltip>
@@ -522,6 +548,14 @@ function FormCard({ form, onDelete, onPublish }: { form: FormListItem; onDelete:
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Copiar link público</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(); }}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Duplicar formulário</TooltipContent>
             </Tooltip>
             <AlertDialog>
               <Tooltip>

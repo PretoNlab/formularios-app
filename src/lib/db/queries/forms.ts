@@ -229,6 +229,73 @@ export async function publishForm(formId: string): Promise<ApiResponse<FormRow>>
 }
 
 /**
+ * Duplicates a form (including all questions) as a new draft.
+ */
+export async function duplicateForm(
+  formId: string,
+  workspaceId: string,
+  createdById: string
+): Promise<ApiResponse<FormRow>> {
+  try {
+    const original = await db.query.forms.findFirst({
+      where: eq(forms.id, formId),
+      with: { questions: { orderBy: (q, { asc }) => [asc(q.order)] } },
+    })
+    if (!original) return { success: false, error: { code: "NOT_FOUND", message: "Form not found" } }
+
+    const [newForm] = await db
+      .insert(forms)
+      .values({
+        workspaceId,
+        createdById,
+        title: `${original.title} (Cópia)`,
+        description: original.description,
+        slug: generateSlug(original.title + " copia"),
+        status: "draft",
+        theme: original.theme,
+        settings: original.settings,
+      })
+      .returning()
+
+    if (original.questions.length > 0) {
+      await db.insert(questions).values(
+        original.questions.map((q) => ({
+          formId: newForm.id,
+          type: q.type,
+          title: q.title,
+          description: q.description,
+          required: q.required,
+          order: q.order,
+          properties: q.properties,
+          logicRules: q.logicRules,
+        }))
+      )
+    }
+
+    return { success: true, data: newForm }
+  } catch (error) {
+    return { success: false, error: { code: "DB_ERROR", message: error instanceof Error ? error.message : "Database error" } }
+  }
+}
+
+/**
+ * Sets a form's status to "closed" (stops accepting responses).
+ */
+export async function closeForm(formId: string): Promise<ApiResponse<FormRow>> {
+  try {
+    const [updated] = await db
+      .update(forms)
+      .set({ status: "closed", updatedAt: new Date() })
+      .where(eq(forms.id, formId))
+      .returning()
+    if (!updated) return { success: false, error: { code: "NOT_FOUND", message: "Form not found" } }
+    return { success: true, data: updated }
+  } catch (error) {
+    return { success: false, error: { code: "DB_ERROR", message: error instanceof Error ? error.message : "Database error" } }
+  }
+}
+
+/**
  * Atomically increments the view count for a form identified by slug.
  * Fire-and-forget — errors are silently swallowed to avoid breaking page loads.
  */
