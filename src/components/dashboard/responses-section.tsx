@@ -1324,49 +1324,47 @@ function ResponsesTable({ responses, questions, onOpen }: {
     )
   }
 
+  const NON_INPUT: QuestionType[] = ["welcome", "thank_you", "statement"]
+  const visibleQuestions = [...questions]
+    .filter((q) => !NON_INPUT.includes(q.type))
+    .sort((a, b) => a.order - b.order)
+
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
-      <p className="text-xs text-muted-foreground px-4 py-2.5 border-b bg-muted/20">
-        Clique em qualquer linha para ver os detalhes completos da resposta
-      </p>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/30">
-            <th className="text-left p-4 font-semibold text-muted-foreground w-12">#</th>
-            <th className="text-left p-4 font-semibold text-muted-foreground">Data</th>
-            <th className="text-left p-4 font-semibold text-muted-foreground">Prévia</th>
-            <th className="text-left p-4 font-semibold text-muted-foreground">Respostas</th>
-            <th className="text-left p-4 font-semibold text-muted-foreground">Tempo</th>
-            <th className="text-left p-4 font-semibold text-muted-foreground">Status</th>
-            <th className="w-8" />
-          </tr>
-        </thead>
-        <tbody>
-          {responses.map((r, i) => {
-            const duration = r.completedAt
-              ? Math.round((new Date(r.completedAt).getTime() - new Date(r.startedAt).getTime()) / 1000)
-              : null
-            return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/30">
+              <th className="text-left px-4 py-3 font-semibold text-muted-foreground w-10 sticky left-0 bg-muted/30">#</th>
+              <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Data</th>
+              {visibleQuestions.map((q) => (
+                <th key={q.id} className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[160px] max-w-[220px]">
+                  <span className="block truncate" title={q.title}>{q.title}</span>
+                </th>
+              ))}
+              <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Status</th>
+              <th className="w-8" />
+            </tr>
+          </thead>
+          <tbody>
+            {responses.map((r, i) => (
               <tr
                 key={r.id}
                 className="border-b last:border-0 hover:bg-muted/40 cursor-pointer transition-colors group"
                 onClick={() => onOpen(i)}
               >
-                <td className="p-4 text-muted-foreground">{i + 1}</td>
-                <td className="p-4 whitespace-nowrap">{formatDate(r.startedAt)}</td>
-                <td className="p-4 max-w-[200px]">
-                  <span className="text-muted-foreground text-sm truncate block">
-                    {getResponsePreview(r, questions)}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span className="tabular-nums">{r.answers.length}</span>
-                  <span className="text-muted-foreground"> / {questions.length}</span>
-                </td>
-                <td className="p-4 text-muted-foreground tabular-nums whitespace-nowrap">
-                  {duration != null ? formatDuration(duration) : "—"}
-                </td>
-                <td className="p-4">
+                <td className="px-4 py-3 text-muted-foreground sticky left-0 bg-card group-hover:bg-muted/40 transition-colors">{i + 1}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">{formatDate(r.startedAt)}</td>
+                {visibleQuestions.map((q) => {
+                  const ans = r.answers.find((a) => a.questionId === q.id)
+                  const val = ans ? formatAnswerValue(ans.value) : "—"
+                  return (
+                    <td key={q.id} className="px-4 py-3 max-w-[220px]">
+                      <span className="block truncate" title={val !== "—" ? val : undefined}>{val}</span>
+                    </td>
+                  )
+                })}
+                <td className="px-4 py-3">
                   {r.completedAt ? (
                     <span className="inline-flex items-center gap-1.5 text-green-600 whitespace-nowrap">
                       <CheckCircle2 className="h-3.5 w-3.5" />Completa
@@ -1377,14 +1375,14 @@ function ResponsesTable({ responses, questions, onOpen }: {
                     </span>
                   )}
                 </td>
-                <td className="p-4 pr-3">
+                <td className="px-4 py-3 pr-3">
                   <ChevronRight className="h-4 w-4 text-muted-foreground opacity-30 group-hover:opacity-100 transition-opacity" />
                 </td>
               </tr>
-            )
-          })}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
