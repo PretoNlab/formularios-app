@@ -231,10 +231,27 @@ export async function sendResponseNotification({
 </body>
 </html>`
 
-  await resend.emails.send({
-    from,
-    to: toEmail,
-    subject: `Nova resposta: ${formTitle}`,
-    html,
+  const recipients = Array.isArray(toEmail) ? toEmail : [toEmail]
+  const sendingPromises = recipients.map(async (email) => {
+    try {
+      const response = await resend.emails.send({
+        from,
+        to: email,
+        subject: `Nova resposta: ${formTitle}`,
+        html,
+      })
+      
+      if (response.error) {
+        console.error(`[email notification] Resend error for ${email}:`, response.error)
+        return { email, success: false, error: response.error }
+      }
+      
+      return { email, success: true }
+    } catch (err) {
+      console.error(`[email notification] Exception for ${email}:`, err)
+      return { email, success: false, error: err }
+    }
   })
+
+  return await Promise.all(sendingPromises)
 }

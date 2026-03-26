@@ -1493,13 +1493,13 @@ kbd {
 
 /* ── Progress bar ── */
 .ff-progress {
-  position: fixed;
+  position: absolute;
   top: 0; left: 0; right: 0;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 20px;
-  z-index: 100;
+  z-index: 10;
   background: color-mix(in srgb, var(--ff-bg) 80%, transparent);
   backdrop-filter: blur(6px);
 }

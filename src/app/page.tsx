@@ -68,6 +68,7 @@ function Nav() {
           <Link href="#how" className="text-muted-foreground hover:text-foreground transition-colors">Como funciona</Link>
           <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Preços</Link>
           <Link href="#comparativo" className="text-muted-foreground hover:text-foreground transition-colors">Comparativo</Link>
+          <Link href="/settings/brand-kit" className="text-muted-foreground hover:text-foreground transition-colors">Brand Kit</Link>
           <Link href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</Link>
         </nav>
 

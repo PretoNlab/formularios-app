@@ -13,6 +13,7 @@ import type { AnswerValue, FormSettings, IntegrationConfig } from "@/lib/db/sche
 const RATE_LIMIT_MAX = 5
 const RATE_LIMIT_WINDOW_MIN = 60
 const NON_INPUT_TYPES = new Set(["welcome", "thank_you", "statement"])
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 // ─── Validation schemas (exported so callers can reuse) ───────────────────────
 
@@ -258,7 +259,7 @@ export async function submitResponseCore(params: {
     const recipients = settings.notificationEmail
       .split(",")
       .map((e) => e.trim())
-      .filter((e) => e.includes("@"))
+      .filter((e) => EMAIL_REGEX.test(e))
     if (recipients.length > 0) {
       sendResponseNotification({
         toEmail: recipients,
