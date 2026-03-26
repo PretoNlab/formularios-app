@@ -31,6 +31,7 @@ export const workspaces = pgTable("workspaces", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   ownerId: uuid("owner_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  brandKit: jsonb("brand_kit").$type<WorkspaceBrandKit>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
@@ -267,6 +268,24 @@ export interface FormThemeConfig {
     url: string
     position: "left" | "center" | "right"
   }
+}
+
+export interface WorkspaceBrandKit {
+  logoUrl?: string
+  logoPosition?: "left" | "center" | "right"
+  colors?: {
+    bg: string
+    card: string
+    accent: string
+    text: string
+    muted: string
+    inputBg?: string
+  }
+  font?: {
+    heading: string
+    body: string
+  }
+  borderRadius?: string
 }
 
 export interface FormSettings {

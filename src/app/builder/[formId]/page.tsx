@@ -4,6 +4,7 @@ import { ensureUserExists } from "@/lib/db/queries/users"
 import { getFormById } from "@/lib/db/queries/forms"
 import { BuilderClient } from "@/components/builder/builder-client"
 import { mapDbForm } from "@/lib/utils/map-db-form"
+import type { WorkspaceBrandKit } from "@/lib/db/schema"
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -45,5 +46,6 @@ export default async function BuilderPage({
   if (dbForm.createdById !== user.id) notFound()
 
   const form = mapDbForm(dbForm)
-  return <BuilderClient initialForm={form} />
+  const brandKit = (user.defaultWorkspace.brandKit as WorkspaceBrandKit | null) ?? null
+  return <BuilderClient initialForm={form} workspaceBrandKit={brandKit} />
 }

@@ -56,6 +56,7 @@ import {
   disconnectGoogleSheetsAction,
 } from "@/app/actions/integrations"
 import type { Form, Question, QuestionType, QuestionProperties, ThemeConfig, LogicRule, LogicOperator } from "@/lib/types/form"
+import type { WorkspaceBrandKit } from "@/lib/db/schema"
 import { QUESTION_TYPES } from "@/lib/types/form"
 import type { IntegrationRow } from "@/lib/db/queries/integrations"
 import { PRESET_THEMES, AVAILABLE_FONTS, getThemeCSSVariables } from "@/config/themes"
@@ -284,7 +285,13 @@ function createQuestion(type: QuestionType, formId: string, order: number): Ques
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function BuilderClient({ initialForm }: { initialForm: Form }) {
+export function BuilderClient({
+  initialForm,
+  workspaceBrandKit,
+}: {
+  initialForm: Form
+  workspaceBrandKit?: WorkspaceBrandKit | null
+}) {
   const { storeForm, setForm } = useBuilderStore(
     useShallow((s) => ({ storeForm: s.form, setForm: s.setForm }))
   )
@@ -532,6 +539,7 @@ export function BuilderClient({ initialForm }: { initialForm: Form }) {
               form={form}
               onSelect={updateFormTheme}
               onUpdateLogo={(logo) => updateFormTheme({ ...form.theme, logo })}
+              workspaceBrandKit={workspaceBrandKit ?? null}
             />
           )}
 
@@ -919,13 +927,29 @@ function ThemePickerPanel({
   form,
   onSelect,
   onUpdateLogo,
+  workspaceBrandKit,
 }: {
   form: Form
   onSelect: (theme: ThemeConfig) => void
   onUpdateLogo: (logo: ThemeConfig["logo"] | undefined) => void
+  workspaceBrandKit: WorkspaceBrandKit | null
 }) {
   const currentThemeId = form.theme.id
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function handleApplyBrandKit() {
+    if (!workspaceBrandKit) return
+    const updated: ThemeConfig = {
+      ...form.theme,
+      ...(workspaceBrandKit.colors ? { colors: workspaceBrandKit.colors } : {}),
+      ...(workspaceBrandKit.font ? { font: workspaceBrandKit.font } : {}),
+      ...(workspaceBrandKit.borderRadius ? { borderRadius: workspaceBrandKit.borderRadius } : {}),
+    }
+    onSelect(updated)
+    if (workspaceBrandKit.logoUrl) {
+      onUpdateLogo({ url: workspaceBrandKit.logoUrl, position: workspaceBrandKit.logoPosition ?? "center" })
+    }
+  }
   
   // Custom Themes State
   const [savedThemes, setSavedThemes] = useState<ThemeConfig[]>([])
@@ -1037,6 +1061,22 @@ function ThemePickerPanel({
 
   return (
     <div className="p-4 space-y-8">
+      {/* Brand Kit */}
+      {workspaceBrandKit && (
+        <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Palette className="h-4 w-4 text-accent" />
+            <p className="text-sm font-semibold">Brand Kit</p>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Aplica as cores, fontes e logo da sua marca a este formulário.
+          </p>
+          <Button size="sm" className="w-full" onClick={handleApplyBrandKit}>
+            Aplicar Brand Kit
+          </Button>
+        </div>
+      )}
+
       {/* Marca / Logotipo */}
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">

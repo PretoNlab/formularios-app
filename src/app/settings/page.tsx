@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, User, Building2, CreditCard, Shield } from "lucide-react"
+import { ArrowLeft, User, Building2, CreditCard, Shield, Palette } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { ensureUserExists } from "@/lib/db/queries/users"
 import { Badge } from "@/components/ui/badge"
@@ -154,6 +154,24 @@ export default async function SettingsPage() {
             </ul>
           </div>
         )}
+      </section>
+
+      {/* ── Brand Kit ── */}
+      <section className="rounded-xl border bg-card p-6 space-y-5 mt-6">
+        <div className="flex items-center gap-3">
+          <Palette className="h-4 w-4 text-muted-foreground" />
+          <h2 className="font-semibold">Brand Kit</h2>
+        </div>
+        <Separator />
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">Identidade visual da sua marca</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Logo, cores e fontes aplicáveis a qualquer formulário com um clique.</p>
+          </div>
+          <Link href="/settings/brand-kit" className="rounded-full border px-4 py-1.5 text-sm font-medium hover:bg-muted transition-colors">
+            Gerenciar
+          </Link>
+        </div>
       </section>
 
       {/* ── Segurança ── */}
