@@ -46,8 +46,8 @@ const nextConfig = {
 };
 
 export default withSentryConfig(nextConfig, {
-    org: process.env.SENTRY_ORG,
-    project: process.env.SENTRY_PROJECT,
+    org: process.env.SENTRY_ORG ?? "formulariosia",
+    project: process.env.SENTRY_PROJECT ?? "javascript-nextjs",
 
     // Upload source maps apenas em produção (CI/CD)
     silent: !process.env.CI,
