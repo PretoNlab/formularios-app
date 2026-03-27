@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   ArrowLeft, Eye, Users, TrendingUp, Clock,
   CheckCircle2, Circle, Copy, ExternalLink, Download,
@@ -26,6 +27,13 @@ interface QuestionSummary {
   order: number
 }
 
+interface PaginationMeta {
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
+}
+
 interface ResponsesSectionProps {
   formId: string
   formTitle: string
@@ -34,6 +42,7 @@ interface ResponsesSectionProps {
   questions: QuestionSummary[]
   responses: ResponseWithAnswers[]
   analytics: FormAnalytics | null
+  pagination?: PaginationMeta
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1518,8 +1527,9 @@ function FilterBar({
 
 export function ResponsesSection({
   formId, formTitle, formStatus, formSlug,
-  questions, responses, analytics,
+  questions, responses, analytics, pagination,
 }: ResponsesSectionProps) {
+  const router = useRouter()
   const [tab, setTab] = useState<"responses" | "analytics">("responses")
   const [copied, setCopied] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
@@ -1665,6 +1675,31 @@ export function ResponsesSection({
             questions={questions}
             onOpen={setOpenResponseIndex}
           />
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4 px-1">
+              <p className="text-xs text-muted-foreground">
+                Página {pagination.page} de {pagination.totalPages} · {pagination.total} respostas
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.page <= 1}
+                  onClick={() => router.push(`/responses/${formId}?page=${pagination.page - 1}`)}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.page >= pagination.totalPages}
+                  onClick={() => router.push(`/responses/${formId}?page=${pagination.page + 1}`)}
+                >
+                  Próxima<ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
