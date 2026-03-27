@@ -698,53 +698,102 @@ function FounderOffer() {
 // ─── Comparison Table ─────────────────────────────────────────────────────────
 
 function ComparisonTable() {
-  const features = [
-    { name: "Modelo de Cobrança", ia: "Pagamento único anual", respondi: "Assinatura mensal/anual", typeform: "Assinatura mensal/anual" },
-    { name: "Preço Base", ia: "R$ 499/ano", respondi: "R$ 147/mês", typeform: "US$ 50-83/mês" },
-    { name: "Funcionalidades", ia: "Essenciais completas", respondi: "Suíte robusta", typeform: "Operações globais" },
-    { name: "Ideal para", ia: "Simplicidade e previsibilidade", respondi: "Times de marketing", typeform: "Enterprise e Global" },
+  type FeatureRow =
+    | { type: "section"; label: string }
+    | { type: "row"; name: string; ia: string | boolean; respondi: string | boolean; typeform: string | boolean; highlight?: boolean }
+
+  const features: FeatureRow[] = [
+    { type: "section", label: "💰 Preço" },
+    { type: "row", name: "Modelo de cobrança", ia: "Pagamento único anual", respondi: "Assinatura mensal", typeform: "Assinatura mensal", highlight: true },
+    { type: "row", name: "Preço base", ia: "R$ 499/ano", respondi: "R$ 147/mês (R$ 1.764/ano)", typeform: "US$ 83/mês (~R$ 4.980/ano)", highlight: true },
+    { type: "row", name: "Economia anual vs concorrente", ia: "—", respondi: "Você economiza R$ 1.265/ano", typeform: "Você economiza R$ 4.481/ano", highlight: true },
+    { type: "row", name: "Sem surpresa de fatura no mês", ia: true, respondi: false, typeform: false },
+    { type: "row", name: "Preço em Reais (sem câmbio)", ia: true, respondi: true, typeform: false },
+
+    { type: "section", label: "⚡ Funcionalidades" },
+    { type: "row", name: "Formulários conversacionais", ia: true, respondi: true, typeform: true },
+    { type: "row", name: "Analytics de respostas", ia: true, respondi: true, typeform: true },
+    { type: "row", name: "Lógica condicional", ia: true, respondi: true, typeform: true },
+    { type: "row", name: "Brand Kit (cores, logo, fontes)", ia: true, respondi: false, typeform: "Pago extra" },
+    { type: "row", name: "Campos WhatsApp, CPF e CNPJ nativos", ia: true, respondi: false, typeform: false, highlight: true },
+    { type: "row", name: "Notificações de resposta por e-mail", ia: true, respondi: true, typeform: "Planos pagos" },
+    { type: "row", name: "Integração Google Sheets", ia: true, respondi: true, typeform: "Planos pagos" },
+    { type: "row", name: "Webhooks", ia: true, respondi: true, typeform: "Planos pagos" },
+    { type: "row", name: "Domínio personalizado", ia: "Em breve", respondi: true, typeform: "Planos pagos" },
+
+    { type: "section", label: "🇧🇷 Feito para o Brasil" },
+    { type: "row", name: "Interface e suporte em português", ia: true, respondi: false, typeform: false, highlight: true },
+    { type: "row", name: "Validação de CPF/CNPJ", ia: true, respondi: false, typeform: false, highlight: true },
+    { type: "row", name: "Campo WhatsApp com máscara", ia: true, respondi: false, typeform: false, highlight: true },
+    { type: "row", name: "Servidores com baixa latência no BR", ia: true, respondi: false, typeform: false },
   ]
+
+  function Cell({ val }: { val: string | boolean }) {
+    if (val === true) return <span className="text-green-500 text-lg font-bold">✓</span>
+    if (val === false) return <span className="text-red-400 text-lg">✕</span>
+    return <span>{val}</span>
+  }
 
   return (
     <section id="comparativo" className="py-24 container">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-16 space-y-4">
           <h2 className="text-4xl font-extrabold font-headline">Compare pelo que importa</h2>
-          <p className="text-lg text-muted-foreground">
-            Transparência total para você decidir o que faz sentido para o seu momento.
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+            Mais recursos, feito para o Brasil, por uma fração do preço. Sem mensalidade, sem surpresa.
           </p>
         </div>
 
         <div className="overflow-x-auto rounded-3xl border bg-card/50">
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b">
-                <th className="p-6 text-left text-sm font-bold text-muted-foreground uppercase tracking-widest">Recurso</th>
+                <th className="p-6 text-left text-xs font-bold text-muted-foreground uppercase tracking-widest">Recurso</th>
                 <th className="p-6 text-center bg-violet-600/5">
-                  <span className="text-violet-600 font-extrabold font-headline">formularios.ia</span>
+                  <span className="text-violet-600 font-extrabold font-headline text-base">formularios.ia</span>
+                  <div className="mt-1">
+                    <span className="inline-block bg-violet-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Melhor escolha</span>
+                  </div>
                 </th>
                 <th className="p-6 text-center text-muted-foreground font-bold">Respondi</th>
                 <th className="p-6 text-center text-muted-foreground font-bold">Typeform</th>
               </tr>
             </thead>
-            <tbody className="text-sm">
-              {features.map((f, i) => (
-                <tr key={f.name} className={i !== features.length - 1 ? "border-b" : ""}>
-                  <td className="p-6 font-medium">{f.name}</td>
-                  <td className={`p-6 text-center bg-violet-600/5 font-bold text-violet-600 ${i === features.length - 1 ? "rounded-b-3xl" : ""}`}>
-                    {f.ia}
-                  </td>
-                  <td className="p-6 text-center text-muted-foreground">{f.respondi}</td>
-                  <td className="p-6 text-center text-muted-foreground">{f.typeform}</td>
-                </tr>
-              ))}
+            <tbody>
+              {features.map((f, i) => {
+                if (f.type === "section") {
+                  return (
+                    <tr key={`section-${i}`} className="border-b border-t bg-muted/30">
+                      <td colSpan={4} className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        {f.label}
+                      </td>
+                    </tr>
+                  )
+                }
+                const isLast = i === features.length - 1
+                return (
+                  <tr key={f.name} className={`${!isLast ? "border-b" : ""} ${f.highlight ? "bg-violet-50/40 dark:bg-violet-950/10" : ""}`}>
+                    <td className="p-5 font-medium">{f.name}</td>
+                    <td className="p-5 text-center bg-violet-600/5 font-bold text-violet-600">
+                      <Cell val={f.ia} />
+                    </td>
+                    <td className="p-5 text-center text-muted-foreground"><Cell val={f.respondi} /></td>
+                    <td className="p-5 text-center text-muted-foreground"><Cell val={f.typeform} /></td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
+
+        <p className="text-center text-xs text-muted-foreground mt-6">
+          * Preços consultados em março/2025. Typeform convertido com R$ 5,99/US$. Valores podem variar.
+        </p>
       </div>
     </section>
   )
 }
+
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
 
