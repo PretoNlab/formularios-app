@@ -1,3 +1,5 @@
+import { withSentryConfig } from "@sentry/nextjs"
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
@@ -43,4 +45,25 @@ const nextConfig = {
     },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+
+    // Upload source maps apenas em produção (CI/CD)
+    silent: !process.env.CI,
+
+    // Desabilita source map upload se não houver auth token
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+
+    // Tunneling evita ad-blockers que bloqueiam sentry.io
+    tunnelRoute: "/monitoring",
+
+    // Oculta source maps do bundle final
+    hideSourceMaps: true,
+
+    // Desabilita o logger automático de console no edge
+    disableLogger: true,
+
+    // Sem telemetria do Sentry sobre o build
+    telemetry: false,
+});
