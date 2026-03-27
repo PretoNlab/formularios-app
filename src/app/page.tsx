@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import {
   Sparkles, ArrowRight, Zap, BarChart3, Globe, MessageCircle,
   CheckCircle2, Star, ChevronRight, MousePointer2, Shield, Layers,
-  Target, Download, ChevronDown
+  Target, Download, ChevronDown, LayoutTemplate, Code2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -210,7 +210,7 @@ function Hero() {
 const FEATURES = [
   {
     icon: MousePointer2,
-    title: "22 tipos de campo",
+    title: "24 tipos de campo",
     description: "Texto, NPS, escala, múltipla escolha, upload de arquivo, assinatura e muito mais. Tudo que você precisa num só lugar.",
     color: "text-violet-600",
     bg: "bg-violet-50",
@@ -241,7 +241,7 @@ const FEATURES = [
   {
     icon: Globe,
     title: "Temas e customização",
-    description: "8 temas profissionais prontos ou crie o seu. Fontes, cores e gradientes para combinar com a sua marca.",
+    description: "8 temas prontos, Brand Kit do workspace e personalização total de cores, fontes e logo para combinar com a sua marca.",
     color: "text-pink-600",
     bg: "bg-pink-50",
   },
@@ -265,6 +265,20 @@ const FEATURES = [
     description: "Entregue PDFs ou arquivos automaticamente ao final do form. Um diferencial real para captação de leads.",
     color: "text-amber-600",
     bg: "bg-amber-50",
+  },
+  {
+    icon: LayoutTemplate,
+    title: "Templates prontos",
+    description: "Mais de 10 modelos organizados por categoria — NPS, feedback, cadastro, RH, vendas e mais. Comece em segundos.",
+    color: "text-orange-600",
+    bg: "bg-orange-50",
+  },
+  {
+    icon: Code2,
+    title: "Incorpore no seu site",
+    description: "Gere o código iframe com um clique e cole em qualquer site, landing page ou portal. Sem configuração extra.",
+    color: "text-indigo-600",
+    bg: "bg-indigo-50",
   },
 ]
 
@@ -307,7 +321,7 @@ const STEPS = [
   {
     number: "01",
     title: "Crie seu formulário",
-    description: "Escolha um template ou comece do zero. Arraste e solte os campos, configure a lógica e personalize o visual em minutos.",
+    description: "Escolha entre mais de 10 templates prontos ou comece do zero. Arraste e solte os campos, configure a lógica e personalize o visual em minutos.",
   },
   {
     number: "02",
@@ -417,7 +431,7 @@ const PLANS = [
       "Até 3 formulários publicados",
       "Rascunhos ilimitados",
       "50 respostas para testar",
-      "22 tipos de campo",
+      "24 tipos de campo",
       "Analytics básico",
       "Link público compartilhável",
     ],
@@ -544,6 +558,10 @@ const FAQ_ITEMS = [
   {
     question: "Como ofereço um arquivo ou PDF ao respondente?",
     answer: "No builder, basta preencher o campo 'Arquivo para download' ou fazer upload do seu arquivo. Um botão de download aparecerá automaticamente na tela de conclusão do formulário."
+  },
+  {
+    question: "Posso incorporar o formulário no meu site?",
+    answer: "Sim. No Builder, clique em Compartilhar e copie o código iframe gerado automaticamente. Cole em qualquer site, landing page ou portal — o formulário funciona perfeitamente embedado, sem configuração extra."
   },
   {
     question: "Os dados dos respondentes são vendidos ou compartilhados?",
