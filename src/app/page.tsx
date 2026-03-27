@@ -786,9 +786,6 @@ function ComparisonTable() {
           </table>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          * Preços consultados em março/2025. Typeform convertido com R$ 5,99/US$. Valores podem variar.
-        </p>
       </div>
     </section>
   )
