@@ -755,8 +755,8 @@ function ComparisonTable() {
                     <span className="inline-block bg-violet-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Melhor escolha</span>
                   </div>
                 </th>
-                <th className="p-6 text-center text-muted-foreground font-bold">Respondi</th>
-                <th className="p-6 text-center text-muted-foreground font-bold">Typeform</th>
+                <th className="p-6 text-center text-muted-foreground font-bold">Concorrente 1</th>
+                <th className="p-6 text-center text-muted-foreground font-bold">Concorrente 2</th>
               </tr>
             </thead>
             <tbody>
