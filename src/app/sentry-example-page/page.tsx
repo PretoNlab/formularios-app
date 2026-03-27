@@ -7,7 +7,8 @@ export default function SentryExamplePage() {
 
   function throwError() {
     setClicked(true)
-    throw new Error("Sentry Example Frontend Error")
+    // @ts-expect-error intentional test error
+    myUndefinedFunction()
   }
 
   return (
