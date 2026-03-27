@@ -55,9 +55,6 @@ export default withSentryConfig(nextConfig, {
     // Desabilita source map upload se não houver auth token
     authToken: process.env.SENTRY_AUTH_TOKEN,
 
-    // Tunneling evita ad-blockers que bloqueiam sentry.io
-    tunnelRoute: "/monitoring",
-
     // Oculta source maps do bundle final
     hideSourceMaps: true,
 
