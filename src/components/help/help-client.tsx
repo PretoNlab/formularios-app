@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp } from "lucide-react"
 
 const SECTIONS = [
   { id: "primeiros-passos", label: "Primeiros passos" },
+  { id: "dashboard", label: "Dashboard" },
   { id: "builder", label: "Builder" },
   { id: "tipos-de-campos", label: "Tipos de campos" },
   { id: "logica-condicional", label: "Lógica condicional" },
@@ -182,7 +183,7 @@ export function HelpClient() {
               Uma janela de criação aparecerá com duas opções: em branco ou a partir de um template.
             </Step>
             <Step number={2} title="Escolha entre começar em branco ou usar um template">
-              Templates já vêm com perguntas prontas para casos de uso comuns (NPS, cadastro, feedback de produto etc.).
+              A página de Templates (<code className="text-xs bg-muted px-1 py-0.5 rounded">/templates</code>) oferece mais de 10 templates prontos organizados por categoria (Pesquisa, Feedback, Cadastro, RH, Vendas, Saúde, Política). Use a busca ou os filtros de categoria para encontrar o modelo ideal.
             </Step>
             <Step number={3} title="O Builder será aberto com seu formulário pronto para editar" />
 
@@ -196,7 +197,56 @@ export function HelpClient() {
             <Tip>Formulários ficam no status <strong>Rascunho</strong> até você publicar. Apenas formulários publicados aceitam respostas.</Tip>
           </Section>
 
-          {/* ── 2. Builder ─────────────────────────────────────────────── */}
+          {/* ── 2. Dashboard ───────────────────────────────────────────── */}
+          <Section id="dashboard" title="Dashboard">
+            <p className="text-muted-foreground mb-6">O painel central onde você gerencia todos os seus formulários.</p>
+
+            <h3 className="font-semibold text-lg mb-4">Card de formulário</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Cada formulário aparece como um card com nome, status, contador de perguntas, respostas e visualizações. As ações disponíveis ficam na barra inferior do card:
+            </p>
+            <div className="space-y-3 mb-6">
+              {[
+                { action: "Editar", desc: "Abre o Builder para editar o formulário." },
+                { action: "Ver respostas", desc: "Abre o painel de respostas e analytics." },
+                { action: "Duplicar", desc: "Cria uma cópia do formulário (com todas as perguntas e configurações) como novo rascunho. Útil para criar variações ou reaproveitar estruturas existentes." },
+                { action: "Encerrar coleta", desc: "Aparece apenas para formulários publicados. Pausa imediatamente a coleta de respostas — o formulário fica com status Encerrado e pode ser reativado pelo Builder." },
+                { action: "Excluir", desc: "Remove o formulário e todas as suas respostas permanentemente. Essa ação não pode ser desfeita." },
+              ].map(({ action, desc }) => (
+                <div key={action} className="rounded-lg border p-4">
+                  <p className="font-semibold mb-1">{action}</p>
+                  <p className="text-sm text-muted-foreground">{desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <h3 className="font-semibold text-lg mb-4">Contador de visualizações</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Quando um formulário publicado acumula visualizações, um badge com o ícone de olho e o número de views aparece no card. Cada abertura da URL pública (<code className="text-xs bg-muted px-1 py-0.5 rounded">/f/slug</code>) incrementa esse contador.
+            </p>
+
+            <h3 className="font-semibold text-lg mb-4">Status dos formulários</h3>
+            <div className="rounded-lg border overflow-hidden">
+              <table className="w-full text-sm">
+                <tbody>
+                  {[
+                    { status: "Rascunho", desc: "Formulário em edição. Não aceita respostas públicas." },
+                    { status: "Publicado", desc: "Ativo e aceitando respostas. Aparece como badge verde no card." },
+                    { status: "Encerrado", desc: "Parado manualmente ou por limite/data. Respostas existentes ficam preservadas." },
+                  ].map(({ status, desc }, i) => (
+                    <tr key={status} className={i % 2 === 0 ? "bg-background" : "bg-muted/30"}>
+                      <td className="px-4 py-3 font-medium w-32">{status}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{desc}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <Tip>Use <strong>Duplicar</strong> para criar versões A/B de um formulário ou reaproveitar uma estrutura para um novo período (ex: pesquisa mensal).</Tip>
+          </Section>
+
+          {/* ── 3. Builder ─────────────────────────────────────────────── */}
           <Section id="builder" title="Builder">
             <p className="text-muted-foreground mb-6">O editor onde você constrói seu formulário. Tudo salva automaticamente.</p>
 
@@ -313,6 +363,11 @@ export function HelpClient() {
               ))}
             </div>
 
+            <h3 className="font-semibold text-lg mt-8 mb-4">Brand Kit do workspace</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Em <strong>Configurações → Brand Kit</strong> você centraliza os ativos visuais do seu workspace: logo principal, logo escura/clara e favicon. Esses arquivos ficam disponíveis para uso em qualquer formulário sem precisar fazer upload novamente.
+            </p>
+
             <Tip>Todas as alterações de tema aparecem em tempo real no Preview. Ative o Preview ao lado para ver o formulário enquanto você edita as cores.</Tip>
           </Section>
 
@@ -343,8 +398,8 @@ export function HelpClient() {
                   desc: "Exibe o número da pergunta atual (ex: 3/10) durante o preenchimento.",
                 },
                 {
-                  title: "Notificação por e-mail",
-                  desc: "Envie um e-mail automaticamente para um endereço configurado cada vez que uma nova resposta for recebida.",
+                  title: "Encaminhar respostas por e-mail",
+                  desc: "A cada nova resposta, um e-mail com o conteúdo completo (todas as perguntas e respostas) é enviado para os destinatários configurados. Suporta múltiplos e-mails separados por vírgula (ex: joao@empresa.com, maria@empresa.com).",
                 },
                 {
                   title: "Mensagem de encerramento",
@@ -383,13 +438,18 @@ export function HelpClient() {
               No modal de publicação, você pode editar o slug para algo mais fácil de lembrar (ex: <code className="text-xs bg-muted px-1 py-0.5 rounded">pesquisa-clientes-2025</code>). O slug precisa ser único na plataforma.
             </p>
 
-            <h3 className="font-semibold text-lg mb-4">Embed (incorporar)</h3>
-            <p className="text-sm text-muted-foreground mb-3">Para incorporar o formulário em seu site, use um iframe:</p>
-            <div className="rounded-md bg-muted px-4 py-3 text-xs font-mono break-all">
-              {`<iframe src="https://formularios.ia/f/seu-slug" width="100%" height="600" frameborder="0"></iframe>`}
+            <h3 className="font-semibold text-lg mb-4">Embed (incorporar no seu site)</h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              Para incorporar o formulário em qualquer site ou landing page, clique em <strong>Compartilhar</strong> no Builder e depois em <strong>"Incorporar no seu site"</strong>. O código iframe já estará gerado — basta clicar em Copiar e colar no HTML do seu site.
+            </p>
+            <div className="rounded-md bg-muted px-4 py-3 text-xs font-mono break-all mb-4">
+              {`<iframe src="https://formularios.ia.br/f/seu-slug" width="100%" height="600" frameborder="0" style="border:0;border-radius:8px"></iframe>`}
             </div>
+            <p className="text-sm text-muted-foreground">
+              Ajuste o atributo <code className="text-xs bg-muted px-1 py-0.5 rounded">height</code> conforme o tamanho do seu formulário (ex: <code className="text-xs bg-muted px-1 py-0.5 rounded">height="800"</code> para formulários mais longos).
+            </p>
 
-            <Tip>Para que o formulário apareça em iframe em outro site, o domínio de destino precisa permitir frames. Nosso <code className="text-xs bg-muted/80 px-1 py-0.5 rounded">X-Frame-Options</code> está configurado como DENY para páginas autenticadas — mas formulários públicos (/f/*) podem ser embedados normalmente.</Tip>
+            <Tip>Formulários públicos (<code className="text-xs bg-muted/80 px-1 py-0.5 rounded">/f/*</code>) podem ser embedados normalmente em qualquer site. Apenas páginas autenticadas do painel têm proteção contra iframe.</Tip>
           </Section>
 
           {/* ── 8. Integrações ─────────────────────────────────────────── */}
@@ -437,14 +497,13 @@ export function HelpClient() {
 
             <h3 className="font-semibold text-lg mb-4">Acessar respostas</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              No Dashboard, clique em <strong>Ver respostas</strong> no card do formulário. A página de Analytics tem três abas:
+              No Dashboard, clique em <strong>Ver respostas</strong> no card do formulário. A página tem duas abas:
             </p>
 
             <div className="space-y-3 mb-6">
               {[
-                { tab: "Respostas", desc: "Tabela com todas as respostas individuais. Clique em qualquer linha para expandir e ver todas as respostas daquele preenchimento. Filtre por status (completo/parcial) e dispositivo." },
-                { tab: "Perguntas", desc: "Visão analítica por pergunta: distribuição de opções para seleção, média para avaliações, amostras de texto com análise de IA." },
-                { tab: "Visão geral", desc: "KPIs, gráfico de 30 dias, taxa de conclusão, tempo médio, breakdown por dispositivo, origem do tráfego e mapa de calor por hora/dia." },
+                { tab: "Respostas", desc: "Tabela no formato planilha — uma coluna por pergunta, uma linha por resposta. Clique em qualquer linha para abrir o painel de detalhes com todas as respostas daquele preenchimento. Filtre por período, status (completo/parcial) e dispositivo. Formulários com muitas respostas são paginados (50 por página) com navegação Anterior/Próxima no rodapé." },
+                { tab: "Analytics", desc: "KPIs, gráfico de 30 dias, taxa de conclusão, tempo médio, breakdown por dispositivo, origem do tráfego, mapa de calor por hora/dia e análise por pergunta (distribuição de opções, médias de avaliação, análise de IA para textos)." },
               ].map(({ tab, desc }) => (
                 <div key={tab} className="rounded-lg border p-4">
                   <p className="font-semibold mb-1">{tab}</p>
@@ -499,6 +558,18 @@ export function HelpClient() {
                   a: "Sim. O renderer é responsivo e otimizado para mobile. O tipo de dispositivo (desktop, mobile, tablet) também é registrado nas respostas para análise.",
                 },
                 {
+                  q: "Posso duplicar um formulário?",
+                  a: "Sim. No Dashboard, clique no ícone de duplicar no card do formulário. Uma cópia completa é criada como novo rascunho — incluindo todas as perguntas, lógica condicional, tema e configurações. O slug é gerado automaticamente para a cópia.",
+                },
+                {
+                  q: "Como faço para pausar meu formulário sem excluí-lo?",
+                  a: "Clique em 'Encerrar coleta' no card do formulário no Dashboard (disponível apenas para formulários publicados). O formulário passa para o status Encerrado e para de aceitar respostas imediatamente. As respostas já coletadas ficam intactas.",
+                },
+                {
+                  q: "Posso enviar as respostas por e-mail para mais de uma pessoa?",
+                  a: "Sim. No campo 'Encaminhar respostas' nas Configurações do Builder, insira múltiplos e-mails separados por vírgula (ex: joao@empresa.com, maria@empresa.com). Cada resposta recebida será encaminhada com o conteúdo completo do preenchimento.",
+                },
+                {
                   q: "Posso redirecionar o respondente para outro site após o envio?",
                   a: "Ainda não existe um campo de redirect automático. A tela de agradecimento é totalmente personalizável e suporta um botão de download de arquivo como call-to-action.",
                 },
@@ -508,7 +579,11 @@ export function HelpClient() {
                 },
                 {
                   q: "Posso usar um domínio próprio para os formulários?",
-                  a: "Esta funcionalidade está no roadmap mas ainda não está disponível. Por enquanto, todos os formulários ficam em formularios.ia/f/slug.",
+                  a: "Esta funcionalidade está no roadmap mas ainda não está disponível. Por enquanto, todos os formulários ficam em formularios.ia.br/f/slug.",
+                },
+                {
+                  q: "O que é o Brand Kit?",
+                  a: "O Brand Kit (em Configurações → Brand Kit) é onde você armazena os ativos visuais do workspace: logo principal, versão escura/clara e favicon. Esses arquivos ficam disponíveis para todos os formulários sem precisar fazer upload individualmente em cada um.",
                 },
                 {
                   q: "Como funciona a integração com Google Sheets se o token expirar?",
