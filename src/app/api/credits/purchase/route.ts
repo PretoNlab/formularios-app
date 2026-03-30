@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { ensureUserExists } from "@/lib/db/queries/users"
 import { db } from "@/lib/db/client"
 import { creditOrders } from "@/lib/db/schema"
-import { createPixQrCode } from "@/lib/abacatepay"
+import { createPixBillingLink } from "@/lib/abacatepay"
 import { getProductById } from "@/lib/credits"
 
 export async function POST(req: NextRequest) {
@@ -26,9 +26,12 @@ export async function POST(req: NextRequest) {
   if (!product) return NextResponse.json({ error: "Produto inválido." }, { status: 400 })
 
   try {
-    const pix = await createPixQrCode({
+    const baseUrl = req.headers.get("origin") || "https://formularios.ia"
+    const pix = await createPixBillingLink({
       amountCents: product.priceCents,
       description: `${product.name} - formularios.ia`,
+      returnUrl: `${baseUrl}/billing?success=true`,
+      cancelUrl: `${baseUrl}/billing?canceled=true`,
     })
 
     const [order] = await db
@@ -40,17 +43,13 @@ export async function POST(req: NextRequest) {
         amountCents: product.priceCents,
         status: "pending",
         abacatepayId: pix.id,
-        pixCode: pix.brCode,
-        pixQrBase64: pix.brCodeBase64,
-        expiresAt: new Date(pix.expiresAt),
+        expiresAt: new Date(Date.now() + 3600 * 1000), // 1 hour expiration for link fallback
       })
       .returning()
 
     return NextResponse.json({
       orderId: order.id,
-      pixCode: pix.brCode,
-      pixQrBase64: pix.brCodeBase64,
-      expiresAt: pix.expiresAt,
+      url: pix.url,
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erro ao criar cobrança."

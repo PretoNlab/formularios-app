@@ -233,9 +233,6 @@ export function BillingClient({
     setModalOpen(true)
     setLoading(true)
     setError(null)
-    setOrderId(null)
-    setPixCode(null)
-    setExpiresAt(null)
 
     try {
       const res = await fetch("/api/credits/purchase", {
@@ -243,14 +240,14 @@ export function BillingClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ packId: id }),
       })
-      const data = await res.json() as { orderId?: string; pixCode?: string; expiresAt?: string; error?: string }
-      if (!res.ok || data.error) { setError(data.error ?? "Erro ao gerar cobrança."); return }
-      setOrderId(data.orderId!)
-      setPixCode(data.pixCode!)
-      setExpiresAt(data.expiresAt!)
+      const data = await res.json() as { orderId?: string; url?: string; error?: string }
+      if (!res.ok || data.error) { setError(data.error ?? "Erro ao gerar cobrança."); setLoading(false); return }
+      
+      if (data.url) {
+        window.location.href = data.url
+      }
     } catch {
       setError("Erro de rede. Tente novamente.")
-    } finally {
       setLoading(false)
     }
   }

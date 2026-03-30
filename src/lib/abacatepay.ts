@@ -1,32 +1,38 @@
 const BASE_URL = "https://api.abacatepay.com"
 
-export async function createPixQrCode(params: {
+export async function createPixBillingLink(params: {
   amountCents: number
   description: string
-  expiresIn?: number
-}): Promise<{ id: string; brCode: string; brCodeBase64: string; expiresAt: string }> {
+  returnUrl: string
+  cancelUrl: string
+}): Promise<{ id: string; url: string }> {
   const apiKey = process.env.ABACATEPAY_API_KEY
   if (!apiKey) throw new Error("ABACATEPAY_API_KEY não configurada.")
 
-  const res = await fetch(`${BASE_URL}/v2/transparents/create`, {
+  const res = await fetch(`${BASE_URL}/v1/billing/create`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      method: "PIX",
-      data: {
-        amount: params.amountCents,
-        expiresIn: params.expiresIn ?? 3600,
-        description: params.description.slice(0, 37),
-      }
+      frequency: "ONE_TIME",
+      methods: ["PIX"],
+      products: [
+        {
+          name: params.description.slice(0, 37),
+          price: params.amountCents,
+          quantity: 1,
+        }
+      ],
+      returnUrl: params.returnUrl,
+      cancelUrl: params.cancelUrl,
     }),
   })
 
   const json = (await res.json()) as {
     success: boolean
-    data: { id: string; brCode: string; brCodeBase64: string; expiresAt: string } | null
+    data: { id: string; url: string } | null
     error: string | null
   }
 
@@ -34,6 +40,6 @@ export async function createPixQrCode(params: {
     throw new Error(`AbacatePay: ${json.error ?? "Erro desconhecido"}`)
   }
 
-  const { id, brCode, brCodeBase64, expiresAt } = json.data
-  return { id, brCode, brCodeBase64, expiresAt }
+  const { id, url } = json.data
+  return { id, url }
 }

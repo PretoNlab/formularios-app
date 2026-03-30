@@ -43,7 +43,9 @@ export async function POST(req: NextRequest) {
   const isPaid =
     event === "transparent.completed" ||
     event === "pixQrCode.paid" ||
-    event === "checkout.completed"
+    event === "checkout.completed" ||
+    event === "billing.paid" ||
+    event === "billing.completed"
 
   if (!isPaid || !data) return NextResponse.json({ ok: true })
 
