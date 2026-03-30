@@ -4,7 +4,7 @@ import { createHash } from "crypto"
 import { db } from "@/lib/db/client"
 import { forms, questions, responses, answers, users } from "@/lib/db/schema"
 import { getIntegrationsByForm, updateIntegration } from "@/lib/db/queries/integrations"
-import { sendResponseNotification, sendFirstResponseEmail } from "@/lib/email"
+import { sendResponseNotification, sendFirstResponseEmail, sendAutoResponderEmail } from "@/lib/email"
 import { appendGoogleSheetsRow } from "@/lib/google-sheets"
 import type { AnswerValue, FormSettings, IntegrationConfig } from "@/lib/db/schema"
 
@@ -55,14 +55,17 @@ export function hashIp(ip: string): string {
 }
 
 // Private IP ranges and localhost — blocked to prevent SSRF
+// Covers: RFC1918, link-local, loopback, IPv6 ULA/link-local, 0.0.0.0, and IPv6-mapped IPv4
 const PRIVATE_IP_RE =
-  /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|::1$|fc00:|fe80:)/i
+  /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.0\.0\.0|::1$|fc00:|fe80:|::ffff:)/i
 
 function isAllowedWebhookUrl(url: string): boolean {
   try {
     const parsed = new URL(url)
     if (parsed.protocol !== "https:") return false
-    if (PRIVATE_IP_RE.test(parsed.hostname)) return false
+    // Strip IPv6 brackets — URL API returns "[::1]" for IPv6, but regex expects "::1"
+    const hostname = parsed.hostname.replace(/^\[|\]$/g, "")
+    if (PRIVATE_IP_RE.test(hostname)) return false
     return true
   } catch {
     return false
@@ -281,6 +284,25 @@ export async function submitResponseCore(params: {
         }
       })
       .catch(() => {})
+  }
+
+  // 10c. Auto-Responder / Email to Lead (fire-and-forget)
+  if (
+    settings.autoResponderEnabled &&
+    settings.autoResponderEmailFieldId &&
+    sanitizedAnswers[settings.autoResponderEmailFieldId]
+  ) {
+    const rawLeadEmail = sanitizedAnswers[settings.autoResponderEmailFieldId]
+    const leadEmail = typeof rawLeadEmail === "string" ? rawLeadEmail.trim() : ""
+
+    if (EMAIL_REGEX.test(leadEmail)) {
+      sendAutoResponderEmail({
+        toEmail: leadEmail,
+        formTitle: form.title,
+        subject: settings.autoResponderSubject || `Confirmação de Resposta: ${form.title}`,
+        bodyRaw: settings.autoResponderBody || "Recebemos sua resposta com sucesso! Obrigado.",
+      }).catch((err) => console.error("[auto-responder]", err))
+    }
   }
 
   // 11. Fire webhooks (fire-and-forget)

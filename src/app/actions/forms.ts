@@ -19,6 +19,7 @@ import { forms, users } from "@/lib/db/schema"
 import { eq, and, sql as drizzleSql } from "drizzle-orm"
 import { upsertQuestions, type UpsertQuestionInput } from "@/lib/db/queries/questions"
 import { FORM_TEMPLATES } from "@/config/templates"
+import { type ApiResponse } from "@/lib/types/form"
 
 // ─── Auth helpers ─────────────────────────────────────────────────────────────
 
@@ -66,6 +67,7 @@ export async function createFormAction() {
     throw new Error("Falha ao criar formulário.")
   }
 
+  revalidatePath("/dashboard")
   redirect(`/builder/${result.data.id}`)
 }
 
@@ -108,15 +110,67 @@ export async function publishFormAction(formId: string) {
 }
 
 /**
- * Updates form metadata (title, description, slug, settings, theme).
+ * Combined action to save all form data and optionally publish it.
+ * This is now the primary way to persist changes from the builder.
  */
-export async function updateFormAction(formId: string, input: UpdateFormInput) {
-  await requireFormOwner(formId)
-  const result = await updateForm(formId, input)
-  if (!result.success) throw new Error("Falha ao salvar formulário.")
-  revalidatePath("/dashboard")
-  revalidatePath(`/builder/${formId}`)
-  return result.data
+export async function saveAndPublishFormAction(
+  formId: string,
+  input: UpdateFormInput,
+  questions: UpsertQuestionInput[],
+  shouldPublish: boolean = false
+): Promise<ApiResponse<void>> {
+  try {
+    const { form, user } = await requireFormOwner(formId)
+
+    // 1. If publishing, check quota first
+    if (shouldPublish && form.status === "draft") {
+      const [owner, publishedResult] = await Promise.all([
+        db.query.users.findFirst({
+          where: eq(users.id, user.id),
+          columns: { formQuota: true },
+        }),
+        db.select({ total: drizzleSql<number>`count(*)::int` }).from(forms).where(
+          and(eq(forms.createdById, user.id), eq(forms.status, "published"))
+        ),
+      ])
+
+      const publishedCount = publishedResult[0]?.total ?? 0
+      const quota = owner?.formQuota ?? 3
+
+      if (publishedCount >= quota) {
+        throw new Error(`Limite de ${quota} formulário${quota !== 1 ? "s" : ""} publicado${quota !== 1 ? "s" : ""} atingido. Faça uma recarga para publicar mais.`)
+      }
+    }
+
+    // 2. Perform updates
+    const promises: Promise<any>[] = [
+      updateForm(formId, input),
+    ]
+
+    if (questions.length > 0) {
+      promises.push(upsertQuestions(formId, questions))
+    }
+
+    if (shouldPublish && form.status === "draft") {
+      promises.push(publishForm(formId))
+    }
+
+    await Promise.all(promises)
+
+    revalidatePath("/dashboard")
+    revalidatePath(`/builder/${formId}`)
+    revalidatePath(`/f/${input.slug || form.slug}`)
+    
+    return { success: true }
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: "SAVE_ERROR",
+        message: error instanceof Error ? error.message : "Erro ao salvar formulário",
+      },
+    }
+  }
 }
 
 /**
@@ -152,6 +206,7 @@ export async function createFormFromTemplateAction(templateId: string) {
 
   await upsertQuestions(formResult.data.id, questions)
 
+  revalidatePath("/dashboard")
   redirect(`/builder/${formResult.data.id}`)
 }
 
@@ -173,18 +228,4 @@ export async function closeFormAction(formId: string) {
   const result = await closeForm(formId)
   if (!result.success) throw new Error("Falha ao encerrar formulário.")
   revalidatePath("/dashboard")
-}
-
-/**
- * Batch upsert questions from the builder (auto-save).
- * Does NOT revalidate the builder path to avoid resetting client state.
- */
-export async function upsertQuestionsAction(
-  formId: string,
-  questionList: UpsertQuestionInput[]
-) {
-  await requireFormOwner(formId)
-  if (questionList.length === 0) return
-  const result = await upsertQuestions(formId, questionList)
-  if (!result.success) throw new Error("Falha ao salvar perguntas.")
 }

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import {
   ArrowLeft, Eye, Users, TrendingUp, Clock,
   CheckCircle2, Circle, Copy, ExternalLink, Download,
-  Smartphone, AlertTriangle, BarChart2, Sparkles, Loader2,
+  Smartphone, AlertTriangle, BarChart2,
   Filter, X, ChevronLeft, ChevronRight, Monitor, Tablet,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -16,7 +16,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import type { FormAnalytics, QuestionAnalytics, QuestionType } from "@/lib/types/form"
 import type { ResponseWithAnswers } from "@/lib/db/queries/responses"
 import { exportResponsesAction } from "@/app/actions/responses"
-import { analyzeTextResponsesAction, type TextAnalysisResult } from "@/app/actions/ai-analysis"
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -383,145 +382,20 @@ function ChoiceViz({ stat }: { stat: QuestionAnalytics }) {
   )
 }
 
-// ─── Text Visualization with AI ───────────────────────────────────────────────
+// ─── Text Visualization ───────────────────────────────────────────────────────
 
-const AI_TEXT_TYPES = new Set(["short_text", "long_text", "email", "url", "phone", "whatsapp", "cpf", "cnpj"])
-
-function TextViz({ stat, formId }: { stat: QuestionAnalytics; formId: string }) {
-  const [aiResult, setAiResult] = useState<TextAnalysisResult | null>(null)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [aiError, setAiError] = useState<string | null>(null)
-  const canAnalyze = AI_TEXT_TYPES.has(stat.questionType) && stat.totalAnswers >= 3
-
-  async function handleAnalyze() {
-    setIsAnalyzing(true)
-    setAiError(null)
-    const res = await analyzeTextResponsesAction(formId, stat.questionId)
-    if (res.success) {
-      setAiResult(res.data)
-    } else {
-      setAiError(res.error)
-    }
-    setIsAnalyzing(false)
-  }
-
+function TextViz({ stat }: { stat: QuestionAnalytics }) {
   return (
-    <div className="space-y-3">
-      {/* Sample responses */}
-      <div className="space-y-2">
-        {(stat.textSamples ?? []).map((text, i) => (
-          <div key={i} className="rounded-lg bg-muted/40 px-3 py-2">
-            <p className="text-sm text-foreground/80 line-clamp-2">{text}</p>
-          </div>
-        ))}
-        {stat.totalAnswers > 5 && (
-          <p className="text-xs text-muted-foreground text-right">
-            +{stat.totalAnswers - 5} respostas adicionais
-          </p>
-        )}
-      </div>
-
-      {/* AI Analysis */}
-      {!aiResult && canAnalyze && (
-        <div className="pt-1">
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-2 w-full text-xs border-dashed"
-            onClick={handleAnalyze}
-            disabled={isAnalyzing}
-          >
-            {isAnalyzing ? (
-              <><Loader2 className="h-3.5 w-3.5 animate-spin" />Analisando com IA...</>
-            ) : (
-              <><Sparkles className="h-3.5 w-3.5 text-violet-500" />Analisar respostas com IA</>
-            )}
-          </Button>
-          {aiError && <p className="text-xs text-red-500 mt-2">{aiError}</p>}
+    <div className="space-y-2">
+      {(stat.textSamples ?? []).map((text, i) => (
+        <div key={i} className="rounded-lg bg-muted/40 px-3 py-2">
+          <p className="text-sm text-foreground/80 line-clamp-2">{text}</p>
         </div>
-      )}
-
-      {aiResult && <AIAnalysisView result={aiResult} />}
-    </div>
-  )
-}
-
-// ─── AI Analysis Result View ──────────────────────────────────────────────────
-
-function AIAnalysisView({ result }: { result: TextAnalysisResult }) {
-  const { positive, neutral, negative } = result.sentiment
-
-  return (
-    <div className="space-y-4 pt-2 border-t mt-2">
-      {/* Header */}
-      <div className="flex items-center gap-1.5 text-xs text-violet-600 font-medium">
-        <Sparkles className="h-3.5 w-3.5" />
-        Análise com IA · {result.totalAnswers} respostas
-      </div>
-
-      {/* Summary */}
-      <p className="text-sm text-foreground/80 leading-relaxed italic">"{result.summary}"</p>
-
-      {/* Sentiment bar */}
-      <div>
-        <p className="text-xs text-muted-foreground mb-1.5 font-medium">Sentimento</p>
-        <div className="flex h-2.5 rounded-full overflow-hidden gap-0.5">
-          {positive > 0 && <div className="bg-green-500 transition-all" style={{ width: `${positive * 100}%` }} title={`Positivo: ${pct(positive)}`} />}
-          {neutral > 0 && <div className="bg-slate-300 transition-all" style={{ width: `${neutral * 100}%` }} title={`Neutro: ${pct(neutral)}`} />}
-          {negative > 0 && <div className="bg-red-400 transition-all" style={{ width: `${negative * 100}%` }} title={`Negativo: ${pct(negative)}`} />}
-        </div>
-        <div className="flex gap-3 mt-1.5 text-xs text-muted-foreground">
-          {positive > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500 inline-block" />Positivo {pct(positive)}</span>}
-          {neutral > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-slate-300 inline-block" />Neutro {pct(neutral)}</span>}
-          {negative > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-400 inline-block" />Negativo {pct(negative)}</span>}
-        </div>
-      </div>
-
-      {/* Themes */}
-      <div>
-        <p className="text-xs text-muted-foreground mb-2 font-medium">Temas identificados</p>
-        <div className="space-y-2.5">
-          {result.themes.map((theme) => (
-            <div key={theme.label}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium truncate max-w-[65%]">{theme.label}</span>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
-                  <span className="font-medium text-foreground">{pct(theme.percentage)}</span>
-                  <span>{theme.count}</span>
-                </div>
-              </div>
-              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-violet-500/70 transition-all duration-500"
-                  style={{ width: `${theme.percentage * 100}%` }}
-                />
-              </div>
-              {theme.examples.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-1 italic">
-                  ex: "{theme.examples[0]}"
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Keywords */}
-      {result.keywords.length > 0 && (
-        <div>
-          <p className="text-xs text-muted-foreground mb-2 font-medium">Palavras-chave</p>
-          <div className="flex flex-wrap gap-1.5">
-            {result.keywords.map((kw, i) => (
-              <span
-                key={kw}
-                className="rounded-full px-2.5 py-0.5 text-xs font-medium"
-                style={{ opacity: 1 - i * 0.08, backgroundColor: "hsl(var(--muted))" }}
-              >
-                {kw}
-              </span>
-            ))}
-          </div>
-        </div>
+      ))}
+      {stat.totalAnswers > 5 && (
+        <p className="text-xs text-muted-foreground text-right">
+          +{stat.totalAnswers - 5} respostas adicionais
+        </p>
       )}
     </div>
   )
@@ -584,7 +458,7 @@ function QuestionCard({ stat, order, formId, criticality, dropoffRate }: {
       ) : stat.optionCounts && stat.optionCounts.length > 0 ? (
         <ChoiceViz stat={stat} />
       ) : (
-        <TextViz stat={stat} formId={formId} />
+        <TextViz stat={stat} />
       )}
     </div>
   )

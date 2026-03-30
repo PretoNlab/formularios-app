@@ -4,13 +4,13 @@ import { createClient as createAuthClient } from "@/lib/supabase/server"
 
 const BUCKET = "form-responses"
 const MAX_SIZE_BYTES = 2 * 1024 * 1024 // 2MB
+// SVG excluded — can contain executable scripts when served from a public bucket
 const ALLOWED_TYPES = new Set([
   "image/png",
   "image/jpeg",
   "image/jpg",
   "image/webp",
   "image/gif",
-  "image/svg+xml",
 ])
 const MIME_TO_EXT: Record<string, string> = {
   "image/png": "png",
@@ -18,7 +18,6 @@ const MIME_TO_EXT: Record<string, string> = {
   "image/jpg": "jpg",
   "image/webp": "webp",
   "image/gif": "gif",
-  "image/svg+xml": "svg",
 }
 
 function serviceClient() {

@@ -115,19 +115,31 @@ self.addEventListener("fetch", (e) => {
     return
   }
 
-  // Cache GET requests for /f/* pages (stale-while-revalidate)
+  // Cache GET requests for /f/* pages (Network First)
   if (e.request.method === "GET" && url.pathname.startsWith("/f/")) {
+    const isPreview = url.searchParams.get("preview") === "1"
+    
+    // Preview mode: Always network (don't cache/serve from cache)
+    if (isPreview) {
+      e.respondWith(fetch(e.request))
+      return
+    }
+
+    // Public form: Network First, fallback to cache
     e.respondWith(
-      caches.open(CACHE_NAME).then(async (cache) => {
-        const cached = await cache.match(e.request)
-        const networkPromise = fetch(e.request)
-          .then((res) => {
-            if (res.ok) cache.put(e.request, res.clone())
-            return res
-          })
-          .catch(() => null)
-        return cached ?? (await networkPromise) ?? new Response("Offline", { status: 503 })
-      })
+      fetch(e.request)
+        .then(async (res) => {
+          if (res.ok) {
+            const cache = await caches.open(CACHE_NAME)
+            cache.put(e.request, res.clone())
+          }
+          return res
+        })
+        .catch(async () => {
+          const cache = await caches.open(CACHE_NAME)
+          const cached = await cache.match(e.request)
+          return cached ?? new Response("Offline", { status: 503 })
+        })
     )
     return
   }

@@ -31,6 +31,7 @@ interface BillingClientProps {
   formQuota: number
   publishedFormsCount: number
   transactions: Transaction[]
+  checkoutIntent?: string
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -200,6 +201,7 @@ export function BillingClient({
   formQuota,
   publishedFormsCount,
   transactions,
+  checkoutIntent,
 }: BillingClientProps) {
   const [selectedProduct, setSelectedProduct] = useState<{ id: string; name: string; priceReais: number } | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -212,6 +214,16 @@ export function BillingClient({
   const isFounder = plan === "founder"
   const planActive = isFounder && (!planExpiresAt || new Date(planExpiresAt) > new Date())
   const planExpired = isFounder && planExpiresAt && new Date(planExpiresAt) <= new Date()
+
+  // Use a ref so the effect only auto-triggers once on mount
+  const autoTriggered = useRef(false)
+  useEffect(() => {
+    if (checkoutIntent === "founder" && (!isFounder || planExpired) && !autoTriggered.current) {
+      autoTriggered.current = true
+      handleSelectProduct(FOUNDER_PLAN.id, FOUNDER_PLAN.name, FOUNDER_PLAN.priceReais)
+      window.history.replaceState({}, "", "/billing")
+    }
+  }, [checkoutIntent, isFounder, planExpired])
   const days = planExpiresAt ? daysRemaining(planExpiresAt) : 0
   const responsePercent = responseQuota > 0 ? Math.min(100, Math.round((responseUsed / responseQuota) * 100)) : 0
   const formPercent = formQuota > 0 ? Math.min(100, Math.round((publishedFormsCount / formQuota) * 100)) : 0

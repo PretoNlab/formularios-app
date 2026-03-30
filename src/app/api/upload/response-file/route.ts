@@ -12,7 +12,6 @@ const MIME_TO_EXT: Record<string, string> = {
   "image/png": "png",
   "image/gif": "gif",
   "image/webp": "webp",
-  "image/svg+xml": "svg",
   "video/mp4": "mp4",
   "video/webm": "webm",
   "audio/mpeg": "mp3",
@@ -55,8 +54,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Arquivo excede o limite de 10MB." }, { status: 400 })
   }
 
+  // SVG excluded — can contain executable scripts when served from a public bucket
   const isAllowedType =
-    file.type.startsWith("image/") ||
+    (file.type.startsWith("image/") && file.type !== "image/svg+xml") ||
     file.type.startsWith("video/") ||
     file.type.startsWith("audio/") ||
     file.type === "application/pdf" ||

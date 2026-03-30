@@ -14,13 +14,47 @@ import { cookies } from "next/headers"
  * fetch mechanism, which may not propagate Set-Cookie headers from redirects
  * to the browser's cookie jar correctly.
  */
+
+// In-memory rate limiter (per serverless instance).
+// Provides meaningful protection on warm instances; cold starts reset counts.
+const loginAttempts = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT_MAX = 10
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
+
+function isLoginRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const rec = loginAttempts.get(ip)
+  if (!rec || rec.resetAt < now) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    return false
+  }
+  rec.count++
+  return rec.count > RATE_LIMIT_MAX
+}
+
 export async function POST(request: NextRequest) {
   const { origin } = new URL(request.url)
+
+  // Rate limiting by IP
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown"
+  if (isLoginRateLimited(ip)) {
+    return NextResponse.redirect(
+      `${origin}/login?error=${encodeURIComponent("Muitas tentativas. Aguarde 15 minutos.")}`,
+      { status: 303 }
+    )
+  }
 
   const formData = await request.formData()
   const email = formData.get("email") as string
   const password = formData.get("password") as string
-  const next = (formData.get("next") as string) || "/dashboard"
+
+  // Validate next param — only allow same-origin relative paths (not //)
+  const rawNext = (formData.get("next") as string) || "/dashboard"
+  const next =
+    rawNext.startsWith("/") && !rawNext.startsWith("//")
+      ? rawNext
+      : "/dashboard"
 
   const cookieStore = await cookies()
 
@@ -51,10 +85,8 @@ export async function POST(request: NextRequest) {
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
-    const msg =
-      error.message === "Invalid login credentials"
-        ? "E-mail ou senha incorretos."
-        : error.message
+    // Normalize all auth errors to a single message to prevent email enumeration
+    const msg = "E-mail ou senha incorretos."
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent(msg)}&next=${encodeURIComponent(next)}`,
       { status: 303 }

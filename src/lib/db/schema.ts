@@ -80,6 +80,10 @@ export const forms = pgTable("forms", {
     closedAt: null,
     downloadUrl: null,
     downloadLabel: null,
+    autoResponderEnabled: false,
+    autoResponderEmailFieldId: null,
+    autoResponderSubject: null,
+    autoResponderBody: null,
   }),
 
   // Metadados
@@ -300,6 +304,10 @@ export interface FormSettings {
   closedAt: string | null
   downloadUrl: string | null
   downloadLabel: string | null
+  autoResponderEnabled: boolean
+  autoResponderEmailFieldId: string | null
+  autoResponderSubject: string | null
+  autoResponderBody: string | null
 }
 
 export interface QuestionProperties {

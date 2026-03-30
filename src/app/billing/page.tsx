@@ -8,7 +8,8 @@ import { BillingClient } from "@/components/billing/billing-client"
 
 export const metadata = { title: "Plano — formularios.ia" }
 
-export default async function BillingPage() {
+export default async function BillingPage({ searchParams }: { searchParams: Promise<{ checkout?: string }> }) {
+  const { checkout } = await searchParams
   const supabase = await createClient()
   const { data: { user: authUser } } = await supabase.auth.getUser()
   if (!authUser) redirect("/login")
@@ -36,6 +37,7 @@ export default async function BillingPage() {
 
   return (
     <BillingClient
+      checkoutIntent={checkout}
       plan={user.plan}
       planExpiresAt={user.planExpiresAt?.toISOString() ?? null}
       responseQuota={user.responseQuota}

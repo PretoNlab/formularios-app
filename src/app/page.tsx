@@ -72,12 +72,15 @@ function Nav() {
           <Link href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</Link>
         </nav>
 
-        <div className="flex items-center gap-3">
-          <Link href="/login">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link href="/login" className="hidden sm:block">
             <Button variant="ghost" size="sm">Entrar</Button>
           </Link>
           <Link href="/signup">
-            <Button size="sm" className="rounded-full px-5 bg-foreground text-background hover:bg-foreground/90 font-bold">Garantir minha vaga</Button>
+            <Button size="sm" className="rounded-full px-4 sm:px-5 bg-foreground text-background hover:bg-foreground/90 font-bold">
+              <span className="sm:hidden">Assinar</span>
+              <span className="hidden sm:inline">Garantir minha vaga</span>
+            </Button>
           </Link>
         </div>
       </div>
@@ -100,7 +103,7 @@ function Hero() {
           Plano Fundador Aberto
         </Badge>
 
-        <h1 className="max-w-4xl text-5xl font-extrabold tracking-tight sm:text-7xl leading-[1.1] font-headline">
+        <h1 className="max-w-4xl text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] font-headline">
           Formulários que{" "}
           <span className="text-violet-600">
             convertem
@@ -479,7 +482,7 @@ function Pricing() {
             <div
               key={plan.name}
               className={`relative rounded-2xl border p-8 flex flex-col gap-6 ${plan.highlight
-                ? "bg-foreground text-background border-foreground shadow-2xl scale-105"
+                ? "bg-foreground text-background border-foreground shadow-2xl md:scale-105"
                 : "bg-card"
                 }`}
             >
@@ -610,7 +613,7 @@ function FAQ() {
 function FinalCTA() {
   return (
     <section className="py-24 container">
-      <div className="relative rounded-3xl bg-foreground text-background overflow-hidden p-12 md:p-20 text-center">
+      <div className="relative rounded-3xl bg-foreground text-background overflow-hidden p-8 sm:p-12 md:p-20 text-center">
         <div className="absolute inset-0 -z-10 [background:radial-gradient(ellipse_at_top,#4c1d95,transparent_60%)]" />
         <Layers className="h-12 w-12 mx-auto mb-6 text-violet-400" />
         <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
@@ -656,7 +659,7 @@ function FounderOffer() {
             </div>
           </div>
           <div className="relative">
-            <div className="bg-background rounded-[2.5rem] p-10 shadow-2xl text-foreground relative overflow-hidden">
+            <div className="bg-background rounded-[2.5rem] p-6 sm:p-10 shadow-2xl text-foreground relative overflow-hidden">
               <div className="absolute top-6 right-6 bg-violet-600 text-white text-[10px] font-extrabold px-4 py-1.5 rounded-full uppercase tracking-widest animate-pulse">
                 Lote Fundador
               </div>
@@ -748,15 +751,15 @@ function ComparisonTable() {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b">
-                <th className="p-6 text-left text-xs font-bold text-muted-foreground uppercase tracking-widest">Recurso</th>
-                <th className="p-6 text-center bg-violet-600/5">
-                  <span className="text-violet-600 font-extrabold font-headline text-base">formularios.ia</span>
+                <th className="p-4 md:p-6 text-left text-xs font-bold text-muted-foreground uppercase tracking-widest min-w-[140px]">Recurso</th>
+                <th className="p-4 md:p-6 text-center bg-violet-600/5 min-w-[140px]">
+                  <span className="text-violet-600 font-extrabold font-headline text-sm md:text-base">formularios.ia</span>
                   <div className="mt-1">
                     <span className="inline-block bg-violet-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Melhor escolha</span>
                   </div>
                 </th>
-                <th className="p-6 text-center text-muted-foreground font-bold">Concorrente 1</th>
-                <th className="p-6 text-center text-muted-foreground font-bold">Concorrente 2</th>
+                <th className="p-4 md:p-6 text-center text-muted-foreground font-bold min-w-[140px]">Concorrente 1</th>
+                <th className="p-4 md:p-6 text-center text-muted-foreground font-bold min-w-[140px]">Concorrente 2</th>
               </tr>
             </thead>
             <tbody>
@@ -764,7 +767,7 @@ function ComparisonTable() {
                 if (f.type === "section") {
                   return (
                     <tr key={`section-${i}`} className="border-b border-t bg-muted/30">
-                      <td colSpan={4} className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      <td colSpan={4} className="px-4 md:px-6 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
                         {f.label}
                       </td>
                     </tr>
@@ -773,12 +776,12 @@ function ComparisonTable() {
                 const isLast = i === features.length - 1
                 return (
                   <tr key={f.name} className={`${!isLast ? "border-b" : ""} ${f.highlight ? "bg-violet-50/40 dark:bg-violet-950/10" : ""}`}>
-                    <td className="p-5 font-medium">{f.name}</td>
-                    <td className="p-5 text-center bg-violet-600/5 font-bold text-violet-600">
+                    <td className="p-4 md:p-5 font-medium">{f.name}</td>
+                    <td className="p-4 md:p-5 text-center bg-violet-600/5 font-bold text-violet-600">
                       <Cell val={f.ia} />
                     </td>
-                    <td className="p-5 text-center text-muted-foreground"><Cell val={f.respondi} /></td>
-                    <td className="p-5 text-center text-muted-foreground"><Cell val={f.typeform} /></td>
+                    <td className="p-4 md:p-5 text-center text-muted-foreground"><Cell val={f.respondi} /></td>
+                    <td className="p-4 md:p-5 text-center text-muted-foreground"><Cell val={f.typeform} /></td>
                   </tr>
                 )
               })}

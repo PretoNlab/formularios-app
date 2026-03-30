@@ -170,7 +170,11 @@ export default function SignupPage() {
       password,
       options: {
         data: { full_name: name },
-        emailRedirectTo: `${getAppUrl()}/auth/callback?next=${encodeURIComponent("/dashboard?welcome=true")}`,
+        emailRedirectTo: `${getAppUrl()}/auth/callback?next=${encodeURIComponent(
+          window.location.search.includes("plan=founder") 
+            ? "/billing?checkout=founder" 
+            : "/dashboard?welcome=true"
+        )}`,
       },
     })
 

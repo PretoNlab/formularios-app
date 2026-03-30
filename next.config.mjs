@@ -1,5 +1,32 @@
 import { withSentryConfig } from "@sentry/nextjs"
 
+// Content-Security-Policy applied to all routes.
+//
+// Notes:
+// - `unsafe-inline` for scripts is required by Next.js App Router (inline hydration chunks).
+//   A nonce-based approach via middleware can remove it later if stricter control is needed.
+// - `unsafe-eval` is intentionally excluded; Next.js production builds don't need it.
+// - `next/font/google` downloads fonts at build time and serves them from /_next/static/,
+//   so fonts.gstatic.com is NOT needed at runtime.
+// - `frame-ancestors` is intentionally omitted here to avoid conflicting with the
+//   per-route X-Frame-Options headers below (which handle DENY vs SAMEORIGIN for /f/*).
+const CSP = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self' data:",
+    // Supabase storage (uploaded files/images), Google avatars
+    "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com",
+    // Supabase REST + realtime WS, Sentry error/replay ingestion
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io",
+    // Audio/video uploaded by respondents
+    "media-src 'self' blob: https://*.supabase.co",
+    "object-src 'none'",
+    "base-uri 'self'",
+    // Google OAuth posts back to its own domain on the auth flow
+    "form-action 'self' https://accounts.google.com",
+].join("; ")
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
@@ -27,6 +54,18 @@ const nextConfig = {
                     {
                         key: "Permissions-Policy",
                         value: "camera=(), microphone=(), geolocation=()",
+                    },
+                    {
+                        key: "Cross-Origin-Opener-Policy",
+                        value: "same-origin",
+                    },
+                    {
+                        key: "Cross-Origin-Resource-Policy",
+                        value: "same-origin",
+                    },
+                    {
+                        key: "Content-Security-Policy",
+                        value: CSP,
                     },
                 ],
             },

@@ -69,19 +69,49 @@ export async function deleteIntegrationAction(id: string, formId: string) {
   revalidatePath(`/builder/${formId}`)
 }
 
+/** Fields that must never be sent to the client, regardless of integration type. */
+const SENSITIVE_CONFIG_KEYS = [
+  "accessToken",
+  "refreshToken",
+  "tokenExpiry",
+  "clientSecret",
+  "apiSecret",
+] as const
+
+function sanitizeIntegrationConfig(
+  type: string,
+  config: IntegrationConfig
+): Record<string, unknown> {
+  // For Google Sheets, use an explicit whitelist — only safe display fields.
+  if (type === "google_sheets") {
+    const c = config as Record<string, unknown>
+    return {
+      spreadsheetId: c.spreadsheetId,
+      spreadsheetUrl: c.spreadsheetUrl,
+      spreadsheetTitle: c.spreadsheetTitle,
+      sheetName: c.sheetName,
+      lastError: c.lastError,
+      lastErrorAt: c.lastErrorAt,
+      connected: Boolean(c.accessToken),
+    }
+  }
+
+  // For all other types: strip every known sensitive key.
+  const safe = { ...(config as Record<string, unknown>) }
+  for (const key of SENSITIVE_CONFIG_KEYS) {
+    delete safe[key]
+  }
+  return safe
+}
+
 export async function getFormIntegrationsAction(formId: string) {
   await requireFormOwner(formId)
   const result = await getIntegrationsByForm(formId)
   if (!result.success) return []
-  // Strip OAuth tokens — never send credentials to the client
-  return (result.data ?? []).map((integration) => {
-    const { accessToken: _a, refreshToken: _r, tokenExpiry: _t, ...safeConfig } = integration.config as IntegrationConfig & {
-      accessToken?: string
-      refreshToken?: string
-      tokenExpiry?: number
-    }
-    return { ...integration, config: safeConfig }
-  })
+  return (result.data ?? []).map((integration) => ({
+    ...integration,
+    config: sanitizeIntegrationConfig(integration.type, integration.config as IntegrationConfig),
+  }))
 }
 
 // ─── Google Sheets ─────────────────────────────────────────────────────────────
