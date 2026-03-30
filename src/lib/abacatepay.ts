@@ -8,16 +8,19 @@ export async function createPixQrCode(params: {
   const apiKey = process.env.ABACATEPAY_API_KEY
   if (!apiKey) throw new Error("ABACATEPAY_API_KEY não configurada.")
 
-  const res = await fetch(`${BASE_URL}/v1/pixQrCode/create`, {
+  const res = await fetch(`${BASE_URL}/v2/transparents/create`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      amount: params.amountCents,
-      expiresIn: params.expiresIn ?? 3600,
-      description: params.description.slice(0, 37),
+      method: "PIX",
+      data: {
+        amount: params.amountCents,
+        expiresIn: params.expiresIn ?? 3600,
+        description: params.description.slice(0, 37),
+      }
     }),
   })
 
