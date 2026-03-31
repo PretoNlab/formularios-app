@@ -90,12 +90,16 @@ export async function publishFormAction(formId: string) {
   const [owner, publishedResult] = await Promise.all([
     db.query.users.findFirst({
       where: eq(users.id, user.id),
-      columns: { formQuota: true },
+      columns: { formQuota: true, planExpiresAt: true },
     }),
     db.select({ total: drizzleSql<number>`count(*)::int` }).from(forms).where(
       and(eq(forms.createdById, user.id), eq(forms.status, "published"))
     ),
   ])
+
+  if (owner?.planExpiresAt && owner.planExpiresAt <= new Date()) {
+    throw new Error("Seu plano expirou. Renove em /billing para publicar formulários.")
+  }
 
   const publishedCount = publishedResult[0]?.total ?? 0
   const quota = owner?.formQuota ?? 3
@@ -127,12 +131,16 @@ export async function saveAndPublishFormAction(
       const [owner, publishedResult] = await Promise.all([
         db.query.users.findFirst({
           where: eq(users.id, user.id),
-          columns: { formQuota: true },
+          columns: { formQuota: true, planExpiresAt: true },
         }),
         db.select({ total: drizzleSql<number>`count(*)::int` }).from(forms).where(
           and(eq(forms.createdById, user.id), eq(forms.status, "published"))
         ),
       ])
+
+      if (owner?.planExpiresAt && owner.planExpiresAt <= new Date()) {
+        throw new Error("Seu plano expirou. Renove em /billing para publicar formulários.")
+      }
 
       const publishedCount = publishedResult[0]?.total ?? 0
       const quota = owner?.formQuota ?? 3

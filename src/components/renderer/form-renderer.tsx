@@ -10,6 +10,7 @@ import type {
     RendererState,
 } from "@/lib/types/form"
 import { getThemeCSSVariables } from "@/config/themes"
+import { RichText } from "@/components/ui/rich-text"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -158,16 +159,56 @@ function NumberInput({ question, value, onChange, onSubmit }: InputProps) {
 }
 
 function PhoneInput({ question, value, onChange, onSubmit }: InputProps) {
+    const rawVal = (value as string) ?? ""
+    let code = "+55"
+    let num = rawVal
+
+    if (rawVal.includes(" ")) {
+        const parts = rawVal.split(" ")
+        if (parts[0].startsWith("+")) {
+            code = parts[0]
+            num = parts.slice(1).join(" ")
+        }
+    }
+
+    const handleCodeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        onChange(`${e.target.value} ${num}`)
+    }
+
+    const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const cleaned = e.target.value.replace(/\D/g, "").slice(0, 15)
+        if (!cleaned) {
+            onChange(null)
+        } else {
+            onChange(`${code} ${cleaned}`)
+        }
+    }
+
     return (
-        <input
-            autoFocus
-            className="ff-input"
-            type="tel"
-            placeholder={question.properties.placeholder ?? "(00) 00000-0000"}
-            value={(value as string) ?? ""}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && onSubmit()}
-        />
+        <div className="ff-phone-container">
+            <select
+                className="ff-input ff-phone-code"
+                value={code}
+                onChange={handleCodeChange}
+            >
+                <option value="+55">🇧🇷 +55</option>
+                <option value="+1">🇺🇸 +1</option>
+                <option value="+351">🇵🇹 +351</option>
+                <option value="+44">🇬🇧 +44</option>
+                <option value="+34">🇪🇸 +34</option>
+                <option value="+49">🇩🇪 +49</option>
+            </select>
+            <input
+                autoFocus
+                className="ff-input ff-phone-input"
+                type="tel"
+                inputMode="numeric"
+                placeholder={question.properties.placeholder ?? "(00) 00000-0000"}
+                value={num}
+                onChange={handleNumberChange}
+                onKeyDown={(e) => e.key === "Enter" && onSubmit()}
+            />
+        </div>
     )
 }
 
@@ -992,7 +1033,7 @@ export function FormRenderer({
                     )}
 
                     <h2 className="ff-question-title">
-                        {currentQ.title}
+                        <RichText text={currentQ.title} />
                         {currentQ.required && (
                             <span className="ff-required" aria-label="Obrigatório">
                                 *
@@ -1001,7 +1042,7 @@ export function FormRenderer({
                     </h2>
 
                     {currentQ.description && (
-                        <p className="ff-question-desc">{currentQ.description}</p>
+                        <p className="ff-question-desc"><RichText text={currentQ.description} /></p>
                     )}
 
                     {currentQ.properties.videoUrl ? (
@@ -1534,5 +1575,26 @@ kbd {
 }
 @keyframes ff-spin {
   to { transform: rotate(360deg); }
+}
+
+/* ── RichText & Improvements ── */
+.ff-question-title strong, .ff-question-desc strong {
+  font-weight: 900;
+  color: inherit;
+}
+.ff-phone-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.ff-phone-code {
+  width: 110px;
+  flex-shrink: 0;
+  cursor: pointer;
+  padding-left: 8px; padding-right: 8px;
+}
+.ff-phone-input {
+  flex-grow: 1;
 }
 `

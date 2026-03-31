@@ -1,10 +1,19 @@
 const BASE_URL = "https://api.abacatepay.com"
 
+interface AbacateCustomer {
+  name: string
+  email: string
+  cellphone: string
+  taxId: string
+}
+
 export async function createPixBillingLink(params: {
+  externalId: string
   amountCents: number
   description: string
   returnUrl: string
-  cancelUrl: string
+  completionUrl: string
+  customer: AbacateCustomer
 }): Promise<{ id: string; url: string }> {
   const apiKey = process.env.ABACATEPAY_API_KEY
   if (!apiKey) throw new Error("ABACATEPAY_API_KEY não configurada.")
@@ -20,13 +29,15 @@ export async function createPixBillingLink(params: {
       methods: ["PIX"],
       products: [
         {
+          externalId: params.externalId,
           name: params.description.slice(0, 37),
           price: params.amountCents,
           quantity: 1,
         }
       ],
       returnUrl: params.returnUrl,
-      cancelUrl: params.cancelUrl,
+      completionUrl: params.completionUrl,
+      customer: params.customer,
     }),
   })
 

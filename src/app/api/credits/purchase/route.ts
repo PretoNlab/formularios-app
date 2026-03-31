@@ -21,17 +21,27 @@ export async function POST(req: NextRequest) {
   let body: unknown
   try { body = await req.json() } catch { return NextResponse.json({ error: "JSON inválido." }, { status: 400 }) }
 
-  const productId = (body as Record<string, unknown>).packId as string
+  const parsed = body as Record<string, unknown>
+  const productId = parsed.packId as string
+  const taxId = parsed.taxId as string | undefined
   const product = getProductById(productId)
   if (!product) return NextResponse.json({ error: "Produto inválido." }, { status: 400 })
+  if (!taxId || !/^\d{11}$/.test(taxId)) return NextResponse.json({ error: "CPF inválido." }, { status: 400 })
 
   try {
     const baseUrl = req.headers.get("origin") || "https://formularios.ia"
     const pix = await createPixBillingLink({
+      externalId: product.id,
       amountCents: product.priceCents,
       description: `${product.name} - formularios.ia`,
       returnUrl: `${baseUrl}/billing?success=true`,
-      cancelUrl: `${baseUrl}/billing?canceled=true`,
+      completionUrl: `${baseUrl}/billing?success=true`,
+      customer: {
+        name: user.name || authUser.user_metadata?.full_name || "Cliente",
+        email: user.email,
+        cellphone: "11999999999",
+        taxId,
+      },
     })
 
     const [order] = await db

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { ensureUserExists } from "@/lib/db/queries/users"
 import { getFormsByWorkspace } from "@/lib/db/queries/forms"
 import { FormsSection } from "@/components/dashboard/forms-section"
+import { PlanExpirationBanner } from "@/components/dashboard/plan-expiration-banner"
 import { Suspense } from "react"
 
 export default async function DashboardPage() {
@@ -28,6 +29,9 @@ export default async function DashboardPage() {
 
   return (
     <Suspense fallback={null}>
+      <div className="container mx-auto max-w-5xl px-4 pt-6 space-y-4">
+        <PlanExpirationBanner plan={user.plan} planExpiresAt={user.planExpiresAt?.toISOString() ?? null} />
+      </div>
       <FormsSection forms={forms ?? []} />
     </Suspense>
   )

@@ -36,7 +36,7 @@ export const TYPE_ICONS: Record<string, React.ElementType> = {
 export const SIDEBAR_TYPES: QuestionType[] = [
   "short_text", "long_text", "email", "number",
   "phone", "whatsapp",
-  "cpf", "cnpj",
+  "cpf", "cnpj", "date",
   "multiple_choice", "checkbox", "dropdown", "yes_no",
   "rating", "scale", "nps",
   "download", "file_upload", "signature",
@@ -72,6 +72,7 @@ export function createQuestion(type: QuestionType, formId: string, order: number
     signature:       "Assine abaixo",
     welcome:         "Bem-vindo(a)!",
     thank_you:       "Obrigado pela sua resposta!",
+    date:            "Selecione uma data",
   }
 
   return {
