@@ -163,7 +163,7 @@ function PhoneInput({ question, value, onChange, onSubmit }: InputProps) {
     let code = "+55"
     let num = rawVal
 
-    if (rawVal.includes(" ")) {
+        if (rawVal.includes(" ")) {
         const parts = rawVal.split(" ")
         if (parts[0].startsWith("+")) {
             code = parts[0]
@@ -171,12 +171,29 @@ function PhoneInput({ question, value, onChange, onSubmit }: InputProps) {
         }
     }
 
+    const PHONE_LIMITS: Record<string, number> = {
+        "+55": 11,
+        "+1": 10,
+        "+351": 9,
+        "+44": 11,
+        "+34": 9,
+        "+49": 11,
+    }
+
     const handleCodeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        onChange(`${e.target.value} ${num}`)
+        const newCode = e.target.value
+        const limit = PHONE_LIMITS[newCode] ?? 15
+        const cleaned = num.replace(/\D/g, "").slice(0, limit)
+        if (!cleaned) {
+            onChange(null)
+        } else {
+            onChange(`${newCode} ${cleaned}`)
+        }
     }
 
     const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const cleaned = e.target.value.replace(/\D/g, "").slice(0, 15)
+        const limit = PHONE_LIMITS[code] ?? 15
+        const cleaned = e.target.value.replace(/\D/g, "").slice(0, limit)
         if (!cleaned) {
             onChange(null)
         } else {
@@ -1212,6 +1229,8 @@ const FF_CSS = `
   border-radius: var(--ff-radius);
   box-shadow: 0 8px 40px rgba(0,0,0,0.18);
   box-sizing: border-box;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 @media (max-width: 600px) {
   .ff-card { padding: 28px 20px; }
@@ -1238,6 +1257,8 @@ const FF_CSS = `
   margin: 0 0 8px;
   line-height: 1.3;
   color: var(--ff-text);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .ff-required { color: var(--ff-accent); margin-left: 4px; }
 
@@ -1246,6 +1267,8 @@ const FF_CSS = `
   color: var(--ff-muted);
   margin: 0 0 20px;
   line-height: 1.55;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .ff-question-image {
   width: 100%;
