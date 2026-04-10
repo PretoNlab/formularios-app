@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { createClient } from "@/lib/supabase/server"
 import { getUserByAuthId } from "@/lib/db/queries/users"
 import { LogoutButton } from "./logout-button"
+import { CreateFormButton } from "@/components/dashboard/create-form-button"
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return "?"
@@ -84,9 +85,7 @@ export async function Header() {
             </Button>
           )}
 
-          <Button className="rounded-full px-6" asChild>
-            <Link href="/dashboard">Novo form</Link>
-          </Button>
+          <CreateFormButton variant="header" />
         </div>
 
       </div>
