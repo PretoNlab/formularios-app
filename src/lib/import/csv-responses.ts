@@ -138,16 +138,97 @@ const IGNORED_HEADERS = [
 ]
 
 function isTimestampHeader(header: string): boolean {
-  return TIMESTAMP_HEADERS.includes(normalize(header))
+  const lower = header.toLowerCase().trim()
+  const norm = normalize(header)
+  return TIMESTAMP_HEADERS.some((t) => t === lower || t === norm)
 }
 
 function isIgnoredHeader(header: string): boolean {
-  return IGNORED_HEADERS.includes(normalize(header))
+  const lower = header.toLowerCase().trim()
+  const norm = normalize(header)
+  return IGNORED_HEADERS.some((t) => t === lower || t === norm)
+}
+
+/**
+ * Calculate similarity between two strings (0 to 1).
+ * Uses longest common subsequence ratio.
+ */
+function similarity(a: string, b: string): number {
+  if (a === b) return 1
+  if (a.length === 0 || b.length === 0) return 0
+
+  // LCS length
+  const m = a.length
+  const n = b.length
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0))
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1] + 1
+        : Math.max(dp[i - 1][j], dp[i][j - 1])
+    }
+  }
+
+  return (2 * dp[m][n]) / (m + n)
+}
+
+/**
+ * Find the best matching question for a CSV header.
+ * Strategy (in order of priority):
+ * 1. Exact match (case-insensitive, trimmed)
+ * 2. Normalized match (no accents, no punctuation)
+ * 3. Contains match (header contains question title or vice-versa)
+ * 4. Similarity score ≥ 0.6 (fuzzy match)
+ */
+function findBestMatch(
+  header: string,
+  questions: QuestionInfo[],
+  usedIds: Set<string>,
+): QuestionInfo | null {
+  const headerLower = header.toLowerCase().trim()
+  const headerNorm = normalize(header)
+
+  // 1. Exact match
+  for (const q of questions) {
+    if (usedIds.has(q.id)) continue
+    if (q.title.toLowerCase().trim() === headerLower) return q
+  }
+
+  // 2. Normalized match
+  for (const q of questions) {
+    if (usedIds.has(q.id)) continue
+    if (normalize(q.title) === headerNorm) return q
+  }
+
+  // 3. Contains match (one contains the other)
+  for (const q of questions) {
+    if (usedIds.has(q.id)) continue
+    const qNorm = normalize(q.title)
+    if (qNorm.length >= 3 && headerNorm.length >= 3) {
+      if (headerNorm.includes(qNorm) || qNorm.includes(headerNorm)) return q
+    }
+  }
+
+  // 4. Fuzzy match — best similarity ≥ 0.6
+  let bestScore = 0
+  let bestMatch: QuestionInfo | null = null
+
+  for (const q of questions) {
+    if (usedIds.has(q.id)) continue
+    const score = similarity(headerNorm, normalize(q.title))
+    if (score > bestScore && score >= 0.6) {
+      bestScore = score
+      bestMatch = q
+    }
+  }
+
+  return bestMatch
 }
 
 /**
  * Match CSV headers to form questions.
- * Strategy: exact match first, then normalized match.
+ * Uses multi-strategy matching: exact → normalized → contains → fuzzy.
  */
 function matchColumns(
   headers: string[],
@@ -156,19 +237,22 @@ function matchColumns(
   const mappings: ColumnMapping[] = []
   const warnings: string[] = []
   let timestampCol: number | null = null
-
-  // Build lookup maps
-  const exactMap = new Map<string, QuestionInfo>()
-  const normalizedMap = new Map<string, QuestionInfo>()
   const usedQuestionIds = new Set<string>()
-
-  for (const q of questions) {
-    exactMap.set(q.title.toLowerCase().trim(), q)
-    normalizedMap.set(normalize(q.title), q)
-  }
 
   for (let i = 0; i < headers.length; i++) {
     const header = headers[i]
+
+    // Skip empty headers
+    if (!header.trim()) {
+      mappings.push({
+        csvIndex: i,
+        csvHeader: header || "(vazia)",
+        questionId: null,
+        questionTitle: null,
+        questionType: null,
+      })
+      continue
+    }
 
     if (isTimestampHeader(header)) {
       timestampCol = i
@@ -194,16 +278,9 @@ function matchColumns(
       continue
     }
 
-    // Try exact match
-    const headerLower = header.toLowerCase().trim()
-    let match = exactMap.get(headerLower)
+    const match = findBestMatch(header, questions, usedQuestionIds)
 
-    // Try normalized match
-    if (!match) {
-      match = normalizedMap.get(normalize(header))
-    }
-
-    if (match && !usedQuestionIds.has(match.id)) {
+    if (match) {
       usedQuestionIds.add(match.id)
       mappings.push({
         csvIndex: i,
@@ -220,9 +297,7 @@ function matchColumns(
         questionTitle: null,
         questionType: null,
       })
-      if (!match) {
-        warnings.push(`Coluna "${header}" não foi mapeada a nenhuma pergunta`)
-      }
+      warnings.push(`Coluna "${header}" não foi mapeada a nenhuma pergunta`)
     }
   }
 
