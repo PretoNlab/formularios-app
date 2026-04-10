@@ -325,7 +325,10 @@ function UrlInput({ question, value, onChange, onSubmit }: InputProps) {
 
 function MultipleChoiceInput({ question, value, onChange, onSubmit }: InputProps) {
     const options = question.properties.options ?? []
+    const allowOther = question.properties.allowOther ?? false
     const selected = (value as string) ?? null
+    const isOtherSelected = selected?.startsWith("__other__") ?? false
+    const [otherText, setOtherText] = useState(isOtherSelected ? selected!.slice(9) : "")
 
     return (
         <div className="ff-options">
@@ -342,19 +345,65 @@ function MultipleChoiceInput({ question, value, onChange, onSubmit }: InputProps
                     <span>{opt.label}</span>
                 </button>
             ))}
+            {allowOther && (
+                <div className={`ff-option ${isOtherSelected ? "ff-option--selected" : ""}`} style={{ flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+                    <div
+                        style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", width: "100%" }}
+                        onClick={() => {
+                            if (!isOtherSelected) onChange(`__other__${otherText}`)
+                        }}
+                    >
+                        <span className="ff-option-letter">{String.fromCharCode(65 + options.length)}</span>
+                        <span>Outro</span>
+                    </div>
+                    {isOtherSelected && (
+                        <input
+                            autoFocus
+                            placeholder="Especifique..."
+                            value={otherText}
+                            onChange={(e) => {
+                                setOtherText(e.target.value)
+                                onChange(`__other__${e.target.value}`)
+                            }}
+                            style={{
+                                width: "100%",
+                                background: "transparent",
+                                border: "none",
+                                borderBottom: "1px solid currentColor",
+                                outline: "none",
+                                fontSize: 14,
+                                paddingBottom: 4,
+                                color: "inherit",
+                            }}
+                        />
+                    )}
+                </div>
+            )}
         </div>
     )
 }
 
 function CheckboxInput({ question, value, onChange }: InputProps) {
     const options = question.properties.options ?? []
+    const allowOther = question.properties.allowOther ?? false
     const selected: string[] = Array.isArray(value) ? (value as string[]) : []
+    const otherEntry = selected.find((s) => s.startsWith("__other__"))
+    const isOtherSelected = !!otherEntry
+    const [otherText, setOtherText] = useState(otherEntry ? otherEntry.slice(9) : "")
 
     const toggle = (label: string) => {
         const next = selected.includes(label)
             ? selected.filter((s) => s !== label)
             : [...selected, label]
         onChange(next)
+    }
+
+    const toggleOther = () => {
+        if (isOtherSelected) {
+            onChange(selected.filter((s) => !s.startsWith("__other__")))
+        } else {
+            onChange([...selected, `__other__${otherText}`])
+        }
     }
 
     return (
@@ -372,6 +421,40 @@ function CheckboxInput({ question, value, onChange }: InputProps) {
                     )}
                 </button>
             ))}
+            {allowOther && (
+                <div className={`ff-option ${isOtherSelected ? "ff-option--selected" : ""}`} style={{ flexDirection: "column", alignItems: "stretch", gap: 8 }}>
+                    <div
+                        style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", width: "100%" }}
+                        onClick={toggleOther}
+                    >
+                        <span className="ff-option-letter">{String.fromCharCode(65 + options.length)}</span>
+                        <span>Outro</span>
+                        {isOtherSelected && <span className="ff-option-check">✓</span>}
+                    </div>
+                    {isOtherSelected && (
+                        <input
+                            autoFocus
+                            placeholder="Especifique..."
+                            value={otherText}
+                            onChange={(e) => {
+                                setOtherText(e.target.value)
+                                const next = selected.filter((s) => !s.startsWith("__other__"))
+                                onChange([...next, `__other__${e.target.value}`])
+                            }}
+                            style={{
+                                width: "100%",
+                                background: "transparent",
+                                border: "none",
+                                borderBottom: "1px solid currentColor",
+                                outline: "none",
+                                fontSize: 14,
+                                paddingBottom: 4,
+                                color: "inherit",
+                            }}
+                        />
+                    )}
+                </div>
+            )}
         </div>
     )
 }
@@ -878,6 +961,9 @@ export function FormRenderer({
         if (!currentQ.required) return true
         if (val == null || val === "") return false
         if (Array.isArray(val) && val.length === 0) return false
+        // "Outro" selecionado mas sem texto especificado
+        if (typeof val === "string" && val === "__other__") return false
+        if (Array.isArray(val) && val.some((v) => typeof v === "string" && v === "__other__")) return false
         return true
     }, [currentQ, state.answers])
 

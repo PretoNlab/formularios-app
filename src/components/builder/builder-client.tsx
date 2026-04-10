@@ -308,20 +308,24 @@ export function BuilderClient({
                   {filteredFields.length > 0 && (
                     <div className="space-y-3">
                       {!fieldSearch && <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Adicionar Campo</h4>}
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1.5">
                         {filteredFields.map((type) => {
                           const Icon = TYPE_ICONS[type] ?? Type
+                          const meta = QUESTION_TYPES[type]
                           return (
-                            <Button
+                            <button
                               key={type}
-                              variant="outline"
-                              size="sm"
-                              className="h-20 flex-col gap-2 border-dashed bg-muted/20 hover:bg-muted/50 hover:border-solid hover:text-foreground text-muted-foreground transition-all"
+                              type="button"
+                              title={meta.description}
+                              className="w-full flex items-start gap-3 rounded-md border border-dashed border-input bg-muted/20 px-3 py-2.5 text-left hover:bg-muted/50 hover:border-solid transition-all group"
                               onClick={() => { handleAddQuestion(type); setFieldSearch("") }}
                             >
-                              <Icon className="h-5 w-5" />
-                              <span className="text-[10px] leading-tight text-center">{QUESTION_TYPES[type].label}</span>
-                            </Button>
+                              <Icon className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground group-hover:text-foreground" />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-medium text-foreground leading-tight">{meta.label}</div>
+                                <div className="text-[10px] text-muted-foreground leading-snug mt-0.5 line-clamp-2">{meta.description}</div>
+                              </div>
+                            </button>
                           )
                         })}
                       </div>
