@@ -15,10 +15,12 @@ const CSP = [
     "script-src 'self' 'unsafe-inline' https://www.clarity.ms",
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self' data:",
-    // Supabase storage (uploaded files/images), Google avatars
-    "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com",
+    // Supabase storage (uploaded files/images), Google avatars, Clarity pixel
+    "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com https://*.clarity.ms",
     // Supabase REST + realtime WS, Sentry error/replay ingestion, Microsoft Clarity
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://*.clarity.ms",
+    // Clarity uses blob: web workers for session recording
+    "worker-src 'self' blob:",
     // Audio/video uploaded by respondents
     "media-src 'self' blob: https://*.supabase.co",
     "object-src 'none'",
