@@ -4,30 +4,23 @@ import { useState, useTransition, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import {
   FileSpreadsheet, Upload, Loader2, AlertTriangle, CheckCircle2,
-  ArrowRight, ArrowLeft, X,
+  ArrowRight, ArrowLeft,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { previewCsvImportAction, importCsvResponsesAction } from "@/app/actions/import-responses"
-import type { ColumnMapping, CsvPreviewResult } from "@/lib/import/csv-responses"
+import type { ColumnMapping, CsvPreviewResult, QuestionInfo } from "@/lib/import/csv-responses"
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
-interface QuestionOption {
-  id: string
-  title: string
-  type: string
-}
-
 interface ImportResponsesDialogProps {
   formId: string
-  questions: QuestionOption[]
 }
 
 // ─── Main Component ─────────────────────────────────────────────────────────
 
-export function ImportResponsesDialog({ formId, questions }: ImportResponsesDialogProps) {
+export function ImportResponsesDialog({ formId }: ImportResponsesDialogProps) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -53,7 +46,6 @@ export function ImportResponsesDialog({ formId, questions }: ImportResponsesDial
 
           <ImportFlow
             formId={formId}
-            questions={questions}
             onClose={() => setOpen(false)}
           />
         </DialogContent>
@@ -74,11 +66,9 @@ interface ImportResult {
 
 function ImportFlow({
   formId,
-  questions,
   onClose,
 }: {
   formId: string
-  questions: QuestionOption[]
   onClose: () => void
 }) {
   const router = useRouter()
@@ -86,6 +76,7 @@ function ImportFlow({
   const [csvContent, setCsvContent] = useState("")
   const [fileName, setFileName] = useState("")
   const [preview, setPreview] = useState<CsvPreviewResult | null>(null)
+  const [questions, setQuestions] = useState<QuestionInfo[]>([])
   const [mappings, setMappings] = useState<ColumnMapping[]>([])
   const [result, setResult] = useState<ImportResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -128,6 +119,7 @@ function ImportFlow({
       }
       setPreview(res.data!)
       setMappings(res.data!.mappings)
+      setQuestions(res.data!.availableQuestions)
       setStep("preview")
     })
   }, [formId, csvContent])
@@ -141,9 +133,9 @@ function ImportFlow({
         if (questionId === "") {
           return { ...m, questionId: null, questionTitle: null, questionType: null }
         }
-        const q = questions.find((q) => q.id === questionId)
+        const q = questions.find((x) => x.id === questionId)
         if (!q) return m
-        return { ...m, questionId: q.id, questionTitle: q.title, questionType: q.type as ColumnMapping["questionType"] }
+        return { ...m, questionId: q.id, questionTitle: q.title, questionType: q.type }
       }),
     )
   }, [questions])
@@ -167,8 +159,6 @@ function ImportFlow({
       setStep("result")
     })
   }, [formId, csvContent, mappings, preview])
-
-  // ── Step 3: Result ──
 
   // ── Render ──
 

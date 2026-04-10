@@ -17,6 +17,7 @@ export interface CsvPreviewResult {
   previewRows: string[][]
   warnings: string[]
   detectedTimestampCol: number | null
+  availableQuestions: QuestionInfo[]
 }
 
 export interface ParsedCsvRow {
@@ -347,6 +348,7 @@ export function parseCsvPreview(
     previewRows,
     warnings,
     detectedTimestampCol: timestampCol,
+    availableQuestions: questions,
   }
 }
 
