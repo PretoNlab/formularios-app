@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import type { FormAnalytics, QuestionAnalytics, QuestionType } from "@/lib/types/form"
 import type { ResponseWithAnswers } from "@/lib/db/queries/responses"
 import { exportResponsesAction } from "@/app/actions/responses"
+import { ImportResponsesDialog } from "@/components/responses/import-responses-dialog"
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -1509,6 +1510,7 @@ export function ResponsesSection({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <ImportResponsesDialog formId={formId} questions={questions} />
           <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}
             disabled={isExporting || responses.length === 0}>
             <Download className="h-3.5 w-3.5" />

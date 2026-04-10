@@ -562,3 +562,91 @@ export async function getFormAnalytics(
     }
   }
 }
+
+// ─── Bulk Import ────────────────────────────────────────────────────────────
+
+interface BulkImportRow {
+  timestamp: Date | null
+  answers: { questionId: string; value: AnswerValue }[]
+}
+
+/**
+ * Imports CSV-parsed responses in batches of 100.
+ * Each response is marked with `importedAt` in metadata.
+ * Also increments the form's `responseCount`.
+ */
+export async function bulkImportResponses(
+  formId: string,
+  rows: BulkImportRow[],
+): Promise<ApiResponse<{ imported: number; errors: number }>> {
+  const BATCH_SIZE = 100
+  let imported = 0
+  let errors = 0
+  const importedAt = new Date().toISOString()
+
+  try {
+    for (let start = 0; start < rows.length; start += BATCH_SIZE) {
+      const batch = rows.slice(start, start + BATCH_SIZE)
+
+      await db.transaction(async (tx) => {
+        for (const row of batch) {
+          try {
+            const now = row.timestamp ?? new Date()
+
+            const [created] = await tx
+              .insert(responses)
+              .values({
+                formId,
+                startedAt: now,
+                completedAt: now,
+                lastActiveAt: now,
+                metadata: {
+                  userAgent: null,
+                  ipHash: null,
+                  utmSource: null,
+                  utmMedium: null,
+                  utmCampaign: null,
+                  referrer: null,
+                  deviceType: null,
+                  importedAt,
+                } as ResponseMetadata & { importedAt: string },
+              })
+              .returning({ id: responses.id })
+
+            if (row.answers.length > 0) {
+              await tx.insert(answers).values(
+                row.answers.map((a) => ({
+                  responseId: created.id,
+                  questionId: a.questionId,
+                  value: a.value,
+                })),
+              )
+            }
+
+            imported++
+          } catch {
+            errors++
+          }
+        }
+      })
+    }
+
+    // Update form response count
+    if (imported > 0) {
+      await db
+        .update(forms)
+        .set({ responseCount: sql`${forms.responseCount} + ${imported}` })
+        .where(eq(forms.id, formId))
+    }
+
+    return { success: true, data: { imported, errors } }
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: "DB_ERROR",
+        message: error instanceof Error ? error.message : "Database error",
+      },
+    }
+  }
+}
