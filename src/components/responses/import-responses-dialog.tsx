@@ -117,9 +117,11 @@ function ImportFlow({
         setError(res.error?.message ?? "Erro ao analisar o arquivo.")
         return
       }
+      console.log("[CSV Import Client] res.data:", JSON.stringify(res.data))
+      console.log("[CSV Import Client] availableQuestions:", res.data!.availableQuestions)
       setPreview(res.data!)
       setMappings(res.data!.mappings)
-      setQuestions(res.data!.availableQuestions)
+      setQuestions(res.data!.availableQuestions ?? [])
       setStep("preview")
     })
   }, [formId, csvContent])

@@ -54,7 +54,9 @@ export async function previewCsvImportAction(
 ): Promise<ApiResponse<CsvPreviewResult>> {
   try {
     const { questions } = await requireFormOwner(formId)
+    console.log("[CSV Import] formId:", formId, "questions count:", questions.length, "questions:", JSON.stringify(questions.map(q => ({ id: q.id, title: q.title }))))
     const preview = parseCsvPreview(csvContent, questions)
+    console.log("[CSV Import] preview availableQuestions count:", preview.availableQuestions.length)
     return { success: true, data: preview }
   } catch (error) {
     return {
