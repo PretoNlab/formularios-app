@@ -12,13 +12,13 @@ import { withSentryConfig } from "@sentry/nextjs"
 //   per-route X-Frame-Options headers below (which handle DENY vs SAMEORIGIN for /f/*).
 const CSP = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline' https://www.clarity.ms",
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self' data:",
     // Supabase storage (uploaded files/images), Google avatars
     "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com",
-    // Supabase REST + realtime WS, Sentry error/replay ingestion
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io",
+    // Supabase REST + realtime WS, Sentry error/replay ingestion, Microsoft Clarity
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://*.clarity.ms",
     // Audio/video uploaded by respondents
     "media-src 'self' blob: https://*.supabase.co",
     "object-src 'none'",
