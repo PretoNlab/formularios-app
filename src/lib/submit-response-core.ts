@@ -77,6 +77,8 @@ function isAnswerEmpty(value: AnswerValue | undefined): boolean {
   if (value === null || value === undefined) return true
   if (typeof value === "string") return value.trim() === ""
   if (Array.isArray(value)) return value.length === 0
+  // Empty matrix object (Record with no entries)
+  if (typeof value === "object" && !("fileUrl" in value) && !Array.isArray(value) && Object.keys(value).length === 0) return true
   return false
 }
 

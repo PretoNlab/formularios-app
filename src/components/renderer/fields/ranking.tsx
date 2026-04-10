@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useEffect } from "react"
 import type { FieldProps } from "./field-props"
 
 /**
@@ -15,6 +15,14 @@ export function RankingField({ question, value, onChange }: FieldProps) {
     const items: string[] = Array.isArray(value) && value.length > 0
         ? value as string[]
         : options.map((o) => o.label)
+
+    // Emit the initial order on mount so the answer is always saved
+    useEffect(() => {
+        if ((!value || (Array.isArray(value) && value.length === 0)) && options.length > 0) {
+            onChange(options.map((o) => o.label))
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const moveUp = (index: number) => {
         if (index === 0) return

@@ -986,8 +986,21 @@ function AnswerDisplay({ value, type }: { value: unknown; type?: string }) {
       </div>
     )
   }
-  if (typeof value === "number" || (type && ["rating", "scale", "nps", "number"].includes(type))) {
+  if (typeof value === "number" || (type && ["rating", "scale", "nps", "number", "opinion_scale"].includes(type))) {
     return <span className="text-3xl font-bold tabular-nums">{String(value)}</span>
+  }
+  if (typeof value === "object" && value !== null && !("fileName" in (value as object)) && !Array.isArray(value)) {
+    const entries = Object.entries(value as Record<string, string>)
+    return (
+      <div className="space-y-1.5">
+        {entries.map(([k, v]) => (
+          <div key={k} className="flex items-center gap-2 text-sm">
+            <span className="font-medium text-foreground">{k}:</span>
+            <span className="rounded-full bg-primary/10 text-primary text-xs font-medium px-3 py-1">{v}</span>
+          </div>
+        ))}
+      </div>
+    )
   }
   if (typeof value === "object" && "fileName" in (value as object)) {
     const file = value as { fileName: string; fileUrl?: string }
@@ -1293,6 +1306,9 @@ function formatAnswerValue(value: unknown): string {
   if (value === null || value === undefined) return "—"
   if (typeof value === "boolean") return value ? "Sim" : "Não"
   if (Array.isArray(value)) return value.map(stripOther).join(", ")
+  if (typeof value === "object" && value !== null && !("fileName" in (value as object)) && !Array.isArray(value)) {
+    return Object.entries(value as Record<string, string>).map(([k, v]) => `${k}: ${v}`).join(", ")
+  }
   if (typeof value === "object" && "fileName" in (value as object)) {
     return `📎 ${(value as { fileName: string }).fileName}`
   }

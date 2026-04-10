@@ -148,6 +148,8 @@ export function FormRenderer({
         if (!currentQ.required) return true
         if (val == null || val === "") return false
         if (Array.isArray(val) && val.length === 0) return false
+        // Empty matrix object
+        if (typeof val === "object" && val !== null && !Array.isArray(val) && !("fileUrl" in val) && Object.keys(val).length === 0) return false
         // "Outro" selecionado mas sem texto especificado
         if (typeof val === "string" && val === "__other__") return false
         if (Array.isArray(val) && val.some((v) => typeof v === "string" && v === "__other__")) return false

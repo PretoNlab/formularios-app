@@ -19,7 +19,7 @@ export function MatrixField({ question, value, onChange }: FieldProps) {
 
     const handleChange = (row: string, col: string) => {
         const next = { ...answers, [row]: col }
-        onChange(next as unknown as string)
+        onChange(next)
     }
 
     if (rows.length === 0 || columns.length === 0) {
