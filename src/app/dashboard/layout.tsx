@@ -1,4 +1,5 @@
 import { Header } from "@/components/layout/header"
+import { SupportWidget } from "@/components/dashboard/support-widget"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -7,6 +8,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="flex-1">
                 {children}
             </div>
+            <SupportWidget />
         </div>
     )
 }
