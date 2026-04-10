@@ -23,6 +23,7 @@ export const answerValueSchema = z.union([
   z.boolean(),
   z.array(z.string()),
   z.object({ fileUrl: z.string(), fileName: z.string() }),
+  z.record(z.string(), z.string()),
   z.null(),
 ])
 

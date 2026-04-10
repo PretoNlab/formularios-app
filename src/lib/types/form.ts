@@ -24,6 +24,9 @@ export const QUESTION_TYPES = {
   download: { label: "Download de Arquivo", icon: "⬇️", category: "advanced", hasOptions: false, description: "Disponibiliza um arquivo para o respondente baixar" },
   file_upload: { label: "Upload de arquivo", icon: "📎", category: "advanced", hasOptions: false, description: "Permite o respondente enviar um arquivo" },
   signature: { label: "Assinatura", icon: "✍️", category: "advanced", hasOptions: false, description: "Captura assinatura digital desenhada" },
+  matrix: { label: "Matriz", icon: "▦", category: "advanced", hasOptions: true, description: "Grade de avaliação com linhas e colunas" },
+  ranking: { label: "Ranking", icon: "🏆", category: "advanced", hasOptions: true, description: "Ordene itens por preferência" },
+  opinion_scale: { label: "Escala de Opinião", icon: "◧", category: "rating", hasOptions: false, description: "Escala segmentada com rótulos" },
 } as const
 
 export type QuestionType = keyof typeof QUESTION_TYPES
@@ -67,6 +70,10 @@ export interface QuestionProperties {
   downloadUrl?: string
   downloadButtonSize?: "sm" | "default" | "lg"
   downloadButtonAlign?: "left" | "center" | "right" | "full"
+
+  // Matrix
+  matrixRows?: string[]
+  matrixColumns?: string[]
 }
 
 export interface QuestionOption {
@@ -173,6 +180,7 @@ export interface FormResponse {
 export type AnswerValue =
   | string | number | boolean | string[]
   | { fileUrl: string; fileName: string }
+  | Record<string, string>
   | null
 
 export interface ResponseMetadata {

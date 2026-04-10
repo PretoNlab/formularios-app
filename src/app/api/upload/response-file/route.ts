@@ -54,15 +54,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Arquivo excede o limite de 10MB." }, { status: 400 })
   }
 
-  // SVG excluded — can contain executable scripts when served from a public bucket
-  const isAllowedType =
-    (file.type.startsWith("image/") && file.type !== "image/svg+xml") ||
-    file.type.startsWith("video/") ||
-    file.type.startsWith("audio/") ||
-    file.type === "application/pdf" ||
-    file.type === "application/msword" ||
-    file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-    file.type === "application/zip";
+  // Remove os charsets para validação (ex: image/svg+xml;charset=utf-8)
+  const rawType = file.type.split(";")[0].trim();
+  const isAllowedType = rawType in MIME_TO_EXT;
 
   if (!isAllowedType) {
     return NextResponse.json({ error: "Tipo de arquivo não permitido." }, { status: 400 })
@@ -82,7 +76,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Formulário não disponível." }, { status: 403 })
   }
 
-  const ext = MIME_TO_EXT[file.type] ?? "bin"
+  const ext = MIME_TO_EXT[rawType] ?? "bin"
   const randomHex = Math.random().toString(16).slice(2, 10)
   const path = `${formId}/${Date.now()}-${randomHex}.${ext}`
 
@@ -91,7 +85,7 @@ export async function POST(req: NextRequest) {
 
   const { error } = await admin.storage
     .from(BUCKET)
-    .upload(path, buffer, { contentType: file.type, upsert: false })
+    .upload(path, buffer, { contentType: rawType, upsert: false })
 
   if (error) {
     return NextResponse.json({ error: "Falha ao salvar arquivo." }, { status: 500 })

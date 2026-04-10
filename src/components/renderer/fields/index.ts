@@ -41,6 +41,9 @@ export { ThankYouField } from "./thank-you"
 export { FileUploadField } from "./file-upload"
 export { DownloadField } from "./download"
 export { SignatureField } from "./signature"
+export { MatrixField } from "./matrix"
+export { RankingField } from "./ranking"
+export { OpinionScaleField } from "./opinion-scale"
 
 // ─── QuestionType → Component map ────────────────────────────────────────────
 import type { QuestionType } from "@/lib/types/form"
@@ -70,6 +73,9 @@ import { ThankYouField } from "./thank-you"
 import { FileUploadField } from "./file-upload"
 import { DownloadField } from "./download"
 import { SignatureField } from "./signature"
+import { MatrixField } from "./matrix"
+import { RankingField } from "./ranking"
+import { OpinionScaleField } from "./opinion-scale"
 
 export const FIELD_COMPONENTS: Record<QuestionType, ComponentType<FieldProps>> = {
     short_text: ShortTextField,
@@ -95,4 +101,7 @@ export const FIELD_COMPONENTS: Record<QuestionType, ComponentType<FieldProps>> =
     download: DownloadField,
     file_upload: FileUploadField,
     signature: SignatureField,
+    matrix: MatrixField,
+    ranking: RankingField,
+    opinion_scale: OpinionScaleField,
 }

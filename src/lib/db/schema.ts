@@ -347,6 +347,10 @@ export interface QuestionProperties {
   buttonText?: string
   imageUrl?: string
   videoUrl?: string
+
+  // Matrix
+  matrixRows?: string[]
+  matrixColumns?: string[]
 }
 
 export interface QuestionOption {
@@ -378,6 +382,7 @@ export type AnswerValue =
   | boolean
   | string[]
   | { fileUrl: string; fileName: string }
+  | Record<string, string>
   | null
 
 export interface ResponseMetadata {

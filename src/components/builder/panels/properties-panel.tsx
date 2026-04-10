@@ -19,7 +19,7 @@ export function PropertiesPanel({ question }: { question: Question }) {
   const deleteQuestion = useBuilderStore((s) => s.deleteQuestion)
   const selectQuestion = useBuilderStore((s) => s.selectQuestion)
 
-  const hasOptions = ["multiple_choice", "checkbox", "dropdown"].includes(question.type)
+  const hasOptions = ["multiple_choice", "checkbox", "dropdown", "ranking"].includes(question.type)
 
   return (
     <div className="p-4 space-y-5">
@@ -300,6 +300,145 @@ export function PropertiesPanel({ question }: { question: Question }) {
                   className="text-sm h-8"
                 />
               </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {question.type === "opinion_scale" && (
+        <>
+          <Separator />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Faixa da escala</label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-[11px] text-muted-foreground">De</label>
+                  <select
+                    value={question.properties.scaleMin ?? 1}
+                    onChange={(e) => updateQuestion(question.id, { properties: { ...question.properties, scaleMin: Number(e.target.value) } })}
+                    className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {[0, 1].map((n) => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] text-muted-foreground">Até</label>
+                  <select
+                    value={question.properties.scaleMax ?? 5}
+                    onChange={(e) => updateQuestion(question.id, { properties: { ...question.properties, scaleMax: Number(e.target.value) } })}
+                    className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {[3, 4, 5, 6, 7, 8, 9, 10].map((n) => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-[11px] text-muted-foreground">Label início</label>
+                <Input
+                  value={question.properties.scaleMinLabel ?? ""}
+                  onChange={(e) => updateQuestion(question.id, { properties: { ...question.properties, scaleMinLabel: e.target.value || undefined } })}
+                  placeholder="ex: Discordo"
+                  className="text-sm h-8"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[11px] text-muted-foreground">Label fim</label>
+                <Input
+                  value={question.properties.scaleMaxLabel ?? ""}
+                  onChange={(e) => updateQuestion(question.id, { properties: { ...question.properties, scaleMaxLabel: e.target.value || undefined } })}
+                  placeholder="ex: Concordo"
+                  className="text-sm h-8"
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {question.type === "matrix" && (
+        <>
+          <Separator />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Linhas (itens a avaliar)</label>
+              {(question.properties.matrixRows ?? []).map((row, i) => (
+                <div key={i} className="flex gap-2">
+                  <Input
+                    value={row}
+                    onChange={(e) => {
+                      const next = [...(question.properties.matrixRows ?? [])]
+                      next[i] = e.target.value
+                      updateQuestion(question.id, { properties: { ...question.properties, matrixRows: next } })
+                    }}
+                    placeholder={`Linha ${i + 1}`}
+                    className="text-sm h-8"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => {
+                      const next = (question.properties.matrixRows ?? []).filter((_, idx) => idx !== i)
+                      updateQuestion(question.id, { properties: { ...question.properties, matrixRows: next } })
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full h-7 text-xs"
+                onClick={() => {
+                  const next = [...(question.properties.matrixRows ?? []), `Item ${(question.properties.matrixRows?.length ?? 0) + 1}`]
+                  updateQuestion(question.id, { properties: { ...question.properties, matrixRows: next } })
+                }}
+              >
+                + Adicionar linha
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Colunas (opções de resposta)</label>
+              {(question.properties.matrixColumns ?? []).map((col, i) => (
+                <div key={i} className="flex gap-2">
+                  <Input
+                    value={col}
+                    onChange={(e) => {
+                      const next = [...(question.properties.matrixColumns ?? [])]
+                      next[i] = e.target.value
+                      updateQuestion(question.id, { properties: { ...question.properties, matrixColumns: next } })
+                    }}
+                    placeholder={`Coluna ${i + 1}`}
+                    className="text-sm h-8"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => {
+                      const next = (question.properties.matrixColumns ?? []).filter((_, idx) => idx !== i)
+                      updateQuestion(question.id, { properties: { ...question.properties, matrixColumns: next } })
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full h-7 text-xs"
+                onClick={() => {
+                  const next = [...(question.properties.matrixColumns ?? []), `Opção ${(question.properties.matrixColumns?.length ?? 0) + 1}`]
+                  updateQuestion(question.id, { properties: { ...question.properties, matrixColumns: next } })
+                }}
+              >
+                + Adicionar coluna
+              </Button>
             </div>
           </div>
         </>

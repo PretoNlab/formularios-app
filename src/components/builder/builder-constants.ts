@@ -3,6 +3,7 @@ import {
   ListTodo, CheckSquare, ChevronDown, ToggleLeft,
   Star, TrendingUp, Presentation, MessageSquare,
   PartyPopper, Paperclip, PenTool, Download, MessageCircle, CreditCard, Building2,
+  Grid3X3, Trophy, SlidersHorizontal,
 } from "lucide-react"
 import type { Question, QuestionType, QuestionProperties } from "@/lib/types/form"
 import { QUESTION_TYPES } from "@/lib/types/form"
@@ -31,6 +32,9 @@ export const TYPE_ICONS: Record<string, React.ElementType> = {
   download: Download,
   file_upload: Paperclip,
   signature: PenTool,
+  matrix: Grid3X3,
+  ranking: Trophy,
+  opinion_scale: SlidersHorizontal,
 }
 
 export const SIDEBAR_TYPES: QuestionType[] = [
@@ -40,10 +44,11 @@ export const SIDEBAR_TYPES: QuestionType[] = [
   "multiple_choice", "checkbox", "dropdown", "yes_no",
   "rating", "scale", "nps",
   "download", "file_upload", "signature",
+  "matrix", "ranking", "opinion_scale",
 ]
 
 export function createQuestion(type: QuestionType, formId: string, order: number): Question {
-  const hasOptions = ["multiple_choice", "checkbox", "dropdown"].includes(type)
+  const hasOptions = ["multiple_choice", "checkbox", "dropdown", "ranking"].includes(type)
 
   const defaultProperties: Record<string, QuestionProperties> = {
     multiple_choice: { options: [{ id: crypto.randomUUID(), label: "Opção 1" }, { id: crypto.randomUUID(), label: "Opção 2" }, { id: crypto.randomUUID(), label: "Opção 3" }] },
@@ -58,6 +63,9 @@ export function createQuestion(type: QuestionType, formId: string, order: number
     short_text:      { placeholder: "Digite aqui..." },
     long_text:       { placeholder: "Escreva sua resposta..." },
     url:             { placeholder: "https://" },
+    matrix:          { matrixRows: ["Item 1", "Item 2", "Item 3"], matrixColumns: ["Ruim", "Regular", "Bom", "Ótimo"] },
+    ranking:         { options: [{ id: crypto.randomUUID(), label: "1ª opção" }, { id: crypto.randomUUID(), label: "2ª opção" }, { id: crypto.randomUUID(), label: "3ª opção" }] },
+    opinion_scale:   { scaleMin: 1, scaleMax: 5, scaleMinLabel: "Discordo totalmente", scaleMaxLabel: "Concordo totalmente" },
   }
 
   const defaultTitles: Partial<Record<QuestionType, string>> = {
@@ -73,6 +81,9 @@ export function createQuestion(type: QuestionType, formId: string, order: number
     welcome:         "Bem-vindo(a)!",
     thank_you:       "Obrigado pela sua resposta!",
     date:            "Selecione uma data",
+    matrix:          "Avalie cada item abaixo",
+    ranking:         "Ordene as opções por preferência",
+    opinion_scale:   "Qual o seu nível de concordância?",
   }
 
   return {

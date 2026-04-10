@@ -99,7 +99,14 @@ export async function exportResponsesAction(formId: string, ids?: string[]): Pro
     else if (Array.isArray(value)) str = value.join("; ")
     else if (typeof value === "object" && "fileName" in (value as object))
       str = (value as { fileName: string }).fileName
+    else if (typeof value === "object" && value !== null && !("fileName" in (value as object)) && !Array.isArray(value))
+      str = Object.entries(value as Record<string, string>).map(([k, v]) => `${k}: ${v}`).join("; ")
     else str = String(value)
+    
+    if (/^[=+\-@\t\r]/.test(str)) {
+      str = "'" + str
+    }
+    
     if (str.includes('"') || str.includes(",") || str.includes("\n")) {
       return `"${str.replace(/"/g, '""')}"`
     }
