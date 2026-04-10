@@ -16,6 +16,7 @@ const SECTIONS = [
   { id: "compartilhar", label: "Compartilhar" },
   { id: "integracoes", label: "Integrações" },
   { id: "analytics", label: "Respostas e Analytics" },
+  { id: "planos", label: "Planos e cobrança" },
   { id: "faq", label: "FAQ" },
 ]
 
@@ -88,10 +89,10 @@ const FIELD_TYPES = [
     { name: "URL", icon: "🔗", description: "Valida o formato de uma URL (http/https)." },
   ]},
   { category: "Seleção", types: [
-    { name: "Múltipla escolha", icon: "◉", description: "Escolha única entre opções (radio). Suporta opção 'Outro' e ordem aleatória." },
-    { name: "Caixas de seleção", icon: "☑", description: "Múltipla seleção (checkbox). Suporta opção 'Outro'." },
-    { name: "Lista suspensa", icon: "▾", description: "Dropdown com opções. Bom para listas longas." },
-    { name: "Sim / Não", icon: "✓✗", description: "Escolha binária com ícones visuais." },
+    { name: "Múltipla escolha", icon: "◉", description: "Escolha única — apenas uma opção pode ser selecionada. Suporta opção 'Outro' (campo livre) e ordem aleatória." },
+    { name: "Caixas de seleção", icon: "☑", description: "Várias respostas — permite marcar mais de uma opção. Também suporta 'Outro' e ordem aleatória." },
+    { name: "Lista suspensa", icon: "▾", description: "Dropdown com escolha única. Ideal para listas longas onde mostrar todas as opções ocuparia muito espaço." },
+    { name: "Sim / Não", icon: "✓✗", description: "Escolha binária com ícones visuais. Avança automaticamente após a seleção." },
   ]},
   { category: "Avaliação", types: [
     { name: "Avaliação", icon: "★", description: "Escala visual com estrelas, corações, polegares ou números. Padrão: 5 estrelas." },
@@ -402,12 +403,20 @@ export function HelpClient() {
                   desc: "A cada nova resposta, um e-mail com o conteúdo completo (todas as perguntas e respostas) é enviado para os destinatários configurados. Suporta múltiplos e-mails separados por vírgula (ex: joao@empresa.com, maria@empresa.com).",
                 },
                 {
+                  title: "Auto-Responder (e-mail para o respondente)",
+                  desc: "Envia automaticamente um e-mail de confirmação para quem preencher o formulário. Você define o assunto e o corpo, e o sistema usa o campo de e-mail do próprio formulário como destinatário. Requer pelo menos uma pergunta do tipo E-mail.",
+                },
+                {
+                  title: "Redirecionar após envio",
+                  desc: "Cole uma URL para redirecionar o respondente automaticamente depois que ele enviar o formulário (ex: página de obrigado, checkout, área de membros).",
+                },
+                {
                   title: "Mensagem de encerramento",
                   desc: "Texto exibido quando o formulário está fechado (por limite ou data). Personalize para orientar o respondente.",
                 },
                 {
                   title: "Arquivo para download",
-                  desc: "Exibe um botão de download na tela de agradecimento. Útil para entregar um e-book, certificado ou material após o preenchimento.",
+                  desc: "Exibe um botão de download na tela de agradecimento. Útil para entregar um e-book, certificado ou material após o preenchimento. Aceita upload direto (PDF, DOC, ZIP, imagens) ou link externo.",
                 },
               ].map(({ title, desc }) => (
                 <div key={title} className="rounded-lg border p-4">
@@ -427,7 +436,7 @@ export function HelpClient() {
               Após publicar, o formulário fica acessível em:
             </p>
             <div className="rounded-md bg-muted px-4 py-3 text-sm font-mono mb-4">
-              https://formularios.ia/f/<span className="text-foreground font-bold">seu-slug</span>
+              https://formularios.ia.br/f/<span className="text-foreground font-bold">seu-slug</span>
             </div>
             <p className="text-sm text-muted-foreground mb-6">
               Copie e cole em e-mails, WhatsApp, redes sociais, QR Code ou qualquer outro canal.
@@ -512,24 +521,92 @@ export function HelpClient() {
               ))}
             </div>
 
-            <h3 className="font-semibold text-lg mb-4">Análise com IA</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Para campos de texto longo, clique em <strong>"Analisar com IA"</strong> na aba Perguntas. Em segundos você recebe:
-            </p>
-            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-6">
-              <li>Temas mais mencionados (com exemplos reais)</li>
-              <li>Distribuição de sentimento (positivo / neutro / negativo)</li>
-              <li>Palavras-chave mais frequentes</li>
-              <li>Resumo executivo do conjunto de respostas</li>
-            </ul>
-
             <h3 className="font-semibold text-lg mb-4">Exportar dados</h3>
             <p className="text-sm text-muted-foreground">
               Clique em <strong>Exportar</strong> na aba Respostas para baixar todas as respostas em <strong>CSV</strong> (abre no Excel/Sheets) ou <strong>JSON</strong> (para integrações técnicas).
             </p>
           </Section>
 
-          {/* ── 10. FAQ ────────────────────────────────────────────────── */}
+          {/* ── 10. Planos e cobrança ──────────────────────────────────── */}
+          <Section id="planos" title="Planos e cobrança">
+            <p className="text-muted-foreground mb-6">
+              Comece grátis e faça upgrade quando precisar de mais. Todos os pagamentos são feitos via Pix usando AbacatePay.
+            </p>
+
+            <h3 className="font-semibold text-lg mb-4">Plano gratuito</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              No plano gratuito você pode publicar até <strong>3 formulários</strong> simultaneamente e receber um número limitado de respostas. Crie sua conta, monte um formulário e publique sem cartão.
+            </p>
+
+            <h3 className="font-semibold text-lg mb-4">Lote Fundador — R$ 499/ano</h3>
+            <div className="rounded-lg border p-5 mb-6 bg-muted/20">
+              <p className="text-sm text-muted-foreground mb-3">
+                Acesso completo por <strong>12 meses</strong>, com pagamento único via Pix:
+              </p>
+              <ul className="text-sm space-y-2 mb-4">
+                <li className="flex gap-2"><span className="text-foreground">✓</span> Até <strong>10 formulários publicados</strong> simultaneamente</li>
+                <li className="flex gap-2"><span className="text-foreground">✓</span> <strong>2.500 respostas</strong> incluídas no período</li>
+                <li className="flex gap-2"><span className="text-foreground">✓</span> Todas as integrações (Google Sheets, Webhooks, Auto-Responder)</li>
+                <li className="flex gap-2"><span className="text-foreground">✓</span> Brand Kit, temas customizados, lógica condicional sem limites</li>
+                <li className="flex gap-2"><span className="text-foreground">✓</span> Acesso vitalício às melhorias do período fundador</li>
+              </ul>
+              <p className="text-[11px] text-muted-foreground">
+                Para contratar, vá em <strong>Cobrança</strong> no menu principal e clique em "Assinar Lote Fundador". O pagamento é processado via Pix e seu plano é liberado automaticamente após a confirmação.
+              </p>
+            </div>
+
+            <h3 className="font-semibold text-lg mb-4">Recargas avulsas</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Já é Fundador e está chegando perto do limite? Compre recargas pontuais sem renovar o plano todo:
+            </p>
+            <div className="rounded-lg border overflow-hidden mb-6">
+              <table className="w-full text-sm">
+                <tbody>
+                  <tr className="bg-background">
+                    <td className="px-4 py-3 font-medium">+500 respostas</td>
+                    <td className="px-4 py-3 text-muted-foreground">Adiciona 500 respostas ao seu saldo</td>
+                    <td className="px-4 py-3 text-right font-semibold">R$ 49</td>
+                  </tr>
+                  <tr className="bg-muted/30">
+                    <td className="px-4 py-3 font-medium">+1.000 respostas</td>
+                    <td className="px-4 py-3 text-muted-foreground">Adiciona 1.000 respostas ao seu saldo</td>
+                    <td className="px-4 py-3 text-right font-semibold">R$ 79</td>
+                  </tr>
+                  <tr className="bg-background">
+                    <td className="px-4 py-3 font-medium">+5 formulários</td>
+                    <td className="px-4 py-3 text-muted-foreground">Aumenta seu limite de formulários publicados em 5</td>
+                    <td className="px-4 py-3 text-right font-semibold">R$ 59</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3 className="font-semibold text-lg mb-4">Pagamento via Pix</h3>
+            <Step number={1} title='Escolha o plano ou recarga em "Cobrança"' />
+            <Step number={2} title="Informe seu CPF para emissão da cobrança">
+              É exigido pelas regras do AbacatePay (intermediador) — não armazenamos o CPF no nosso banco.
+            </Step>
+            <Step number={3} title="Pague o Pix no app do seu banco">
+              Você é redirecionado para a página de pagamento do AbacatePay.
+            </Step>
+            <Step number={4} title="Volte para o site — o saldo é creditado em segundos">
+              O sistema fica verificando o status em tempo real. Quando o pagamento confirma, sua página é atualizada automaticamente.
+            </Step>
+
+            <h3 className="font-semibold text-lg mt-8 mb-4">Expiração do plano</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              30 dias antes do fim do período Fundador você verá um aviso amarelo no Dashboard. Após a expiração:
+            </p>
+            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-4">
+              <li>Aparece um banner vermelho avisando que o plano expirou</li>
+              <li>Os formulários publicados <strong>param de aceitar novas respostas</strong></li>
+              <li>Você não consegue publicar novos formulários até renovar</li>
+              <li>Todas as respostas existentes ficam intactas e acessíveis</li>
+            </ul>
+            <Tip>Renovar o Lote Fundador estende o período por mais 12 meses a partir da data de pagamento.</Tip>
+          </Section>
+
+          {/* ── 11. FAQ ────────────────────────────────────────────────── */}
           <Section id="faq" title="FAQ">
             <div className="rounded-lg border px-4">
               {[
@@ -571,7 +648,7 @@ export function HelpClient() {
                 },
                 {
                   q: "Posso redirecionar o respondente para outro site após o envio?",
-                  a: "Ainda não existe um campo de redirect automático. A tela de agradecimento é totalmente personalizável e suporta um botão de download de arquivo como call-to-action.",
+                  a: "Sim. Nas Configurações do formulário, no bloco 'Conclusão', preencha o campo 'Redirecionar para (URL)' com o endereço de destino. Assim que o respondente enviar o formulário, ele será encaminhado automaticamente para essa URL — útil para páginas de obrigado, checkout, área de membros, etc.",
                 },
                 {
                   q: "O que são respostas parciais?",
@@ -579,7 +656,7 @@ export function HelpClient() {
                 },
                 {
                   q: "Posso usar um domínio próprio para os formulários?",
-                  a: "Esta funcionalidade está no roadmap mas ainda não está disponível. Por enquanto, todos os formulários ficam em formularios.ia.br/f/slug.",
+                  a: "Esta funcionalidade está no roadmap mas ainda não está disponível. Por enquanto, todos os formulários ficam em formularios.ia.br/f/slug. Você pode personalizar o slug para algo mais amigável (ex: /f/pesquisa-clientes-2026).",
                 },
                 {
                   q: "O que é o Brand Kit?",
@@ -588,6 +665,22 @@ export function HelpClient() {
                 {
                   q: "Como funciona a integração com Google Sheets se o token expirar?",
                   a: "O sistema atualiza o token de acesso automaticamente usando o refresh token armazenado. Você não precisa reconectar periodicamente — a integração se mantém ativa indefinidamente enquanto você não revogar o acesso no painel do Google.",
+                },
+                {
+                  q: "Por que vocês pedem meu CPF na hora de pagar?",
+                  a: "O CPF é uma exigência do AbacatePay (intermediador financeiro responsável por processar o Pix) para emitir a cobrança. Ele não é armazenado no nosso banco de dados — é enviado direto ao AbacatePay no momento da compra.",
+                },
+                {
+                  q: "Quanto tempo demora para o plano ser liberado depois do pagamento?",
+                  a: "Geralmente alguns segundos. Após você pagar o Pix no app do banco, o AbacatePay nos avisa e seu plano/recarga é creditado automaticamente. A página de Cobrança fica verificando em tempo real e atualiza sozinha quando confirma.",
+                },
+                {
+                  q: "O que acontece se meu Lote Fundador expirar?",
+                  a: "Os formulários publicados param de aceitar novas respostas e você não consegue publicar novos formulários. Todas as respostas já coletadas continuam acessíveis normalmente. Para reativar, basta renovar o Lote Fundador na página de Cobrança.",
+                },
+                {
+                  q: "Como funciona a opção 'Outro' nas perguntas de seleção?",
+                  a: "Em perguntas de Múltipla escolha e Caixas de seleção, ative a opção 'Outro' no painel direito do Builder. No formulário, o respondente verá uma opção extra 'Outro' que abre um campo livre para escrever a resposta dele. O texto fica registrado como uma resposta normal e aparece destacado nos relatórios e exportações com o prefixo 'Outro:'.",
                 },
               ].map((item) => (
                 <FaqItem key={item.q} question={item.q} answer={item.a} />
