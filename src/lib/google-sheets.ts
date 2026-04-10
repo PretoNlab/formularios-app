@@ -113,6 +113,9 @@ function formatValue(value: unknown): string {
   if (value === null || value === undefined) return ""
   if (typeof value === "boolean") return value ? "Sim" : "Não"
   if (Array.isArray(value)) return (value as unknown[]).join("; ")
+  if (typeof value === 'object' && value !== null && !Array.isArray(value) && !('fileName' in (value as object))) {
+    return Object.entries(value as Record<string, unknown>).map(([k, v]) => `${k}: ${v}`).join('; ')
+  }
   if (typeof value === "object" && "fileName" in (value as object)) {
     const v = value as { fileName: string; fileUrl?: string }
     return v.fileUrl ?? v.fileName
