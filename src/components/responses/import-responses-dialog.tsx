@@ -173,13 +173,15 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
                   {questions.length === 0
                     ? "Nenhuma pergunta encontrada!"
                     : questions.map((q) => q.title).join(" | ")}
+                  <br />
+                  <strong>Mapeadas: {mapped}</strong> — questionsJson length: {preview.questionsJson.length} chars
                 </p>
 
                 <div className="space-y-3">
-                  {mappings.map((m) => {
-                    const selectId = `csv-map-${m.csvIndex}`
+                  {mappings.map((m, idx) => {
+                    const selectId = `csv-map-${idx}`
                     return (
-                      <div key={m.csvIndex} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                      <div key={idx} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                         <label htmlFor={selectId} className="text-xs font-mono truncate" title={m.csvHeader}>
                           {m.csvHeader}
                         </label>
@@ -188,7 +190,7 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
                           id={selectId}
                           name={selectId}
                           className="rounded-md border border-input bg-background px-2 py-1.5 text-xs"
-                          defaultValue={m.questionId ?? ""}
+                          value={m.questionId ?? ""}
                           onChange={(e) => onMapping(m.csvIndex, e.target.value)}
                         >
                           <option value="">— Ignorar —</option>
