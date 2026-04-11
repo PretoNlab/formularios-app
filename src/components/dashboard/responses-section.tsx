@@ -1510,7 +1510,7 @@ export function ResponsesSection({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <ImportResponsesDialog formId={formId} questions={questions} />
+          <ImportResponsesDialog formId={formId} />
           <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}
             disabled={isExporting || responses.length === 0}>
             <Download className="h-3.5 w-3.5" />
