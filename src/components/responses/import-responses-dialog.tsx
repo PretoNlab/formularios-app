@@ -147,7 +147,7 @@ function ImportFlow({
 
   // ── Step 2: Preview ──
 
-  const handleMappingChange = useCallback((csvIndex: number, questionId: string) => {
+  function handleMappingChange(csvIndex: number, questionId: string) {
     setMappings((prev) =>
       prev.map((m) => {
         if (m.csvIndex !== csvIndex) return m
@@ -155,16 +155,15 @@ function ImportFlow({
           return { ...m, questionId: null, questionTitle: null, questionType: null }
         }
         const q = questions.find((x) => x.id === questionId)
-        if (!q) return m
         return {
           ...m,
-          questionId: q.id,
-          questionTitle: q.title,
-          questionType: q.type as ColumnMapping["questionType"],
+          questionId,
+          questionTitle: q?.title ?? null,
+          questionType: (q?.type ?? null) as ColumnMapping["questionType"],
         }
       }),
     )
-  }, [questions])
+  }
 
   const mappedCount = mappings.filter((m) => m.questionId !== null).length
 
