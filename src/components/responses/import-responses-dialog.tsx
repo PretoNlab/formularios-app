@@ -10,7 +10,24 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { previewCsvImportAction, importCsvResponsesAction } from "@/app/actions/import-responses"
-import type { ColumnMapping, CsvPreviewResult } from "@/lib/import/csv-responses"
+import type { ColumnMapping } from "@/lib/import/csv-responses"
+
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+interface QuestionItem {
+  id: string
+  title: string
+  type: string
+}
+
+interface PreviewData {
+  totalRows: number
+  mappings: ColumnMapping[]
+  previewRows: string[][]
+  warnings: string[]
+  detectedTimestampCol: number | null
+  questionsJson: string
+}
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
@@ -20,7 +37,8 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [csvContent, setCsvContent] = useState("")
   const [fileName, setFileName] = useState("")
-  const [preview, setPreview] = useState<CsvPreviewResult | null>(null)
+  const [preview, setPreview] = useState<PreviewData | null>(null)
+  const [questions, setQuestions] = useState<QuestionItem[]>([])
   const [mappings, setMappings] = useState<ColumnMapping[]>([])
   const [importResult, setImportResult] = useState<{ imported: number; errors: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -33,13 +51,12 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
       setCsvContent("")
       setFileName("")
       setPreview(null)
+      setQuestions([])
       setMappings([])
       setImportResult(null)
       setError(null)
     }
   }
-
-  // ── Step 1: File ──
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -57,27 +74,35 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
     startTransition(async () => {
       const res = await previewCsvImportAction(formId, csvContent)
       if (!res.success) { setError(res.error?.message ?? "Erro"); return }
-      setPreview(res.data!)
-      setMappings(res.data!.mappings)
+      const data = res.data!
+      setPreview(data)
+      setMappings(data.mappings)
+      // Parse questions from JSON string
+      try {
+        const parsed = JSON.parse(data.questionsJson) as QuestionItem[]
+        setQuestions(parsed)
+      } catch {
+        setQuestions([])
+      }
       setStep(2)
     })
   }
 
-  // ── Step 2: Mapping ──
-
   function onMapping(csvIndex: number, qId: string) {
-    const newMappings = [...mappings]
-    const idx = newMappings.findIndex((m) => m.csvIndex === csvIndex)
-    if (idx === -1) return
-    const avail = preview?.availableQuestions ?? []
-    const q = avail.find((x) => x.id === qId)
-    newMappings[idx] = {
-      ...newMappings[idx],
-      questionId: qId || null,
-      questionTitle: q?.title ?? null,
-      questionType: q ? q.type : null,
-    }
-    setMappings(newMappings)
+    const updated = mappings.map((m) => {
+      if (m.csvIndex !== csvIndex) return m
+      if (qId === "") {
+        return { ...m, questionId: null, questionTitle: null, questionType: null }
+      }
+      const q = questions.find((x) => x.id === qId)
+      return {
+        ...m,
+        questionId: qId,
+        questionTitle: q?.title ?? null,
+        questionType: (q?.type ?? null) as ColumnMapping["questionType"],
+      }
+    })
+    setMappings(updated)
   }
 
   function onImport() {
@@ -93,7 +118,6 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
   }
 
   const mapped = mappings.filter((m) => m.questionId).length
-  const avail = preview?.availableQuestions ?? []
 
   return (
     <>
@@ -112,7 +136,7 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
           </DialogHeader>
 
           <div className="mt-2">
-            {/* ════ STEP 1: UPLOAD ════ */}
+            {/* ════ STEP 1 ════ */}
             {step === 1 && (
               <div className="space-y-4">
                 <label className="flex flex-col items-center gap-3 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 p-8 cursor-pointer hover:border-muted-foreground/40">
@@ -128,7 +152,7 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
               </div>
             )}
 
-            {/* ════ STEP 2: MAPPING ════ */}
+            {/* ════ STEP 2 ════ */}
             {step === 2 && preview && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between text-sm">
@@ -145,13 +169,15 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
                 )}
 
                 <p className="text-[11px] text-muted-foreground border rounded p-2 bg-muted/30">
-                  <strong>{avail.length} perguntas no formulário:</strong>{" "}
-                  {avail.length === 0 ? "Nenhuma pergunta encontrada!" : avail.map((q) => q.title).join(" | ")}
+                  <strong>{questions.length} perguntas no formulário:</strong>{" "}
+                  {questions.length === 0
+                    ? "Nenhuma pergunta encontrada!"
+                    : questions.map((q) => q.title).join(" | ")}
                 </p>
 
                 <div className="space-y-3">
                   {mappings.map((m) => {
-                    const selectId = `mapping-${m.csvIndex}`
+                    const selectId = `csv-map-${m.csvIndex}`
                     return (
                       <div key={m.csvIndex} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                         <label htmlFor={selectId} className="text-xs font-mono truncate" title={m.csvHeader}>
@@ -166,7 +192,7 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
                           onChange={(e) => onMapping(m.csvIndex, e.target.value)}
                         >
                           <option value="">— Ignorar —</option>
-                          {avail.map((q) => (
+                          {questions.map((q) => (
                             <option key={q.id} value={q.id}>{q.title}</option>
                           ))}
                         </select>
@@ -188,7 +214,7 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
               </div>
             )}
 
-            {/* ════ STEP 3: RESULT ════ */}
+            {/* ════ STEP 3 ════ */}
             {step === 3 && importResult && (
               <div className="space-y-4">
                 <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20 p-4">

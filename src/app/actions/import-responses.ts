@@ -70,14 +70,33 @@ export async function getFormQuestionsAction(
 
 // ─── Preview Action ────────────────────────────────────────────────────────
 
+interface PreviewResponse {
+  totalRows: number
+  mappings: ColumnMapping[]
+  previewRows: string[][]
+  warnings: string[]
+  detectedTimestampCol: number | null
+  questionsJson: string // JSON-encoded array — avoids serialization issues
+}
+
 export async function previewCsvImportAction(
   formId: string,
   csvContent: string,
-): Promise<ApiResponse<CsvPreviewResult>> {
+): Promise<ApiResponse<PreviewResponse>> {
   try {
     const { questions } = await requireFormOwner(formId)
     const preview = parseCsvPreview(csvContent, questions)
-    return { success: true, data: preview }
+    return {
+      success: true,
+      data: {
+        totalRows: preview.totalRows,
+        mappings: preview.mappings,
+        previewRows: preview.previewRows,
+        warnings: preview.warnings,
+        detectedTimestampCol: preview.detectedTimestampCol,
+        questionsJson: JSON.stringify(questions),
+      },
+    }
   } catch (error) {
     return {
       success: false,
