@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useCallback } from "react"
+import { useState, useTransition, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
   FileSpreadsheet, Upload, Loader2, AlertTriangle, CheckCircle2,
@@ -9,10 +9,20 @@ import {
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { previewCsvImportAction, importCsvResponsesAction } from "@/app/actions/import-responses"
-import type { ColumnMapping, CsvPreviewResult, QuestionInfo } from "@/lib/import/csv-responses"
+import {
+  previewCsvImportAction,
+  importCsvResponsesAction,
+  getFormQuestionsAction,
+} from "@/app/actions/import-responses"
+import type { ColumnMapping, CsvPreviewResult } from "@/lib/import/csv-responses"
 
-// ─── Props ──────────────────────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+interface QuestionOption {
+  id: string
+  title: string
+  type: string
+}
 
 interface ImportResponsesDialogProps {
   formId: string
@@ -44,10 +54,12 @@ export function ImportResponsesDialog({ formId }: ImportResponsesDialogProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <ImportFlow
-            formId={formId}
-            onClose={() => setOpen(false)}
-          />
+          {open && (
+            <ImportFlow
+              formId={formId}
+              onClose={() => setOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </>
@@ -58,7 +70,7 @@ export function ImportResponsesDialog({ formId }: ImportResponsesDialogProps) {
 
 type Step = "upload" | "preview" | "result"
 
-interface ImportResult {
+interface ImportResultData {
   imported: number
   errors: number
   warnings: string[]
@@ -76,11 +88,22 @@ function ImportFlow({
   const [csvContent, setCsvContent] = useState("")
   const [fileName, setFileName] = useState("")
   const [preview, setPreview] = useState<CsvPreviewResult | null>(null)
-  const [questions, setQuestions] = useState<QuestionInfo[]>([])
+  const [questions, setQuestions] = useState<QuestionOption[]>([])
+  const [questionsLoaded, setQuestionsLoaded] = useState(false)
   const [mappings, setMappings] = useState<ColumnMapping[]>([])
-  const [result, setResult] = useState<ImportResult | null>(null)
+  const [result, setResult] = useState<ImportResultData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+
+  // ── Load questions on mount ──
+  useEffect(() => {
+    getFormQuestionsAction(formId).then((res) => {
+      if (res.success && res.data) {
+        setQuestions(res.data)
+      }
+      setQuestionsLoaded(true)
+    })
+  }, [formId])
 
   // ── Step 1: Upload ──
 
@@ -93,7 +116,6 @@ function ImportFlow({
       return
     }
 
-    // 10MB limit
     if (file.size > 10 * 1024 * 1024) {
       setError("Arquivo muito grande (máximo 10MB)")
       return
@@ -117,11 +139,8 @@ function ImportFlow({
         setError(res.error?.message ?? "Erro ao analisar o arquivo.")
         return
       }
-      console.log("[CSV Import Client] res.data:", JSON.stringify(res.data))
-      console.log("[CSV Import Client] availableQuestions:", res.data!.availableQuestions)
       setPreview(res.data!)
       setMappings(res.data!.mappings)
-      setQuestions(res.data!.availableQuestions ?? [])
       setStep("preview")
     })
   }, [formId, csvContent])
@@ -137,7 +156,12 @@ function ImportFlow({
         }
         const q = questions.find((x) => x.id === questionId)
         if (!q) return m
-        return { ...m, questionId: q.id, questionTitle: q.title, questionType: q.type }
+        return {
+          ...m,
+          questionId: q.id,
+          questionTitle: q.title,
+          questionType: q.type as ColumnMapping["questionType"],
+        }
       }),
     )
   }, [questions])
@@ -188,6 +212,19 @@ function ImportFlow({
           />
         </label>
 
+        {!questionsLoaded && (
+          <p className="text-xs text-muted-foreground text-center">Carregando perguntas do formulário...</p>
+        )}
+
+        {questionsLoaded && questions.length === 0 && (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 p-3">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-700 dark:text-amber-300">
+              Este formulário não possui perguntas. Adicione perguntas no Builder antes de importar respostas.
+            </p>
+          </div>
+        )}
+
         {error && (
           <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20 p-3">
             <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
@@ -197,7 +234,7 @@ function ImportFlow({
 
         <Button
           className="w-full"
-          disabled={!csvContent || isPending}
+          disabled={!csvContent || isPending || questions.length === 0}
           onClick={handleAnalyze}
         >
           {isPending ? (
@@ -250,7 +287,9 @@ function ImportFlow({
             <thead>
               <tr className="bg-muted/50">
                 <th className="px-3 py-2 text-left font-medium text-muted-foreground">Coluna CSV</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Mapear para</th>
+                <th className="px-3 py-2 text-left font-medium text-muted-foreground">
+                  Mapear para ({questions.length} perguntas)
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -261,7 +300,7 @@ function ImportFlow({
                   </td>
                   <td className="px-3 py-2">
                     <select
-                      className="w-full rounded-md border border-input bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       value={m.questionId ?? ""}
                       onChange={(e) => handleMappingChange(m.csvIndex, e.target.value)}
                     >

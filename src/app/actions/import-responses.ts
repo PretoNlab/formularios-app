@@ -46,6 +46,28 @@ async function requireFormOwner(formId: string) {
   }
 }
 
+// ─── Get Questions Action ──────────────────────────────────────────────────
+
+export async function getFormQuestionsAction(
+  formId: string,
+): Promise<ApiResponse<{ id: string; title: string; type: string }[]>> {
+  try {
+    const { questions } = await requireFormOwner(formId)
+    return {
+      success: true,
+      data: questions.map((q) => ({ id: q.id, title: q.title, type: q.type })),
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: "IMPORT_ERROR",
+        message: error instanceof Error ? error.message : "Erro ao buscar perguntas.",
+      },
+    }
+  }
+}
+
 // ─── Preview Action ────────────────────────────────────────────────────────
 
 export async function previewCsvImportAction(
@@ -54,9 +76,7 @@ export async function previewCsvImportAction(
 ): Promise<ApiResponse<CsvPreviewResult>> {
   try {
     const { questions } = await requireFormOwner(formId)
-    console.log("[CSV Import] formId:", formId, "questions count:", questions.length, "questions:", JSON.stringify(questions.map(q => ({ id: q.id, title: q.title }))))
     const preview = parseCsvPreview(csvContent, questions)
-    console.log("[CSV Import] preview availableQuestions count:", preview.availableQuestions.length)
     return { success: true, data: preview }
   } catch (error) {
     return {
