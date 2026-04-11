@@ -9,7 +9,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { previewCsvImportAction, importCsvResponsesAction } from "@/app/actions/import-responses"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { previewCsvImportAction, importCsvResponsesAction, createQuestionsFromHeadersAction } from "@/app/actions/import-responses"
 import type { ColumnMapping } from "@/lib/import/csv-responses"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -42,6 +43,7 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
   const [mappings, setMappings] = useState<ColumnMapping[]>([])
   const [importResult, setImportResult] = useState<{ imported: number; errors: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [generating, setGenerating] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   function handleOpenChange(v: boolean) {
@@ -77,14 +79,45 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
       const data = res.data!
       setPreview(data)
       setMappings(data.mappings)
-      // Parse questions from JSON string
       try {
-        const parsed = JSON.parse(data.questionsJson) as QuestionItem[]
-        setQuestions(parsed)
+        setQuestions(JSON.parse(data.questionsJson))
       } catch {
         setQuestions([])
       }
       setStep(2)
+    })
+  }
+
+  function onGenerateQuestions() {
+    setGenerating(true)
+    setError(null)
+    const headers = mappings.map((m) => m.csvHeader)
+    
+    startTransition(async () => {
+      const res = await createQuestionsFromHeadersAction(formId, headers)
+      if (!res.success) {
+        setError(res.error?.message ?? "Erro ao criar perguntas.")
+        setGenerating(false)
+        return
+      }
+
+      // Re-run the preview to auto-map the newly created questions
+      const previewRes = await previewCsvImportAction(formId, csvContent)
+      setGenerating(false)
+
+      if (!previewRes.success) {
+        setError(previewRes.error?.message ?? "Perguntas criadas, mas falha ao atualizar pre-visualização.")
+        return
+      }
+
+      const data = previewRes.data!
+      setPreview(data)
+      setMappings(data.mappings)
+      try {
+        setQuestions(JSON.parse(data.questionsJson))
+      } catch {
+        setQuestions([])
+      }
     })
   }
 
@@ -168,6 +201,22 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
                   </div>
                 )}
 
+                {questions.length === 0 && (
+                  <div className="rounded-lg border-2 border-dashed p-5 flex flex-col items-center justify-center gap-3 bg-muted/20">
+                    <p className="text-sm text-center text-muted-foreground">
+                      Este formulário parece estar vazio (0 perguntas).<br/>
+                      Quer criar automaticamente uma pergunta de texto curto para cada coluna deste arquivo CSV?
+                    </p>
+                    <Button
+                      size="sm"
+                      onClick={onGenerateQuestions}
+                      disabled={generating}
+                    >
+                      {generating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando...</> : "Sim, gerar perguntas do CSV"}
+                    </Button>
+                  </div>
+                )}
+
                 <p className="text-[11px] text-muted-foreground border rounded p-2 bg-muted/30">
                   <strong>{questions.length} perguntas no formulário:</strong>{" "}
                   {questions.length === 0
@@ -186,18 +235,20 @@ export function ImportResponsesDialog({ formId }: { formId: string }) {
                           {m.csvHeader}
                         </label>
                         <span className="text-muted-foreground text-xs">→</span>
-                        <select
-                          id={selectId}
-                          name={selectId}
-                          className="rounded-md border border-input bg-background px-2 py-1.5 text-xs"
-                          value={m.questionId ?? ""}
-                          onChange={(e) => onMapping(m.csvIndex, e.target.value)}
+                        <Select
+                          value={m.questionId ?? "ignore"}
+                          onValueChange={(val: string) => onMapping(m.csvIndex, val === "ignore" ? "" : val)}
                         >
-                          <option value="">— Ignorar —</option>
-                          {questions.map((q) => (
-                            <option key={q.id} value={q.id}>{q.title}</option>
-                          ))}
-                        </select>
+                          <SelectTrigger id={selectId} className="h-8 text-xs">
+                            <SelectValue placeholder="— Ignorar —" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ignore">— Ignorar —</SelectItem>
+                            {questions.map((q) => (
+                              <SelectItem key={q.id} value={q.id}>{q.title}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )
                   })}

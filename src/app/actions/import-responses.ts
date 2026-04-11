@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server"
 import { ensureUserExists } from "@/lib/db/queries/users"
 import { getFormById } from "@/lib/db/queries/forms"
 import { bulkImportResponses } from "@/lib/db/queries/responses"
+import { db } from "@/lib/db/client"
+import { questions } from "@/lib/db/schema"
 import {
   parseCsvPreview,
   parseCsvRows,
@@ -152,6 +154,62 @@ export async function importCsvResponsesAction(
       error: {
         code: "IMPORT_ERROR",
         message: error instanceof Error ? error.message : "Erro ao importar respostas.",
+      },
+    }
+  }
+}
+
+// ─── Generate Questions Action ────────────────────────────────────────────────
+
+export async function createQuestionsFromHeadersAction(
+  formId: string,
+  headers: string[]
+): Promise<ApiResponse<{ questionsJson: string }>> {
+  try {
+    const { questions: existingQs } = await requireFormOwner(formId)
+
+    if (existingQs.length > 0) {
+      throw new Error("O formulário já possui perguntas. Crie manualmente caso necessário.")
+    }
+
+    const timestampKeywords = ["timestamp", "carimbo de data/hora", "data", "hora", "criado em"]
+    const validHeaders = headers.filter(h => {
+      const lower = h.trim().toLowerCase()
+      return lower && !timestampKeywords.includes(lower)
+    })
+
+    if (validHeaders.length === 0) {
+      throw new Error("Nenhum cabeçalho válido encontrado no CSV para virar pergunta.")
+    }
+
+    const newQuestions = validHeaders.map((header, index) => ({
+      formId,
+      type: "short_text" as QuestionType,
+      title: header.trim(),
+      order: index,
+      required: false,
+      properties: {},
+      logicRules: [],
+    }))
+
+    const inserted = await db.insert(questions).values(newQuestions).returning()
+
+    return {
+      success: true,
+      data: {
+        questionsJson: JSON.stringify(inserted.map(q => ({
+          id: q.id,
+          title: q.title,
+          type: q.type as QuestionType,
+        })))
+      }
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: "CREATE_QUESTIONS_ERROR",
+        message: error instanceof Error ? error.message : "Erro ao criar perguntas.",
       },
     }
   }
