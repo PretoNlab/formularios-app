@@ -357,7 +357,11 @@ export async function submitResponseCore(params: {
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "Erro desconhecido"
         console.error("[Google Sheets] Falha ao appender linha:", msg, { integrationId: integration.id, spreadsheetId: config.spreadsheetId })
+        // invalid_grant = refresh token inválido (revogado, expirado, ou app em modo Testing).
+        // Única recuperação é reconectar OAuth — desabilita para evitar tentativas em loop.
+        const isInvalidGrant = msg.includes("invalid_grant")
         await updateIntegration(integration.id, {
+          enabled: isInvalidGrant ? false : integration.enabled,
           config: { ...config, lastError: msg, lastErrorAt: new Date().toISOString() },
         })
       }

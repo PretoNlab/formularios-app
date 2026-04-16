@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Table2, CheckCircle2, ExternalLink, Trash2 } from "lucide-react"
+import { Loader2, Table2, CheckCircle2, ExternalLink, Trash2, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   getFormIntegrationsAction,
@@ -50,7 +50,8 @@ export function GoogleSheetsPanel({ formId }: { formId: string }) {
   }
 
   const config = integration?.config as { spreadsheetId?: string; spreadsheetTitle?: string; sheetName?: string; lastError?: string; lastErrorAt?: string } | undefined
-  const isConfigured = integration?.enabled && config?.spreadsheetId && config?.sheetName
+  const isExpired = !!config?.lastError?.includes("invalid_grant")
+  const isConfigured = !isExpired && integration?.enabled && config?.spreadsheetId && config?.sheetName
   const lastTriggeredAt = integration?.lastTriggeredAt ? new Date(integration.lastTriggeredAt) : null
 
   return (
@@ -67,6 +68,39 @@ export function GoogleSheetsPanel({ formId }: { formId: string }) {
         <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
           <Loader2 className="h-4 w-4 animate-spin" />
           Carregando...
+        </div>
+      ) : isExpired ? (
+        // ── State 3: Expired (invalid_grant) ──
+        <div className="rounded-lg border bg-amber-500/5 border-amber-500/30 p-3 space-y-2">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium">Conexão expirada</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                O acesso ao Google foi revogado ou expirou. Reconecte para voltar a enviar as respostas para a planilha.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="h-7 text-xs flex-1"
+              onClick={handleConnect}
+              disabled={isConnecting}
+            >
+              {isConnecting ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <ExternalLink className="h-3 w-3 mr-1" />}
+              Reconectar
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-destructive hover:text-destructive"
+              onClick={handleDisconnect}
+              disabled={isSaving}
+            >
+              {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+            </Button>
+          </div>
         </div>
       ) : isConfigured ? (
         // ── State 2: Configured ──
