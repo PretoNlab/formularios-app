@@ -88,7 +88,20 @@ export async function POST(req: NextRequest) {
     .upload(path, buffer, { contentType: rawType, upsert: false })
 
   if (error) {
-    return NextResponse.json({ error: "Falha ao salvar arquivo." }, { status: 500 })
+    const msg = error.message ?? ""
+    // Supabase Storage devolve "Bucket not found" quando o bucket não existe e
+    // "new row violates row-level security policy" quando faltam as policies de INSERT.
+    const isStorageNotConfigured =
+      /bucket not found/i.test(msg) || /row-level security/i.test(msg)
+    console.error("[upload/response-file] Falha Supabase Storage:", msg, { bucket: BUCKET, formId })
+    return NextResponse.json(
+      {
+        error: isStorageNotConfigured
+          ? "Upload de arquivos indisponível no momento. Contate o suporte."
+          : "Falha ao salvar arquivo.",
+      },
+      { status: 500 }
+    )
   }
 
   const { data: { publicUrl } } = admin.storage.from(BUCKET).getPublicUrl(path)

@@ -352,7 +352,12 @@ export async function submitResponseCore(params: {
             }).catch(() => {})
           },
         })
-        const { lastError: _e, lastErrorAt: _ea, ...cleanConfig } = config
+        // Refetch to pick up any token rotation that onTokenRefresh may have persisted
+        // while appendGoogleSheetsRow was running — writing the in-memory `config` here
+        // would clobber the fresh access token.
+        const { data: fresh } = await getIntegrationsByForm(formId, "google_sheets")
+        const freshConfig = (fresh?.find((i) => i.id === integration.id)?.config ?? config) as IntegrationConfig
+        const { lastError: _e, lastErrorAt: _ea, ...cleanConfig } = freshConfig
         await updateIntegration(integration.id, { lastTriggeredAt: new Date(), config: cleanConfig })
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "Erro desconhecido"

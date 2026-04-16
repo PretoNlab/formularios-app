@@ -2,44 +2,11 @@
 
 import { eq, asc, and, inArray } from "drizzle-orm"
 import { headers } from "next/headers"
-import { redirect } from "next/navigation"
 import { db } from "@/lib/db/client"
-import { questions, responses, forms } from "@/lib/db/schema"
+import { questions, responses } from "@/lib/db/schema"
 import { submitResponseCore, submitBodySchema, hashIp } from "@/lib/submit-response-core"
-import { createClient } from "@/lib/supabase/server"
-import { ensureUserExists } from "@/lib/db/queries/users"
+import { requireFormOwner } from "@/lib/auth"
 import type { AnswerValue } from "@/lib/db/schema"
-
-// ─── Auth helpers ─────────────────────────────────────────────────────────────
-
-async function requireUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
-
-  const { data: userWithWorkspace, success } = await ensureUserExists({
-    id: user.id,
-    email: user.email!,
-    user_metadata: user.user_metadata,
-  })
-
-  if (!success || !userWithWorkspace) {
-    throw new Error("Falha ao obter dados do usuário.")
-  }
-
-  return userWithWorkspace
-}
-
-async function requireFormOwner(formId: string) {
-  const user = await requireUser()
-  const form = await db.query.forms.findFirst({
-    where: eq(forms.id, formId),
-    columns: { id: true, createdById: true },
-  })
-  if (!form) throw new Error("Formulário não encontrado.")
-  if (form.createdById !== user.id) throw new Error("Acesso negado.")
-  return { user, form }
-}
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 

@@ -1,10 +1,6 @@
 "use server"
 
-import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
-import { ensureUserExists } from "@/lib/db/queries/users"
-import { getFormById } from "@/lib/db/queries/forms"
 import { bulkImportResponses } from "@/lib/db/queries/responses"
 import { db } from "@/lib/db/client"
 import { questions } from "@/lib/db/schema"
@@ -12,33 +8,16 @@ import {
   parseCsvPreview,
   parseCsvRows,
   type ColumnMapping,
-  type CsvPreviewResult,
 } from "@/lib/import/csv-responses"
+import { requireFormOwner as requireFormOwnerBase } from "@/lib/auth"
 import type { ApiResponse, QuestionType } from "@/lib/types/form"
 
 // ─── Auth + Ownership ──────────────────────────────────────────────────────
 
 async function requireFormOwner(formId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
-
-  const { data: dbUser, success } = await ensureUserExists({
-    id: user.id,
-    email: user.email!,
-    user_metadata: user.user_metadata,
-  })
-
-  if (!success || !dbUser) {
-    throw new Error("Falha ao obter dados do usuário.")
-  }
-
-  const { data: form } = await getFormById(formId)
-  if (!form) throw new Error("Formulário não encontrado.")
-  if (form.createdById !== dbUser.id) throw new Error("Você não tem permissão para importar respostas neste formulário.")
-
+  const { user, form } = await requireFormOwnerBase(formId)
   return {
-    user: dbUser,
+    user,
     form,
     questions: form.questions.map((q) => ({
       id: q.id,

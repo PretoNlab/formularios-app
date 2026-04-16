@@ -1,35 +1,13 @@
 "use server"
 
-import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
-import { ensureUserExists } from "@/lib/db/queries/users"
 import { createForm } from "@/lib/db/queries/forms"
 import { upsertQuestions, type UpsertQuestionInput } from "@/lib/db/queries/questions"
 import { parseGoogleFormsUrl } from "@/lib/import/google-forms"
 import { parseJsonImport } from "@/lib/import/json-import"
+import { requireUser } from "@/lib/auth"
 import type { ApiResponse } from "@/lib/types/form"
 import type { ImportWarning, ImportResult } from "@/lib/import/types"
-
-// ─── Auth ───────────────────────────────────────────────────────────────────
-
-async function requireUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
-
-  const { data: userWithWorkspace, success } = await ensureUserExists({
-    id: user.id,
-    email: user.email!,
-    user_metadata: user.user_metadata,
-  })
-
-  if (!success || !userWithWorkspace) {
-    throw new Error("Falha ao obter dados do usuário.")
-  }
-
-  return userWithWorkspace
-}
 
 // ─── Shared ─────────────────────────────────────────────────────────────────
 
