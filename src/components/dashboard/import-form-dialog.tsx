@@ -165,6 +165,91 @@ function GoogleFormsTab({ onClose }: { onClose: () => void }) {
 
 // ─── JSON Tab ───────────────────────────────────────────────────────────────
 
+const JSON_PLACEHOLDER = `{
+  "title": "Pesquisa de satisfação",
+  "questions": [
+    {
+      "type": "short_text",
+      "title": "Qual seu nome?",
+      "required": true
+    },
+    {
+      "type": "multiple_choice",
+      "title": "Como você nos conheceu?",
+      "properties": {
+        "options": ["Google", "Indicação", "Redes sociais"]
+      }
+    }
+  ]
+}`
+
+const JSON_FULL_EXAMPLE = `{
+  "title": "Exemplo completo",
+  "description": "Mostra todos os tipos de pergunta suportados.",
+  "questions": [
+    { "type": "short_text", "title": "Nome", "required": true },
+    { "type": "long_text", "title": "Comentários" },
+    { "type": "email", "title": "E-mail", "required": true },
+    { "type": "number", "title": "Idade", "properties": { "min": 0, "max": 120 } },
+    { "type": "phone", "title": "Telefone" },
+    { "type": "whatsapp", "title": "WhatsApp" },
+    { "type": "cpf", "title": "CPF" },
+    { "type": "cnpj", "title": "CNPJ" },
+    { "type": "date", "title": "Data de nascimento" },
+    { "type": "url", "title": "Site" },
+    {
+      "type": "multiple_choice",
+      "title": "Escolha uma opção",
+      "properties": {
+        "options": [
+          { "id": "a", "label": "Opção A" },
+          { "id": "b", "label": "Opção B" }
+        ]
+      }
+    },
+    {
+      "type": "checkbox",
+      "title": "Marque todas que se aplicam",
+      "properties": { "options": ["X", "Y", "Z"] }
+    },
+    {
+      "type": "dropdown",
+      "title": "Selecione",
+      "properties": { "options": ["Sim", "Não", "Talvez"] }
+    },
+    { "type": "yes_no", "title": "Aceita os termos?" },
+    {
+      "type": "rating",
+      "title": "Avalie nosso serviço",
+      "properties": { "ratingMax": 5, "ratingStyle": "stars" }
+    },
+    {
+      "type": "scale",
+      "title": "De 1 a 5, quanto concorda?",
+      "properties": { "scaleMin": 1, "scaleMax": 5, "scaleMinLabel": "Discordo", "scaleMaxLabel": "Concordo" }
+    },
+    { "type": "nps", "title": "Quanto nos recomendaria?" },
+    {
+      "type": "matrix",
+      "title": "Avalie cada aspecto",
+      "properties": {
+        "matrixRows": ["Atendimento", "Produto", "Preço"],
+        "matrixColumns": ["Ruim", "Médio", "Bom"]
+      }
+    },
+    {
+      "type": "ranking",
+      "title": "Ordene por preferência",
+      "properties": { "options": ["A", "B", "C"] }
+    },
+    { "type": "file_upload", "title": "Envie um documento" },
+    { "type": "signature", "title": "Assine aqui" },
+    { "type": "welcome", "title": "Bem-vindo!", "properties": { "buttonText": "Começar" } },
+    { "type": "statement", "title": "Informação importante" },
+    { "type": "thank_you", "title": "Obrigado!" }
+  ]
+}`
+
 function JsonTab({ onClose }: { onClose: () => void }) {
   const router = useRouter()
   const [json, setJson] = useState("")
@@ -198,6 +283,25 @@ function JsonTab({ onClose }: { onClose: () => void }) {
             <span className="font-semibold">Formulário importado com sucesso!</span>
           </div>
         </div>
+
+        {result.warnings.length > 0 && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+                {result.warnings.length} ajuste{result.warnings.length !== 1 ? "s" : ""} automático{result.warnings.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <ul className="space-y-1">
+              {result.warnings.map((w, i) => (
+                <li key={i} className="text-xs text-amber-600 dark:text-amber-400">
+                  Pergunta {w.questionIndex + 1} ({w.originalType}): {w.message}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <Button
           className="w-full"
           onClick={() => {
@@ -219,21 +323,20 @@ function JsonTab({ onClose }: { onClose: () => void }) {
           Cole o JSON do formulário
         </label>
         <textarea
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[160px] resize-y"
-          placeholder={`{
-  "title": "Meu formulário",
-  "questions": [
-    {
-      "type": "short_text",
-      "title": "Qual seu nome?",
-      "required": true
-    }
-  ]
-}`}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[200px] resize-y"
+          placeholder={JSON_PLACEHOLDER}
           value={json}
           onChange={(e) => { setJson(e.target.value); setError(null) }}
           disabled={isPending}
         />
+        <details className="mt-2 text-xs">
+          <summary className="cursor-pointer text-muted-foreground hover:text-foreground select-none">
+            Ver formato completo (todos os tipos suportados)
+          </summary>
+          <pre className="mt-2 overflow-x-auto rounded-md bg-muted p-3 text-[11px] leading-relaxed">
+{JSON_FULL_EXAMPLE}
+          </pre>
+        </details>
       </div>
 
       {error && (
