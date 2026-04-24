@@ -425,6 +425,7 @@ function FilterBar({
   sources,
   filteredCount,
   totalCount,
+  crossFilters,
 }: {
   filters: ResponseFilters
   onChange: (f: ResponseFilters) => void
@@ -519,6 +520,7 @@ function FilterBar({
 export function ResponsesSection({
   formId, formTitle, formStatus, formSlug,
   questions, responses, analytics, pagination,
+  shareToken, isAnalyticsPublic,
 }: ResponsesSectionProps) {
   const router = useRouter()
   const [tab, setTab] = useState<"responses" | "analytics">("responses")
@@ -537,13 +539,14 @@ export function ResponsesSection({
     const map = new Map<string, Set<string>>()
     for (const r of responses) {
       if (!r.answers) continue
-      for (const [qid, a] of Object.entries(r.answers)) {
-        if (!a) continue
+      for (const a of r.answers) {
+        if (!a.value) continue
+        const qid = a.questionId
         let values: string[] = []
-        if (Array.isArray(a)) {
-          values = a.filter((v) => typeof v === "string") as string[]
-        } else if (typeof a === "string") {
-          values = [a]
+        if (Array.isArray(a.value)) {
+          values = a.value.filter((v) => typeof v === "string") as string[]
+        } else if (typeof a.value === "string") {
+          values = [a.value]
         }
         if (values.length === 0) continue
 
@@ -581,7 +584,7 @@ export function ResponsesSection({
       
       if (filters.answerFilter) {
         const { questionId, value } = filters.answerFilter
-        const ans = r.answers?.[questionId]
+        const ans = r.answers?.find(a => a.questionId === questionId)?.value
         if (!ans) return false
         
         let match = false

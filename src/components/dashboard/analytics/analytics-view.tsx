@@ -27,6 +27,7 @@ export function AnalyticsView({
   initialAnalytics,
   initialPeriod = "30d",
   questions,
+  answerFilter,
 }: {
   formId: string
   initialAnalytics: FormAnalytics | null
