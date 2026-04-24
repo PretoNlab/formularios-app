@@ -6,7 +6,9 @@ import { db } from "@/lib/db/client"
 import { questions, responses } from "@/lib/db/schema"
 import { submitResponseCore, submitBodySchema, hashIp } from "@/lib/submit-response-core"
 import { requireFormOwner } from "@/lib/auth"
+import { getFormAnalytics } from "@/lib/db/queries/responses"
 import type { AnswerValue } from "@/lib/db/schema"
+import type { AnalyticsPeriod, FormAnalytics, ApiResponse } from "@/lib/types/form"
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
@@ -107,4 +109,16 @@ export async function exportResponsesAction(formId: string, ids?: string[]): Pro
 
   const lines = [csvHeaders.map(csvCell).join(","), ...rows.map((r) => r.map(csvCell).join(","))]
   return lines.join("\n")
+}
+
+/**
+ * Recomputes analytics for a form within a period window. Called from the client
+ * when the user changes the period selector on the Analytics tab.
+ */
+export async function getAnalyticsForPeriodAction(
+  formId: string,
+  period: AnalyticsPeriod,
+): Promise<ApiResponse<FormAnalytics>> {
+  await requireFormOwner(formId)
+  return getFormAnalytics(formId, period)
 }

@@ -1,8 +1,9 @@
-import { eq, and, desc, asc, sql, inArray } from "drizzle-orm"
+import { eq, and, desc, asc, sql, inArray, type SQL } from "drizzle-orm"
 import { db } from "../client"
 import { forms, questions, responses, answers } from "../schema"
 import type { ResponseMetadata, AnswerValue } from "../schema"
-import type { ApiResponse, PaginatedResponse, FormAnalytics, QuestionAnalytics, QuestionType } from "../../types/form"
+import type { ApiResponse, PaginatedResponse, FormAnalytics, QuestionAnalytics, QuestionType, AnalyticsPeriod } from "../../types/form"
+import { aggregateMatrix, aggregateRanking } from "./analytics-aggregation"
 
 // ─── Inferred row types ───────────────────────────────────────────────────────
 
@@ -223,21 +224,37 @@ export async function getResponseCount(formId: string): Promise<ApiResponse<numb
 const LAYOUT_TYPES = new Set(["welcome", "statement", "thank_you"])
 const SELECTION_TYPES = new Set(["multiple_choice", "dropdown", "yes_no"])
 const CHECKBOX_TYPES = new Set(["checkbox"])
-const NUMERIC_TYPES = new Set(["rating", "scale", "nps", "number"])
+const NUMERIC_TYPES = new Set(["rating", "scale", "nps", "number", "opinion_scale"])
+
+const PERIOD_DAYS: Record<Exclude<AnalyticsPeriod, "all">, number> = {
+  "7d": 7,
+  "30d": 30,
+  "90d": 90,
+}
+
+function periodWhere(period: AnalyticsPeriod): SQL | undefined {
+  if (period === "all") return undefined
+  const days = PERIOD_DAYS[period]
+  return sql`${responses.startedAt} >= now() - make_interval(days => ${days})`
+}
 
 /**
- * Computes analytics for a form:
- *  - Total views, total responses, completion rate
- *  - Average completion time (seconds)
- *  - Responses by day (last 30 days)
- *  - Dropoff rate per question
- *  - Per-question answer distributions + NPS score
- *  - Mobile percentage from user agents
+ * Computes analytics for a form within a time window (default last 30 days).
+ *  - Total responses, completion rate, avg time (period-scoped)
+ *  - totalViews: cumulative, not scoped (form-level counter)
+ *  - Responses by day, dropoff, per-question stats, sources, hour heatmap, devices
+ *    — all scoped to the period
  */
 export async function getFormAnalytics(
-  formId: string
+  formId: string,
+  period: AnalyticsPeriod = "30d",
 ): Promise<ApiResponse<FormAnalytics>> {
   try {
+    const periodFilter = periodWhere(period)
+    const formWhere = periodFilter
+      ? and(eq(responses.formId, formId), periodFilter)
+      : eq(responses.formId, formId)
+
     // ── 1. Form-level counters ───────────────────────────────────────────────
     const form = await db.query.forms.findFirst({
       where: eq(forms.id, formId),
@@ -265,7 +282,7 @@ export async function getFormAnalytics(
         `,
       })
       .from(responses)
-      .where(eq(responses.formId, formId))
+      .where(formWhere)
 
     const total = stats?.total ?? 0
     const completed = stats?.completed ?? 0
@@ -273,19 +290,14 @@ export async function getFormAnalytics(
     const averageCompletionTime = Math.round(stats?.avgSeconds ?? 0)
     const mobilePercentage = total > 0 ? (stats?.mobileCount ?? 0) / total : 0
 
-    // ── 3. Responses per day — last 30 days ──────────────────────────────────
+    // ── 3. Responses per day (scoped to period) ──────────────────────────────
     const responsesByDay = await db
       .select({
         date: sql<string>`date(${responses.startedAt})::text`,
         count: sql<number>`count(*)::int`,
       })
       .from(responses)
-      .where(
-        and(
-          eq(responses.formId, formId),
-          sql`${responses.startedAt} >= now() - interval '30 days'`
-        )
-      )
+      .where(formWhere)
       .groupBy(sql`date(${responses.startedAt})`)
       .orderBy(sql`date(${responses.startedAt})`)
 
@@ -304,7 +316,7 @@ export async function getFormAnalytics(
       })
       .from(answers)
       .innerJoin(responses, eq(answers.responseId, responses.id))
-      .where(eq(responses.formId, formId))
+      .where(formWhere)
       .groupBy(answers.questionId)
 
     const answerCountMap = new Map(
@@ -326,12 +338,7 @@ export async function getFormAnalytics(
         .select({ questionId: answers.questionId, value: answers.value })
         .from(answers)
         .innerJoin(responses, eq(answers.responseId, responses.id))
-        .where(
-          and(
-            eq(responses.formId, formId),
-            inArray(answers.questionId, inputQuestions.map((q) => q.id))
-          )
-        )
+        .where(and(formWhere, inArray(answers.questionId, inputQuestions.map((q) => q.id))))
 
       // Group raw answers by questionId
       const byQuestion = new Map<string, unknown[]>()
@@ -472,6 +479,21 @@ export async function getFormAnalytics(
           continue
         }
 
+        // Matrix — value is Record<rowLabel, colLabel>
+        if (q.type === "matrix") {
+          const props = q.properties as { matrixRows?: string[]; matrixColumns?: string[] } | null
+          const matrixData = aggregateMatrix(qAnswers, props?.matrixRows ?? [], props?.matrixColumns ?? [])
+          questionStats.push({ ...base, matrixData })
+          continue
+        }
+
+        // Ranking — value is string[] in chosen order
+        if (q.type === "ranking") {
+          const rankingData = aggregateRanking(qAnswers)
+          questionStats.push({ ...base, rankingData })
+          continue
+        }
+
         // Text types — store last 5 non-empty samples
         const textSamples = qAnswers
           .filter((v) => typeof v === "string" && (v as string).trim().length > 0)
@@ -491,7 +513,7 @@ export async function getFormAnalytics(
         avgSeconds: sql<number | null>`avg(case when ${responses.completedAt} is not null then extract(epoch from (${responses.completedAt} - ${responses.startedAt})) end)`,
       })
       .from(responses)
-      .where(eq(responses.formId, formId))
+      .where(formWhere)
       .groupBy(SOURCE_EXPR)
       .orderBy(sql`count(*) desc`)
 
@@ -511,7 +533,7 @@ export async function getFormAnalytics(
         count: sql<number>`count(*)::int`,
       })
       .from(responses)
-      .where(eq(responses.formId, formId))
+      .where(formWhere)
       .groupBy(
         sql`extract(dow from ${responses.startedAt} at time zone 'America/Sao_Paulo')`,
         sql`extract(hour from ${responses.startedAt} at time zone 'America/Sao_Paulo')`,
@@ -526,7 +548,7 @@ export async function getFormAnalytics(
         count: sql<number>`count(*)::int`,
       })
       .from(responses)
-      .where(eq(responses.formId, formId))
+      .where(formWhere)
       .groupBy(sql`coalesce(nullif(${responses.metadata}->>'deviceType', ''), 'unknown')`)
       .orderBy(sql`count(*) desc`)
 

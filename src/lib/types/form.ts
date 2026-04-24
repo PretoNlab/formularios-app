@@ -193,6 +193,8 @@ export interface ResponseMetadata {
   deviceType: "desktop" | "mobile" | "tablet" | null
 }
 
+export type AnalyticsPeriod = "7d" | "30d" | "90d" | "all"
+
 export interface FormAnalytics {
   totalViews: number
   totalResponses: number
@@ -235,6 +237,10 @@ export interface QuestionAnalytics {
   npsDetractors?: number
   // Text types
   textSamples?: string[]
+  // Matrix
+  matrixData?: { row: string; columns: { column: string; count: number; percentage: number }[] }[]
+  // Ranking
+  rankingData?: { item: string; avgPosition: number; count: number }[]
 }
 
 export type IntegrationType =

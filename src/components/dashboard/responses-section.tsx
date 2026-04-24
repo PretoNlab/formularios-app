@@ -1,31 +1,27 @@
 "use client"
 
-import { useState, useMemo, useEffect, useRef } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft, Eye, Users, TrendingUp, Clock,
   CheckCircle2, Circle, Copy, ExternalLink, Download,
-  Smartphone, AlertTriangle, BarChart2,
-  Filter, X, ChevronLeft, ChevronRight, Monitor, Tablet,
+  Smartphone, Filter, X, ChevronLeft, ChevronRight, Monitor, Tablet,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { FormAnalytics, QuestionAnalytics, QuestionType } from "@/lib/types/form"
+import type { FormAnalytics, QuestionType } from "@/lib/types/form"
 import type { ResponseWithAnswers } from "@/lib/db/queries/responses"
 import { exportResponsesAction } from "@/app/actions/responses"
 import { ImportResponsesDialog } from "@/components/responses/import-responses-dialog"
+import { StatCard } from "./analytics/stat-card"
+import { AnalyticsView } from "./analytics/analytics-view"
+import { pct, formatDuration } from "./analytics/utils"
+import type { QuestionSummary } from "./analytics/types"
 
 // ─── Props ────────────────────────────────────────────────────────────────────
-
-interface QuestionSummary {
-  id: string
-  title: string
-  type: QuestionType
-  order: number
-}
 
 interface PaginationMeta {
   page: number
@@ -47,13 +43,6 @@ interface ResponsesSectionProps {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return s > 0 ? `${m}m ${s}s` : `${m}m`
-}
-
 function formatDate(date: Date | string): string {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit", month: "2-digit", year: "numeric",
@@ -61,903 +50,25 @@ function formatDate(date: Date | string): string {
   }).format(new Date(date))
 }
 
-function pct(n: number): string {
-  return `${Math.round(n * 100)}%`
+function stripOther(s: unknown): string {
+  const str = String(s)
+  return str.startsWith("__other__") ? `Outro: ${str.slice(9)}` : str
 }
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-
-function StatCard({ icon: Icon, label, value, sub }: {
-  icon: React.ElementType; label: string; value: string; sub?: string
-}) {
-  return (
-    <div className="rounded-xl border bg-card p-5">
-      <div className="flex items-center gap-2 text-muted-foreground mb-3">
-        <Icon className="h-4 w-4" />
-        <span className="text-sm font-medium">{label}</span>
-      </div>
-      <p className="text-3xl font-bold">{value}</p>
-      {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
-    </div>
-  )
-}
-
-// ─── Insight Cards ────────────────────────────────────────────────────────────
-
-function InsightCards({ analytics, questions }: {
-  analytics: FormAnalytics
-  questions: QuestionSummary[]
-}) {
-  const insights: { icon: React.ElementType; color: string; bg: string; text: string }[] = []
-
-  if (analytics.completionRate >= 0.75) {
-    insights.push({
-      icon: TrendingUp, color: "text-green-700", bg: "bg-green-50 border-green-100",
-      text: `Taxa de conclusão excelente: ${pct(analytics.completionRate)} dos respondentes completam o formulário.`,
-    })
-  } else if (analytics.completionRate < 0.5 && analytics.totalResponses > 5) {
-    insights.push({
-      icon: AlertTriangle, color: "text-amber-700", bg: "bg-amber-50 border-amber-100",
-      text: `Menos da metade conclui o formulário (${pct(analytics.completionRate)}). Considere simplificar ou encurtar.`,
-    })
+function formatAnswerValue(value: unknown): string {
+  if (value === null || value === undefined) return "—"
+  if (typeof value === "boolean") return value ? "Sim" : "Não"
+  if (Array.isArray(value)) return value.map(stripOther).join(", ")
+  if (typeof value === "object" && value !== null && !("fileName" in (value as object)) && !Array.isArray(value)) {
+    return Object.entries(value as Record<string, string>).map(([k, v]) => `${k}: ${v}`).join(", ")
   }
-
-  const worstDropoff = analytics.dropoffByQuestion
-    .filter((d) => d.dropoffRate > 0.3)
-    .sort((a, b) => b.dropoffRate - a.dropoffRate)[0]
-  if (worstDropoff) {
-    const q = questions.find((x) => x.id === worstDropoff.questionId)
-    if (q) {
-      insights.push({
-        icon: AlertTriangle, color: "text-red-700", bg: "bg-red-50 border-red-100",
-        text: `${pct(worstDropoff.dropoffRate)} abandonam na pergunta "${q.title}". Pode estar confusa ou longa.`,
-      })
-    }
+  if (typeof value === "object" && "fileName" in (value as object)) {
+    return `📎 ${(value as { fileName: string }).fileName}`
   }
-
-  if (analytics.mobilePercentage > 0.55) {
-    insights.push({
-      icon: Smartphone, color: "text-blue-700", bg: "bg-blue-50 border-blue-100",
-      text: `${pct(analytics.mobilePercentage)} dos respondentes usam celular. Prefira campos de seleção a texto livre.`,
-    })
-  }
-
-  const npsQuestion = analytics.questionStats.find(
-    (q) => q.questionType === "nps" && q.npsScore !== undefined
-  )
-  if (npsQuestion && npsQuestion.npsScore !== undefined) {
-    const score = npsQuestion.npsScore
-    const sentiment = score >= 50 ? "excelente" : score >= 0 ? "razoável" : "precisa de atenção"
-    const color = score >= 50 ? "text-green-700" : score >= 0 ? "text-amber-700" : "text-red-700"
-    const bg = score >= 50 ? "bg-green-50 border-green-100" : score >= 0 ? "bg-amber-50 border-amber-100" : "bg-red-50 border-red-100"
-    insights.push({
-      icon: BarChart2, color, bg,
-      text: `Seu NPS é ${score} — ${sentiment}. ${npsQuestion.npsPromoters}% promotores, ${npsQuestion.npsDetractors}% detratores.`,
-    })
-  }
-
-  if (analytics.totalResponses < 3) {
-    insights.push({
-      icon: Users, color: "text-muted-foreground", bg: "bg-muted/30 border-muted",
-      text: "Ainda há poucas respostas para gerar insights. Compartilhe o link do formulário para coletar mais dados.",
-    })
-  }
-
-  if (insights.length === 0) return null
-
-  return (
-    <div className="space-y-2 mb-6">
-      {insights.map((ins, i) => (
-        <div key={i} className={`flex items-start gap-3 rounded-xl border p-4 ${ins.bg}`}>
-          <ins.icon className={`h-4 w-4 mt-0.5 shrink-0 ${ins.color}`} />
-          <p className={`text-sm leading-relaxed ${ins.color}`}>{ins.text}</p>
-        </div>
-      ))}
-    </div>
-  )
+  return stripOther(value)
 }
 
-// ─── NPS Visualization ────────────────────────────────────────────────────────
-
-function NpsViz({ stat }: { stat: QuestionAnalytics }) {
-  const score = stat.npsScore ?? 0
-  const promoters = stat.npsPromoters ?? 0
-  const passives = stat.npsPassives ?? 0
-  const detractors = stat.npsDetractors ?? 0
-  const scoreColor = score >= 50 ? "text-green-600" : score >= 0 ? "text-amber-600" : "text-red-600"
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-end gap-3">
-        <span className={`text-5xl font-bold tabular-nums ${scoreColor}`}>{score}</span>
-        <span className="text-sm text-muted-foreground mb-1.5">NPS Score</span>
-      </div>
-      <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
-        <div className="bg-red-400 transition-all" style={{ width: `${detractors}%` }} title={`Detratores: ${detractors}%`} />
-        <div className="bg-yellow-400 transition-all" style={{ width: `${passives}%` }} title={`Passivos: ${passives}%`} />
-        <div className="bg-green-500 transition-all" style={{ width: `${promoters}%` }} title={`Promotores: ${promoters}%`} />
-      </div>
-      <div className="flex gap-4 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-red-400 inline-block" />Detratores {detractors}%
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-yellow-400 inline-block" />Passivos {passives}%
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-green-500 inline-block" />Promotores {promoters}%
-        </span>
-      </div>
-      {stat.distribution && (
-        <div className="flex gap-1 flex-wrap pt-1">
-          {stat.distribution.map((d) => (
-            <div key={d.value} className="flex flex-col items-center gap-0.5">
-              <span className="text-[10px] text-muted-foreground tabular-nums">{d.count}</span>
-              <div className={`h-6 w-6 rounded flex items-center justify-center text-[10px] font-semibold ${
-                d.value >= 9 ? "bg-green-100 text-green-700" :
-                d.value >= 7 ? "bg-yellow-100 text-yellow-700" :
-                "bg-red-100 text-red-700"
-              }`}>
-                {d.value}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Rating Visualization ─────────────────────────────────────────────────────
-
-const RATING_ICONS: Record<string, { filled: string; empty: string }> = {
-  stars:   { filled: "★", empty: "☆" },
-  hearts:  { filled: "♥", empty: "♡" },
-  thumbs:  { filled: "👍", empty: "·" },
-  numbers: { filled: "●", empty: "○" },
-}
-
-function RatingViz({ stat }: { stat: QuestionAnalytics }) {
-  const ratingMax = stat.ratingMax ?? 5
-  const style = stat.ratingStyle ?? "stars"
-  const icons = RATING_ICONS[style] ?? RATING_ICONS.stars
-  const avg = stat.average ?? 0
-  const dist = stat.distribution ?? []
-  const maxCount = Math.max(...dist.map((d) => d.count), 1)
-  const filledCount = Math.round(avg)
-
-  const bars = Array.from({ length: ratingMax }, (_, i) => {
-    const value = i + 1
-    const found = dist.find((d) => d.value === value)
-    return { value, count: found?.count ?? 0 }
-  })
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <span className="text-3xl font-bold tabular-nums">{avg}</span>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-xl tracking-wide leading-none">
-            {Array.from({ length: ratingMax }, (_, i) => (
-              <span key={i} className={i < filledCount ? "text-amber-400" : "text-muted-foreground/30"}>
-                {i < filledCount ? icons.filled : icons.empty}
-              </span>
-            ))}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            média de {stat.totalAnswers} resposta{stat.totalAnswers !== 1 ? "s" : ""}
-          </span>
-        </div>
-      </div>
-      <div className="space-y-1.5">
-        {[...bars].reverse().map((b) => (
-          <div key={b.value} className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground w-4 text-right tabular-nums shrink-0">{b.value}</span>
-            <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full rounded-full bg-amber-400 transition-all duration-500"
-                style={{ width: `${(b.count / maxCount) * 100}%` }}
-              />
-            </div>
-            <span className="text-xs text-muted-foreground tabular-nums w-6 text-right shrink-0">{b.count}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ─── Scale Visualization ──────────────────────────────────────────────────────
-
-function ScaleViz({ stat }: { stat: QuestionAnalytics }) {
-  const scaleMin = stat.scaleMin ?? 1
-  const scaleMax = stat.scaleMax ?? 10
-  const avg = stat.average ?? scaleMin
-  const dist = stat.distribution ?? []
-  const maxCount = Math.max(...dist.map((d) => d.count), 1)
-  const range = scaleMax - scaleMin
-  const position = range > 0 ? ((avg - scaleMin) / range) * 100 : 50
-
-  const allValues = Array.from({ length: scaleMax - scaleMin + 1 }, (_, i) => {
-    const value = scaleMin + i
-    const found = dist.find((d) => d.value === value)
-    return { value, count: found?.count ?? 0 }
-  })
-
-  return (
-    <div className="space-y-5">
-      <div className="space-y-2">
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{stat.scaleMinLabel || scaleMin}</span>
-          <span>{stat.scaleMaxLabel || scaleMax}</span>
-        </div>
-        <div className="relative h-3 rounded-full bg-gradient-to-r from-red-300 via-amber-300 to-emerald-400">
-          <div
-            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-5 w-5 rounded-full bg-white border-2 border-primary shadow-sm transition-all duration-700"
-            style={{ left: `${position}%` }}
-          />
-        </div>
-        <div className="flex justify-center gap-1">
-          <span className="text-2xl font-bold tabular-nums">{avg}</span>
-          <span className="text-xs text-muted-foreground self-end mb-0.5">/ {scaleMax}</span>
-        </div>
-      </div>
-      <div className="flex items-end gap-1 h-12">
-        {allValues.map((v) => (
-          <div key={v.value} className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
-            <div
-              className="w-full rounded-t bg-primary/60 transition-all duration-500"
-              style={{ height: `${(v.count / maxCount) * 40}px`, minHeight: v.count > 0 ? "3px" : "0" }}
-              title={`${v.value}: ${v.count}`}
-            />
-            <span className="text-[9px] text-muted-foreground tabular-nums">{v.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ─── Numeric Visualization (campo number) ────────────────────────────────────
-
-function NumericViz({ stat }: { stat: QuestionAnalytics }) {
-  const dist = stat.distribution ?? []
-  const max = Math.max(...dist.map((d) => d.count), 1)
-
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-6 text-sm">
-        <div>
-          <p className="text-2xl font-bold tabular-nums">{stat.average}</p>
-          <p className="text-xs text-muted-foreground">média</p>
-        </div>
-        <div className="text-muted-foreground text-xs flex flex-col justify-end pb-0.5 gap-1">
-          <span>mín: {stat.min}</span>
-          <span>máx: {stat.max}</span>
-        </div>
-      </div>
-      {dist.length > 0 && (
-        <div className="flex items-end gap-1.5 h-16">
-          {dist.map((d) => (
-            <div key={d.value} className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
-              <div
-                className="w-full rounded-t bg-primary/70 transition-all"
-                style={{ height: `${(d.count / max) * 52}px`, minHeight: d.count > 0 ? "4px" : "0" }}
-                title={`${d.value}: ${d.count}`}
-              />
-              <span className="text-[10px] text-muted-foreground tabular-nums">{d.value}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Choice Visualization ─────────────────────────────────────────────────────
-
-function ChoiceViz({ stat }: { stat: QuestionAnalytics }) {
-  const options = stat.optionCounts ?? []
-  const maxCount = Math.max(...options.map((o) => o.count), 1)
-
-  return (
-    <div className="space-y-2.5">
-      {options.slice(0, 8).map((opt) => (
-        <div key={opt.option}>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-sm truncate max-w-[70%]">{opt.option || "—"}</span>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground tabular-nums shrink-0">
-              <span className="font-medium text-foreground">{pct(opt.percentage)}</span>
-              <span>{opt.count}</span>
-            </div>
-          </div>
-          <div className="h-2 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${(opt.count / maxCount) * 100}%` }}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ─── Text Visualization ───────────────────────────────────────────────────────
-
-function TextViz({ stat }: { stat: QuestionAnalytics }) {
-  return (
-    <div className="space-y-2">
-      {(stat.textSamples ?? []).map((text, i) => (
-        <div key={i} className="rounded-lg bg-muted/40 px-3 py-2">
-          <p className="text-sm text-foreground/80 line-clamp-2">{text}</p>
-        </div>
-      ))}
-      {stat.totalAnswers > 5 && (
-        <p className="text-xs text-muted-foreground text-right">
-          +{stat.totalAnswers - 5} respostas adicionais
-        </p>
-      )}
-    </div>
-  )
-}
-
-// ─── Question Card ────────────────────────────────────────────────────────────
-
-const CRITICALITY_BADGE = {
-  high: { label: "Alta atenção", cls: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
-  medium: { label: "Observar", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
-  ok: { label: "OK", cls: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-}
-
-function QuestionCard({ stat, order, formId, criticality, dropoffRate }: {
-  stat: QuestionAnalytics
-  order: number | string
-  formId: string
-  criticality?: "high" | "medium" | "ok"
-  dropoffRate?: number
-}) {
-  const badge = criticality ? CRITICALITY_BADGE[criticality] : null
-
-  return (
-    <div className="rounded-xl border bg-card p-6">
-      <div className="flex items-start justify-between gap-4 mb-5">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <span className="text-xs font-semibold text-muted-foreground bg-muted rounded-md px-2 py-1 shrink-0 tabular-nums">
-            {order}
-          </span>
-          <div className="min-w-0">
-            <p className="font-semibold text-sm leading-tight line-clamp-2">{stat.questionTitle || "Sem título"}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {stat.totalAnswers} resposta{stat.totalAnswers !== 1 ? "s" : ""}
-              {dropoffRate && dropoffRate > 0.1
-                ? <span className="text-red-500"> · {pct(dropoffRate)} abandonaram aqui</span>
-                : null}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {badge && (
-            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${badge.cls}`}>
-              {badge.label}
-            </span>
-          )}
-          {stat.skipRate > 0.1 && (
-            <span className="text-xs text-muted-foreground">{pct(stat.skipRate)} pularam</span>
-          )}
-        </div>
-      </div>
-
-      {stat.npsScore !== undefined ? (
-        <NpsViz stat={stat} />
-      ) : stat.questionType === "rating" && stat.distribution && stat.average !== undefined ? (
-        <RatingViz stat={stat} />
-      ) : stat.questionType === "scale" && stat.distribution && stat.average !== undefined ? (
-        <ScaleViz stat={stat} />
-      ) : stat.distribution && stat.average !== undefined ? (
-        <NumericViz stat={stat} />
-      ) : stat.optionCounts && stat.optionCounts.length > 0 ? (
-        <ChoiceViz stat={stat} />
-      ) : (
-        <TextViz stat={stat} />
-      )}
-    </div>
-  )
-}
-
-// ─── Question Intelligence Tab ────────────────────────────────────────────────
-
-function QuestionIntelligence({ questionStats, questions, formId, dropoffByQuestion }: {
-  questionStats: QuestionAnalytics[]
-  questions: QuestionSummary[]
-  formId: string
-  dropoffByQuestion: FormAnalytics["dropoffByQuestion"]
-}) {
-  if (questionStats.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-20 text-muted-foreground text-sm rounded-xl border bg-card">
-        Sem dados suficientes para análise por pergunta.
-      </div>
-    )
-  }
-
-  const dropoffMap = new Map(dropoffByQuestion.map((d) => [d.questionId, d.dropoffRate]))
-
-  const npsStats = questionStats.filter((s) => s.npsScore !== undefined)
-
-  const sorted = [...questionStats].sort((a, b) => {
-    const da = dropoffMap.get(a.questionId) ?? 0
-    const db = dropoffMap.get(b.questionId) ?? 0
-    return db - da
-  })
-
-  return (
-    <div>
-      {npsStats.length > 0 && <NPSHighlight npsStats={npsStats} />}
-      <div className="space-y-4">
-      {sorted.map((stat) => {
-        const q = questions.find((x) => x.id === stat.questionId)
-        const order = q?.order !== undefined ? q.order + 1 : "?"
-        const dropoffRate = dropoffMap.get(stat.questionId) ?? 0
-        const criticality: "high" | "medium" | "ok" =
-          dropoffRate > 0.4 ? "high" : dropoffRate > 0.2 ? "medium" : "ok"
-        return (
-          <QuestionCard
-            key={stat.questionId}
-            stat={stat}
-            order={order}
-            formId={formId}
-            criticality={criticality}
-            dropoffRate={dropoffRate}
-          />
-        )
-      })}
-      </div>
-    </div>
-  )
-}
-
-// ─── Device Breakdown ─────────────────────────────────────────────────────────
-
-const DEVICE_LABELS: Record<string, string> = {
-  desktop: "Desktop",
-  mobile: "Mobile",
-  tablet: "Tablet",
-  unknown: "Desconhecido",
-}
-
-const DEVICE_COLORS: Record<string, string> = {
-  desktop: "bg-blue-500",
-  mobile: "bg-emerald-500",
-  tablet: "bg-violet-500",
-  unknown: "bg-muted-foreground/40",
-}
-
-function DeviceBreakdown({ data }: { data: FormAnalytics["deviceBreakdown"] }) {
-  if (data.length === 0) {
-    return <p className="text-sm text-muted-foreground">Sem dados de dispositivo ainda.</p>
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
-        {data.map((row) => (
-          <div
-            key={row.device}
-            className={`transition-all ${DEVICE_COLORS[row.device] ?? "bg-muted"}`}
-            style={{ width: `${row.percentage * 100}%` }}
-            title={`${DEVICE_LABELS[row.device] ?? row.device}: ${pct(row.percentage)}`}
-          />
-        ))}
-      </div>
-      <div className="flex flex-col gap-1.5">
-        {data.map((row) => (
-          <div key={row.device} className="flex items-center justify-between text-sm">
-            <span className="flex items-center gap-2">
-              <span className={`h-2.5 w-2.5 rounded-full inline-block ${DEVICE_COLORS[row.device] ?? "bg-muted"}`} />
-              {DEVICE_LABELS[row.device] ?? row.device}
-            </span>
-            <span className="text-muted-foreground tabular-nums text-xs">
-              {pct(row.percentage)} · {row.count}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ─── Mini Bar Chart ───────────────────────────────────────────────────────────
-
-function MiniBarChart({ data }: { data: { date: string; count: number }[] }) {
-  if (data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
-        Sem dados no período.
-      </div>
-    )
-  }
-
-  const max = Math.max(...data.map((d) => d.count), 1)
-  const today = new Date()
-  const days: { date: string; count: number }[] = []
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(d.getDate() - i)
-    const key = d.toISOString().slice(0, 10)
-    days.push({ date: key, count: data.find((x) => x.date === key)?.count ?? 0 })
-  }
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-end gap-0.5 h-24">
-        {days.map((d) => (
-          <div
-            key={d.date}
-            title={`${d.date}: ${d.count} resposta${d.count !== 1 ? "s" : ""}`}
-            className="flex-1 rounded-sm transition-all cursor-default"
-            style={{
-              height: d.count === 0 ? "4px" : `${(d.count / max) * 100}%`,
-              backgroundColor: d.count === 0 ? "hsl(var(--muted))" : "hsl(var(--primary))",
-              opacity: d.count === 0 ? 0.3 : 0.85,
-            }}
-          />
-        ))}
-      </div>
-      <div className="flex justify-between text-[10px] text-muted-foreground">
-        <span>{days[0].date.slice(5).replace("-", "/")}</span>
-        <span>hoje</span>
-      </div>
-    </div>
-  )
-}
-
-// ─── NPS Highlight Card ───────────────────────────────────────────────────────
-
-function NPSHighlight({ npsStats }: { npsStats: QuestionAnalytics[] }) {
-  if (npsStats.length === 0) return null
-  const main = npsStats[0]
-  const score = main.npsScore ?? 0
-  const promoters = main.npsPromoters ?? 0
-  const passives = main.npsPassives ?? 0
-  const detractors = main.npsDetractors ?? 0
-
-  const scoreColor = score >= 50 ? "text-emerald-600" : score >= 0 ? "text-amber-600" : "text-red-600"
-  const ringColor = score >= 50 ? "#22c55e" : score >= 0 ? "#f59e0b" : "#ef4444"
-  const scoreLabel = score >= 50 ? "Excelente" : score >= 0 ? "Bom" : score < 0 ? "Precisa atenção" : "Regular"
-
-  return (
-    <div className="rounded-xl border bg-card p-6 mb-6">
-      <div className="flex items-center gap-2 mb-4">
-        <BarChart2 className="h-4 w-4 text-muted-foreground" />
-        <h3 className="font-semibold">NPS Score</h3>
-        {npsStats.length > 0 && (
-          <span className="text-xs text-muted-foreground ml-1 truncate max-w-[200px]">
-            · {main.questionTitle}
-          </span>
-        )}
-      </div>
-
-      <div className="flex items-center gap-8">
-        {/* Ring */}
-        <div className="relative h-24 w-24 shrink-0">
-          <svg viewBox="0 0 36 36" className="rotate-[-90deg]" width="96" height="96">
-            <circle cx="18" cy="18" r="15.9" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
-            <circle
-              cx="18" cy="18" r="15.9" fill="none"
-              stroke={ringColor} strokeWidth="3"
-              strokeDasharray={`${Math.abs(score)} 100`}
-              strokeLinecap="round"
-            />
-          </svg>
-          <span className={`absolute inset-0 flex items-center justify-center text-2xl font-bold tabular-nums ${scoreColor}`}>
-            {score > 0 ? `+${score}` : score}
-          </span>
-        </div>
-
-        {/* Details */}
-        <div className="flex-1 space-y-3">
-          <p className={`text-sm font-semibold ${scoreColor}`}>{scoreLabel}</p>
-          <div className="flex h-2.5 rounded-full overflow-hidden gap-0.5">
-            <div className="bg-red-400" style={{ width: `${detractors}%` }} title={`Detratores: ${detractors}%`} />
-            <div className="bg-yellow-400" style={{ width: `${passives}%` }} title={`Passivos: ${passives}%`} />
-            <div className="bg-emerald-500" style={{ width: `${promoters}%` }} title={`Promotores: ${promoters}%`} />
-          </div>
-          <div className="flex gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-red-400 inline-block" />Detratores {detractors}%
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-yellow-400 inline-block" />Passivos {passives}%
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />Promotores {promoters}%
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Hour Heatmap ─────────────────────────────────────────────────────────────
-
-const DOW_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
-// Show every 3 hours to avoid crowding
-const HOUR_LABELS = Array.from({ length: 24 }, (_, i) =>
-  i % 3 === 0 ? `${String(i).padStart(2, "0")}h` : ""
-)
-
-function HourHeatmap({ data }: { data: FormAnalytics["responsesByHour"] }) {
-  if (data.length === 0) {
-    return <p className="text-sm text-muted-foreground">Dados insuficientes para o heatmap.</p>
-  }
-
-  const countMap = new Map(data.map((d) => [`${d.dow}-${d.hour}`, d.count]))
-  const maxCount = Math.max(...data.map((d) => d.count), 1)
-
-  // Peak cell for annotation
-  const peak = data.reduce((a, b) => (b.count > a.count ? b : a), data[0])
-  const peakLabel = `${DOW_LABELS[peak.dow]} ${String(peak.hour).padStart(2, "0")}h`
-
-  return (
-    <div className="space-y-3">
-      {/* Hour labels */}
-      <div className="flex gap-0.5 pl-9">
-        {HOUR_LABELS.map((label, h) => (
-          <div key={h} className="flex-1 text-center" style={{ minWidth: 0 }}>
-            <span className="text-[9px] text-muted-foreground leading-none">{label}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Grid rows */}
-      <div className="space-y-0.5">
-        {DOW_LABELS.map((day, dow) => (
-          <div key={dow} className="flex items-center gap-0.5">
-            <span className="text-[10px] text-muted-foreground w-8 shrink-0 text-right pr-1">{day}</span>
-            {Array.from({ length: 24 }, (_, hour) => {
-              const count = countMap.get(`${dow}-${hour}`) ?? 0
-              const intensity = count / maxCount
-              return (
-                <div
-                  key={hour}
-                  className="flex-1 rounded-sm transition-colors"
-                  style={{
-                    aspectRatio: "1",
-                    minWidth: 0,
-                    backgroundColor: count === 0
-                      ? "hsl(var(--muted))"
-                      : `hsl(var(--primary) / ${Math.max(intensity * 0.9 + 0.1, 0.12)})`,
-                  }}
-                  title={`${day} ${String(hour).padStart(2, "0")}h: ${count} resposta${count !== 1 ? "s" : ""}`}
-                />
-              )
-            })}
-          </div>
-        ))}
-      </div>
-
-      {/* Legend + peak */}
-      <div className="flex items-center justify-between pt-1">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-muted-foreground">Menos</span>
-          {[0.1, 0.3, 0.55, 0.75, 0.95].map((v) => (
-            <div
-              key={v}
-              className="h-3 w-3 rounded-sm"
-              style={{ backgroundColor: `hsl(var(--primary) / ${v})` }}
-            />
-          ))}
-          <span className="text-[10px] text-muted-foreground">Mais</span>
-        </div>
-        <span className="text-[10px] text-muted-foreground">
-          Pico: <span className="font-medium text-foreground">{peakLabel}</span> ({peak.count})
-        </span>
-      </div>
-    </div>
-  )
-}
-
-// ─── UTM Source Comparison ────────────────────────────────────────────────────
-
-function UTMComparison({ data }: { data: FormAnalytics["sourceBreakdown"] }) {
-  if (data.length <= 1) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Compartilhe via diferentes canais (UTM links) para comparar a performance por origem.
-      </p>
-    )
-  }
-
-  const maxCount = Math.max(...data.map((d) => d.count), 1)
-
-  function trimSource(source: string): string {
-    try {
-      const url = new URL(source.startsWith("http") ? source : `https://${source}`)
-      return url.hostname.replace(/^www\./, "")
-    } catch {
-      return source.length > 24 ? source.slice(0, 24) + "…" : source
-    }
-  }
-
-  return (
-    <div className="space-y-1">
-      {/* Header */}
-      <div className="grid grid-cols-[1fr_5rem_5rem_5rem] gap-2 pb-2 border-b">
-        <span className="text-xs text-muted-foreground font-medium">Origem</span>
-        <span className="text-xs text-muted-foreground font-medium text-right">Respostas</span>
-        <span className="text-xs text-muted-foreground font-medium text-right">Conclusão</span>
-        <span className="text-xs text-muted-foreground font-medium text-right">Tempo médio</span>
-      </div>
-
-      {data.slice(0, 8).map((row) => (
-        <div key={row.source} className="grid grid-cols-[1fr_5rem_5rem_5rem] gap-2 py-2 border-b last:border-0 items-center">
-          {/* Source + bar */}
-          <div className="min-w-0">
-            <span className="text-sm font-medium truncate block">{trimSource(row.source)}</span>
-            <div className="mt-1 h-1 rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full rounded-full bg-primary/60 transition-all duration-500"
-                style={{ width: `${(row.count / maxCount) * 100}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Count */}
-          <span className="text-sm tabular-nums text-right font-medium">{row.count}</span>
-
-          {/* Completion rate — colored */}
-          <span className={`text-sm tabular-nums text-right font-semibold ${
-            row.completionRate >= 0.75 ? "text-emerald-600" :
-            row.completionRate >= 0.5  ? "text-amber-600"  : "text-red-500"
-          }`}>
-            {pct(row.completionRate)}
-          </span>
-
-          {/* Avg time */}
-          <span className="text-sm tabular-nums text-right text-muted-foreground">
-            {row.avgTime > 0 ? formatDuration(row.avgTime) : "—"}
-          </span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ─── Analytics Overview Tab ───────────────────────────────────────────────────
-
-function AnalyticsView({ analytics, questions, completionRate, formId, formTitle }: {
-  analytics: FormAnalytics | null
-  questions: QuestionSummary[]
-  completionRate: number
-  formId: string
-  formTitle: string
-}) {
-  if (!analytics) {
-    return (
-      <div className="flex items-center justify-center py-20 text-muted-foreground text-sm rounded-xl border bg-card">
-        Dados analíticos não disponíveis.
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      <InsightCards analytics={analytics} questions={questions} />
-
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Respostas por dia */}
-        <div className="rounded-xl border bg-card p-6">
-          <h3 className="font-semibold mb-4">Respostas nos últimos 30 dias</h3>
-          <MiniBarChart data={analytics.responsesByDay} />
-        </div>
-
-        {/* Dropoff */}
-        <div className="rounded-xl border bg-card p-6">
-          <h3 className="font-semibold mb-4">Abandono por pergunta</h3>
-          {analytics.dropoffByQuestion.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sem dados suficientes.</p>
-          ) : (
-            <div className="space-y-3">
-              {analytics.dropoffByQuestion.slice(0, 8).map((d) => {
-                const q = questions.find((x) => x.id === d.questionId)
-                const answered = 1 - d.dropoffRate
-                return (
-                  <div key={d.questionId}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-                        {q?.title ?? d.questionId}
-                      </span>
-                      <span className={`text-xs font-semibold tabular-nums ${
-                        answered < 0.6 ? "text-red-600" : answered < 0.8 ? "text-amber-600" : "text-green-600"
-                      }`}>
-                        {pct(answered)}
-                      </span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          answered < 0.6 ? "bg-red-400" : answered < 0.8 ? "bg-amber-400" : "bg-primary"
-                        }`}
-                        style={{ width: `${answered * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Completion gauge */}
-        <div className="rounded-xl border bg-card p-6">
-          <h3 className="font-semibold mb-4">Taxa de conclusão</h3>
-          <div className="flex items-center gap-6">
-            <div className="relative h-24 w-24 shrink-0">
-              <svg viewBox="0 0 36 36" className="rotate-[-90deg]" width="96" height="96">
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
-                <circle
-                  cx="18" cy="18" r="15.9" fill="none"
-                  stroke={completionRate >= 0.75 ? "#22c55e" : completionRate >= 0.5 ? "#f59e0b" : "#ef4444"}
-                  strokeWidth="3"
-                  strokeDasharray={`${completionRate * 100} 100`}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-lg font-bold">
-                {pct(completionRate)}
-              </span>
-            </div>
-            <div className="space-y-1.5 text-sm text-muted-foreground">
-              <p>{analytics.totalResponses} respostas totais</p>
-              <p className="text-green-600">{Math.round(analytics.totalResponses * completionRate)} concluídas</p>
-              <p className="text-red-500">{Math.round(analytics.totalResponses * (1 - completionRate))} abandonadas</p>
-              {analytics.mobilePercentage > 0 && (
-                <p className="flex items-center gap-1">
-                  <Smartphone className="h-3 w-3" />
-                  {pct(analytics.mobilePercentage)} mobile
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Avg time */}
-        <div className="rounded-xl border bg-card p-6">
-          <h3 className="font-semibold mb-4">Tempo médio de conclusão</h3>
-          {analytics.averageCompletionTime > 0 ? (
-            <span className="text-5xl font-bold">{formatDuration(analytics.averageCompletionTime)}</span>
-          ) : (
-            <p className="text-sm text-muted-foreground">Sem dados suficientes para calcular.</p>
-          )}
-        </div>
-
-        {/* Device breakdown */}
-        <div className="rounded-xl border bg-card p-6">
-          <h3 className="font-semibold mb-4">Dispositivos</h3>
-          <DeviceBreakdown data={analytics.deviceBreakdown} />
-        </div>
-      </div>
-
-      {/* Heatmap — full width */}
-      <div className="rounded-xl border bg-card p-6">
-        <h3 className="font-semibold mb-1">Quando as pessoas respondem</h3>
-        <p className="text-xs text-muted-foreground mb-5">Dia da semana × hora do dia (horário de Brasília)</p>
-        <HourHeatmap data={analytics.responsesByHour} />
-      </div>
-
-      {/* UTM comparison — full width */}
-      <div className="rounded-xl border bg-card p-6">
-        <h3 className="font-semibold mb-1">Performance por canal de origem</h3>
-        <p className="text-xs text-muted-foreground mb-5">Taxa de conclusão e tempo médio por fonte de tráfego</p>
-        <UTMComparison data={analytics.sourceBreakdown} />
-      </div>
-    </div>
-  )
-}
-
-// ─── Individual Response View ─────────────────────────────────────────────────
+// ─── Answer Display (Response Detail Panel) ──────────────────────────────────
 
 function AnswerDisplay({ value, type }: { value: unknown; type?: string }) {
   if (value === null || value === undefined || value === "") {
@@ -1079,7 +190,6 @@ function ResponseDetailPanel({
   const source = meta?.utmSource
     ?? (meta?.referrer ? (() => { try { return new URL(meta.referrer!).hostname.replace(/^www\./, "") } catch { return meta.referrer! } })() : null)
 
-  // Sort answers by question order
   const sortedAnswers = [...r.answers].sort((a, b) => {
     const qa = questionMap.get(a.questionId)
     const qb = questionMap.get(b.questionId)
@@ -1088,13 +198,9 @@ function ResponseDetailPanel({
 
   return (
     <>
-      {/* Backdrop */}
       <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
 
-      {/* Panel */}
       <div className="fixed right-0 top-0 h-full w-full max-w-[540px] bg-background border-l shadow-2xl z-50 flex flex-col">
-
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b">
           <div className="flex items-center gap-1">
             <button
@@ -1125,7 +231,6 @@ function ResponseDetailPanel({
           </button>
         </div>
 
-        {/* Meta strip */}
         <div className="px-5 py-3 border-b bg-muted/20 flex flex-wrap items-center gap-x-4 gap-y-1.5">
           <span className="text-xs text-muted-foreground">{formatDate(r.startedAt)}</span>
           {duration != null && (
@@ -1152,7 +257,6 @@ function ResponseDetailPanel({
           )}
         </div>
 
-        {/* Q&A list */}
         <ScrollArea className="flex-1">
           <div className="px-5 py-6 space-y-7">
             {sortedAnswers.length === 0 ? (
@@ -1175,7 +279,6 @@ function ResponseDetailPanel({
           </div>
         </ScrollArea>
 
-        {/* Footer navigation */}
         <div className="px-5 py-3.5 border-t flex items-center justify-between">
           <Button
             variant="ghost"
@@ -1282,38 +385,6 @@ function ResponsesTable({ responses, questions, onOpen }: {
       </div>
     </div>
   )
-}
-
-function getResponsePreview(response: ResponseWithAnswers, questions: QuestionSummary[]): string {
-  const INPUT_TYPES: QuestionType[] = ["short_text", "long_text", "email", "phone", "number"]
-  const sorted = [...questions].sort((a, b) => a.order - b.order)
-  for (const q of sorted) {
-    if (!INPUT_TYPES.includes(q.type)) continue
-    const ans = response.answers.find((a) => a.questionId === q.id)
-    if (!ans || ans.value === null || ans.value === undefined || ans.value === "") continue
-    const str = String(ans.value).trim()
-    if (!str) continue
-    return str.length > 50 ? str.slice(0, 47) + "…" : str
-  }
-  return "—"
-}
-
-function stripOther(s: unknown): string {
-  const str = String(s)
-  return str.startsWith("__other__") ? `Outro: ${str.slice(9)}` : str
-}
-
-function formatAnswerValue(value: unknown): string {
-  if (value === null || value === undefined) return "—"
-  if (typeof value === "boolean") return value ? "Sim" : "Não"
-  if (Array.isArray(value)) return value.map(stripOther).join(", ")
-  if (typeof value === "object" && value !== null && !("fileName" in (value as object)) && !Array.isArray(value)) {
-    return Object.entries(value as Record<string, string>).map(([k, v]) => `${k}: ${v}`).join(", ")
-  }
-  if (typeof value === "object" && "fileName" in (value as object)) {
-    return `📎 ${(value as { fileName: string }).fileName}`
-  }
-  return stripOther(value)
 }
 
 // ─── Response Filters ─────────────────────────────────────────────────────────
@@ -1470,7 +541,7 @@ export function ResponsesSection({
       const ids =
         filteredResponses.length !== responses.length ? filteredResponses.map((r) => r.id) : undefined
       const csv = await exportResponsesAction(formId, ids)
-      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" })
+      const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
@@ -1486,7 +557,6 @@ export function ResponsesSection({
   const completionRate = analytics?.completionRate ??
     (responses.length > 0 ? completedCount / responses.length : 0)
   const avgTime = analytics?.averageCompletionTime ?? 0
-  const questionStats = analytics?.questionStats ?? []
 
   return (
     <div className="container py-8 max-w-6xl">
@@ -1606,7 +676,11 @@ export function ResponsesSection({
       )}
 
       {tab === "analytics" && (
-        <AnalyticsView analytics={analytics} questions={questions} completionRate={completionRate} formId={formId} formTitle={formTitle} />
+        <AnalyticsView
+          formId={formId}
+          initialAnalytics={analytics}
+          questions={questions}
+        />
       )}
     </div>
   )
