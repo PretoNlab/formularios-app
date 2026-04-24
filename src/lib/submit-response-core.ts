@@ -60,7 +60,7 @@ export function hashIp(ip: string): string {
 const PRIVATE_IP_RE =
   /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.0\.0\.0|::1$|fc00:|fe80:|::ffff:)/i
 
-function isAllowedWebhookUrl(url: string): boolean {
+export function isAllowedWebhookUrl(url: string): boolean {
   try {
     const parsed = new URL(url)
     if (parsed.protocol !== "https:") return false
@@ -73,7 +73,7 @@ function isAllowedWebhookUrl(url: string): boolean {
   }
 }
 
-function isAnswerEmpty(value: AnswerValue | undefined): boolean {
+export function isAnswerEmpty(value: AnswerValue | undefined): boolean {
   if (value === null || value === undefined) return true
   if (typeof value === "string") return value.trim() === ""
   if (Array.isArray(value)) return value.length === 0

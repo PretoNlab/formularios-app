@@ -67,6 +67,8 @@ export default async function ResponsesPage({
       responses={responsesResult.data ?? []}
       analytics={analyticsResult.data ?? null}
       pagination={responsesResult.pagination}
+      shareToken={dbForm.shareToken}
+      isAnalyticsPublic={dbForm.isAnalyticsPublic}
     />
   )
 }

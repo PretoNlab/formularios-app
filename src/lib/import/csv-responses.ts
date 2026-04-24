@@ -358,30 +358,25 @@ export function parseCsvPreview(
  * Parse a date string in multiple formats.
  */
 function parseDate(raw: string): Date | null {
-  // Try ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss)
-  const isoDate = new Date(raw)
-  if (!isNaN(isoDate.getTime())) return isoDate
-
-  // Try DD/MM/YYYY HH:mm:ss (Brazilian format from Google Forms)
-  const brMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s*(\d{1,2}):(\d{2}):?(\d{2})?/)
+  // Brazilian DD/MM/YYYY (with optional HH:mm:ss) — must come before the
+  // native Date parser, which V8 interprets with its permissive MM/DD heuristic
+  // (e.g. "15/03/2026" would be misread as 2027-03-03).
+  const brMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/)
   if (brMatch) {
     const [, day, month, year, hour, min, sec] = brMatch
     return new Date(
       parseInt(year),
       parseInt(month) - 1,
       parseInt(day),
-      parseInt(hour),
-      parseInt(min),
+      parseInt(hour ?? "0"),
+      parseInt(min ?? "0"),
       parseInt(sec ?? "0"),
     )
   }
 
-  // Try MM/DD/YYYY
-  const usMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/)
-  if (usMatch) {
-    const [, month, day, year] = usMatch
-    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-  }
+  // ISO / anything native Date understands (YYYY-MM-DD, RFC 2822, etc.)
+  const isoDate = new Date(raw)
+  if (!isNaN(isoDate.getTime())) return isoDate
 
   return null
 }

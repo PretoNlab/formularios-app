@@ -89,6 +89,8 @@ export const forms = pgTable("forms", {
   // Metadados
   responseCount: integer("response_count").default(0).notNull(),
   viewCount: integer("view_count").default(0).notNull(),
+  shareToken: text("share_token").unique(),
+  isAnalyticsPublic: boolean("is_analytics_public").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   publishedAt: timestamp("published_at"),

@@ -3,10 +3,11 @@
 import { eq, asc, and, inArray } from "drizzle-orm"
 import { headers } from "next/headers"
 import { db } from "@/lib/db/client"
-import { questions, responses } from "@/lib/db/schema"
+import { questions, responses, forms } from "@/lib/db/schema"
 import { submitResponseCore, submitBodySchema, hashIp } from "@/lib/submit-response-core"
 import { requireFormOwner } from "@/lib/auth"
 import { getFormAnalytics } from "@/lib/db/queries/responses"
+import { randomBytes } from "crypto"
 import type { AnswerValue } from "@/lib/db/schema"
 import type { AnalyticsPeriod, FormAnalytics, ApiResponse } from "@/lib/types/form"
 
@@ -118,7 +119,37 @@ export async function exportResponsesAction(formId: string, ids?: string[]): Pro
 export async function getAnalyticsForPeriodAction(
   formId: string,
   period: AnalyticsPeriod,
+  answerFilter?: { questionId: string; value: string } | null
 ): Promise<ApiResponse<FormAnalytics>> {
   await requireFormOwner(formId)
-  return getFormAnalytics(formId, period)
+  return getFormAnalytics(formId, period, answerFilter)
+}
+
+/**
+ * Toggles the public visibility of the analytics dashboard for a form.
+ */
+export async function togglePublicAnalyticsAction(
+  formId: string,
+  isPublic: boolean
+): Promise<ApiResponse<{ shareToken: string | null }>> {
+  await requireFormOwner(formId)
+  
+  try {
+    let newShareToken = null
+    if (isPublic) {
+      newShareToken = randomBytes(16).toString("hex")
+    }
+    
+    await db
+      .update(forms)
+      .set({ isAnalyticsPublic: isPublic, shareToken: newShareToken })
+      .where(eq(forms.id, formId))
+      
+    return { success: true, data: { shareToken: newShareToken } }
+  } catch (error) {
+    return {
+      success: false,
+      error: { code: "DB_ERROR", message: "Failed to update form visibility." }
+    }
+  }
 }

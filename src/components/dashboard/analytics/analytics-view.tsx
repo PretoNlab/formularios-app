@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { Smartphone } from "lucide-react"
 import type { AnalyticsPeriod, FormAnalytics } from "@/lib/types/form"
 import { getAnalyticsForPeriodAction } from "@/app/actions/responses"
@@ -13,6 +13,7 @@ import { MiniBarChart } from "./charts/mini-bar-chart"
 import { DeviceBreakdown } from "./charts/device-breakdown"
 import { HourHeatmap } from "./charts/hour-heatmap"
 import { UTMComparison } from "./charts/utm-comparison"
+import { AutoInsights } from "./auto-insights"
 
 const PERIOD_LABEL: Record<AnalyticsPeriod, string> = {
   "7d": "últimos 7 dias",
@@ -31,6 +32,7 @@ export function AnalyticsView({
   initialAnalytics: FormAnalytics | null
   initialPeriod?: AnalyticsPeriod
   questions: QuestionSummary[]
+  answerFilter?: { questionId: string; value: string } | null
 }) {
   const [period, setPeriod] = useState<AnalyticsPeriod>(initialPeriod)
   const [analytics, setAnalytics] = useState<FormAnalytics | null>(initialAnalytics)
@@ -39,10 +41,17 @@ export function AnalyticsView({
   function handlePeriodChange(next: AnalyticsPeriod) {
     setPeriod(next)
     startTransition(async () => {
-      const res = await getAnalyticsForPeriodAction(formId, next)
+      const res = await getAnalyticsForPeriodAction(formId, next, answerFilter)
       if (res.success && res.data) setAnalytics(res.data)
     })
   }
+
+  useEffect(() => {
+    startTransition(async () => {
+      const res = await getAnalyticsForPeriodAction(formId, period, answerFilter)
+      if (res.success && res.data) setAnalytics(res.data)
+    })
+  }, [answerFilter, formId, period])
 
   if (!analytics) {
     return (
@@ -65,8 +74,12 @@ export function AnalyticsView({
 
       <div className={isPending ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
         <InsightCards analytics={analytics} questions={questions} />
+        
+        <div className="mt-6">
+          <AutoInsights analytics={analytics} />
+        </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2 gap-6 mt-6">
           <div className="rounded-xl border bg-card p-6">
             <h3 className="font-semibold mb-4">Respostas nos {PERIOD_LABEL[period]}</h3>
             <MiniBarChart data={analytics.responsesByDay} period={period} />

@@ -80,3 +80,42 @@
     @apply bg-background text-foreground antialiased;
   }
 }
+
+@media print {
+  body {
+    background: transparent !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .print-hide {
+    display: none !important;
+  }
+  
+  .print-break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  
+  .print-full-width {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .print-no-border {
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Ensure charts and cards render properly */
+  .bg-card {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+  
+  /* Reset text colors for better contrast on paper */
+  .text-foreground { color: #000000 !important; }
+  .text-muted-foreground { color: #64748b !important; }
+}

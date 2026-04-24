@@ -248,12 +248,30 @@ function periodWhere(period: AnalyticsPeriod): SQL | undefined {
 export async function getFormAnalytics(
   formId: string,
   period: AnalyticsPeriod = "30d",
+  answerFilter?: { questionId: string; value: string } | null
 ): Promise<ApiResponse<FormAnalytics>> {
   try {
     const periodFilter = periodWhere(period)
-    const formWhere = periodFilter
+    let formWhere = periodFilter
       ? and(eq(responses.formId, formId), periodFilter)
       : eq(responses.formId, formId)
+      
+    if (answerFilter) {
+      const { questionId, value } = answerFilter
+      const jsonValue = JSON.stringify(value)
+      const arrayValue = JSON.stringify([value])
+      
+      const filterSql = sql`EXISTS (
+        SELECT 1 FROM ${answers} a 
+        WHERE a.response_id = ${responses.id} 
+          AND a.question_id = ${questionId} 
+          AND (
+            a.value::jsonb = ${jsonValue}::jsonb OR
+            a.value::jsonb @> ${arrayValue}::jsonb
+          )
+      )`
+      formWhere = and(formWhere, filterSql)
+    }
 
     // ── 1. Form-level counters ───────────────────────────────────────────────
     const form = await db.query.forms.findFirst({

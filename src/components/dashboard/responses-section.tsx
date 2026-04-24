@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import {
   ArrowLeft, Eye, Users, TrendingUp, Clock,
   CheckCircle2, Circle, Copy, ExternalLink, Download,
-  Smartphone, Filter, X, ChevronLeft, ChevronRight, Monitor, Tablet,
+  Smartphone, Filter, X, ChevronLeft, ChevronRight, Monitor, Tablet, Printer, Share2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +16,7 @@ import type { FormAnalytics, QuestionType } from "@/lib/types/form"
 import type { ResponseWithAnswers } from "@/lib/db/queries/responses"
 import { exportResponsesAction } from "@/app/actions/responses"
 import { ImportResponsesDialog } from "@/components/responses/import-responses-dialog"
+import { PublicShareDialog } from "./public-share-dialog"
 import { StatCard } from "./analytics/stat-card"
 import { AnalyticsView } from "./analytics/analytics-view"
 import { pct, formatDuration } from "./analytics/utils"
@@ -39,6 +40,8 @@ interface ResponsesSectionProps {
   responses: ResponseWithAnswers[]
   analytics: FormAnalytics | null
   pagination?: PaginationMeta
+  shareToken?: string | null
+  isAnalyticsPublic?: boolean | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -398,9 +401,10 @@ interface ResponseFilters {
   status: FilterStatus
   device: FilterDevice
   source: string
+  answerFilter?: { questionId: string; value: string } | null
 }
 
-const DEFAULT_FILTERS: ResponseFilters = { period: "all", status: "all", device: "all", source: "all" }
+const DEFAULT_FILTERS: ResponseFilters = { period: "all", status: "all", device: "all", source: "all", answerFilter: null }
 
 function getResponseSource(meta: { utmSource?: string | null; referrer?: string | null } | null | undefined): string {
   if (!meta) return "Direto"
@@ -427,9 +431,10 @@ function FilterBar({
   sources: string[]
   filteredCount: number
   totalCount: number
+  crossFilters: { questionId: string; title: string; options: string[] }[]
 }) {
   const hasActive =
-    filters.period !== "all" || filters.status !== "all" || filters.device !== "all" || filters.source !== "all"
+    filters.period !== "all" || filters.status !== "all" || filters.device !== "all" || filters.source !== "all" || !!filters.answerFilter
 
   function set<K extends keyof ResponseFilters>(key: K, value: ResponseFilters[K]) {
     onChange({ ...filters, [key]: value })
@@ -463,6 +468,30 @@ function FilterBar({
           <option value="all">Todas as origens</option>
           {sources.map((s) => (
             <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+      )}
+      {crossFilters.length > 0 && (
+        <select
+          className={`${sel} max-w-[200px] truncate`}
+          value={filters.answerFilter ? `${filters.answerFilter.questionId}::${filters.answerFilter.value}` : "all"}
+          onChange={(e) => {
+            if (e.target.value === "all") set("answerFilter", null)
+            else {
+              const [q, v] = e.target.value.split("::")
+              set("answerFilter", { questionId: q, value: v })
+            }
+          }}
+        >
+          <option value="all">Cruzamento de Dados...</option>
+          {crossFilters.map((cf) => (
+            <optgroup key={cf.questionId} label={cf.title}>
+              {cf.options.map((opt) => (
+                <option key={`${cf.questionId}::${opt}`} value={`${cf.questionId}::${opt}`}>
+                  {opt}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
       )}
@@ -504,6 +533,35 @@ export function ResponsesSection({
     return Array.from(set).sort()
   }, [responses])
 
+  const crossFilters = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    for (const r of responses) {
+      if (!r.answers) continue
+      for (const [qid, a] of Object.entries(r.answers)) {
+        if (!a) continue
+        let values: string[] = []
+        if (Array.isArray(a)) {
+          values = a.filter((v) => typeof v === "string") as string[]
+        } else if (typeof a === "string") {
+          values = [a]
+        }
+        if (values.length === 0) continue
+
+        const set = map.get(qid) || new Set<string>()
+        values.forEach((v) => set.add(stripOther(v)))
+        map.set(qid, set)
+      }
+    }
+
+    return questions
+      .filter((q) => map.has(q.id) && map.get(q.id)!.size > 1)
+      .map((q) => ({
+        questionId: q.id,
+        title: q.title,
+        options: Array.from(map.get(q.id)!).sort(),
+      }))
+  }, [responses, questions])
+
   const filteredResponses = useMemo(() => {
     return responses.filter((r) => {
       // Never show partial responses with zero answers (e.g. opened form and left immediately)
@@ -520,6 +578,21 @@ export function ResponsesSection({
       if (filters.status === "partial" && r.completedAt) return false
       if (filters.device !== "all" && r.metadata?.deviceType !== filters.device) return false
       if (filters.source !== "all" && getResponseSource(r.metadata) !== filters.source) return false
+      
+      if (filters.answerFilter) {
+        const { questionId, value } = filters.answerFilter
+        const ans = r.answers?.[questionId]
+        if (!ans) return false
+        
+        let match = false
+        if (Array.isArray(ans)) {
+          match = ans.some((v) => stripOther(v) === value)
+        } else if (typeof ans === "string") {
+          match = stripOther(ans) === value
+        }
+        if (!match) return false
+      }
+
       return true
     })
   }, [responses, filters])
@@ -562,7 +635,7 @@ export function ResponsesSection({
     <div className="container py-8 max-w-6xl">
 
       {/* Header */}
-      <div className="flex flex-wrap items-center gap-4 mb-8">
+      <div className="flex flex-wrap items-center gap-4 mb-8 print-hide">
         <Link href={`/builder/${formId}`}>
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="h-4 w-4" />Editor
@@ -584,16 +657,25 @@ export function ResponsesSection({
           <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}
             disabled={isExporting || responses.length === 0}>
             <Download className="h-3.5 w-3.5" />
-            {isExporting ? "Exportando..." : "Exportar CSV"}
+            <span className="hidden sm:inline">{isExporting ? "Exportando..." : "Exportar CSV"}</span>
           </Button>
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => window.print()}>
+            <Printer className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">PDF</span>
+          </Button>
+          <PublicShareDialog 
+            formId={formId} 
+            initialIsPublic={isAnalyticsPublic ?? false} 
+            initialShareToken={shareToken ?? null} 
+          />
           <Button variant="outline" size="sm" className="gap-2" onClick={copyLink}>
             <Copy className="h-3.5 w-3.5" />
-            {copied ? "Copiado!" : "Copiar link"}
+            <span className="hidden sm:inline">{copied ? "Copiado!" : "Link"}</span>
           </Button>
           {formStatus === "published" && (
             <a href={`/f/${formSlug}`} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm" className="gap-2">
-                <ExternalLink className="h-3.5 w-3.5" />Ver formulário
+                <ExternalLink className="h-3.5 w-3.5" /><span className="hidden sm:inline">Ver formulário</span>
               </Button>
             </a>
           )}
@@ -615,7 +697,7 @@ export function ResponsesSection({
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 print-hide">
           <TabsTrigger value="responses">
             Respostas ({filteredResponses.length !== responses.length ? `${filteredResponses.length}/${responses.length}` : responses.length})
           </TabsTrigger>
@@ -631,6 +713,7 @@ export function ResponsesSection({
             sources={sources}
             filteredCount={filteredResponses.length}
             totalCount={responses.length}
+            crossFilters={crossFilters}
           />
           <ResponsesTable
             responses={filteredResponses}
@@ -680,6 +763,7 @@ export function ResponsesSection({
           formId={formId}
           initialAnalytics={analytics}
           questions={questions}
+          answerFilter={filters.answerFilter}
         />
       )}
     </div>

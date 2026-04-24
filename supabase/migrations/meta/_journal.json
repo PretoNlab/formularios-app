@@ -15,6 +15,13 @@
       "when": 1774101065082,
       "tag": "0001_glorious_next_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777050266183,
+      "tag": "0002_dusty_captain_midlands",
+      "breakpoints": true
     }
   ]
 }
