@@ -77,7 +77,7 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
   const origin = typeof window !== "undefined" ? window.location.origin : "https://formularios.ia"
 
   return (
-    <div className="p-4 pr-10 space-y-6">
+    <div className="p-4 pr-6 space-y-6 overflow-x-hidden w-full">
       <div className="space-y-2">
         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Título</label>
         <Input
@@ -100,10 +100,10 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
 
       <div className="space-y-2">
         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">URL pública</label>
-        <div className={cn("flex items-center rounded-md border bg-background overflow-hidden text-sm", slugError ? "border-destructive" : "border-input")}>
+        <div className={cn("flex items-center rounded-md border bg-background overflow-hidden text-sm min-w-0 w-full", slugError ? "border-destructive" : "border-input")}>
           <span className="px-2 py-2 text-muted-foreground bg-muted border-r border-input text-xs shrink-0">/f/</span>
           <input
-            className="flex-1 px-2 py-2 bg-transparent outline-none focus-visible:ring-0 text-sm"
+            className="flex-1 px-2 py-2 bg-transparent outline-none focus-visible:ring-0 text-sm min-w-0"
             value={form.slug}
             onChange={(e) => handleSlugChange(e.target.value)}
             placeholder="meu-formulario"
@@ -122,7 +122,7 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
       <div className="space-y-4">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Exibição</h4>
 
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 pr-2">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Barra de progresso</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Mostra % de conclusão</p>
@@ -134,7 +134,7 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
           />
         </div>
 
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 pr-2">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Numerar perguntas</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Ex: "1 →"</p>
@@ -202,7 +202,7 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
       <div className="space-y-4">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Controle de acesso</h4>
 
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 pr-2">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Salvar respostas parciais</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Salva progresso mesmo sem concluir</p>
@@ -244,7 +244,7 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
       <div className="space-y-4">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notificações</h4>
 
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 pr-2">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Encaminhar respostas</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Envia cópia das respostas por e-mail</p>
@@ -275,7 +275,7 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
       <div className="space-y-4">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Auto-Responder</h4>
 
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 pr-2">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">E-mail para o Respondente</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Enviar uma confirmação ou material automático</p>

@@ -57,7 +57,7 @@ export function WebhooksPanel({ formId }: { formId: string }) {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 pr-6 space-y-4 overflow-x-hidden">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold">Webhooks</p>
@@ -112,7 +112,7 @@ export function WebhooksPanel({ formId }: { formId: string }) {
             const url = (w.config as { url?: string })?.url ?? ""
             return (
               <div key={w.id} className="rounded-lg border bg-card p-3 space-y-2">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2 pr-1">
                   <div className="flex items-center gap-2 min-w-0">
                     <Zap className={cn("h-3.5 w-3.5 shrink-0", w.enabled ? "text-green-500" : "text-muted-foreground")} />
                     <span className="text-sm font-medium truncate">{w.name}</span>
