@@ -20,6 +20,10 @@ const DEFAULT_SETTINGS: Form["settings"] = {
   closedAt: null,
   downloadUrl: null,
   downloadLabel: null,
+  autoResponderEnabled: false,
+  autoResponderEmailFieldId: null,
+  autoResponderSubject: null,
+  autoResponderBody: null,
 }
 
 export function mapDbForm(dbForm: FormWithQuestions): Form {

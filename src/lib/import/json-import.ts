@@ -122,13 +122,7 @@ function normalizeOptions(raw: unknown): OptionNormalization {
     if (!label) label = `Opção ${i + 1}`
     if (!id) {
       injectedId = true
-      let candidate = `opt_${i + 1}`
-      let n = i + 1
-      while (usedIds.has(candidate)) {
-        n += 1
-        candidate = `opt_${n}`
-      }
-      id = candidate
+      id = crypto.randomUUID()
     }
     usedIds.add(id)
 
@@ -266,6 +260,7 @@ interface NormalizedQuestion {
   description?: string
   required: boolean
   properties: Record<string, unknown>
+  logicRules?: unknown[]
 }
 
 const KEYS_AT_PROPERTIES_LEVEL = [
@@ -411,6 +406,9 @@ function normalizeQuestion(
     }
   }
 
+  // Preserve logicRules if present at the top level
+  const logicRules = Array.isArray(q.logicRules) ? q.logicRules : undefined
+
   return {
     question: {
       type: typeResult.type,
@@ -418,6 +416,7 @@ function normalizeQuestion(
       description,
       required,
       properties: rawProps,
+      logicRules,
     },
   }
 }
@@ -479,6 +478,8 @@ export function parseJsonImport(jsonString: string): ImportResult {
         required: n.required,
         order: i,
         properties,
+        // Carry logicRules through if provided (cast to any to satisfy ImportedQuestion)
+        ...(n.logicRules ? { logicRules: n.logicRules as never } : {}),
       })
     } catch (err) {
       if (err instanceof z.ZodError) {

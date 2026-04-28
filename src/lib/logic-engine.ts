@@ -5,15 +5,15 @@ import type { AnswerValue, LogicCondition, LogicRule, Question } from "@/lib/typ
 export function evaluateCondition(condition: LogicCondition, answers: Record<string, AnswerValue>): boolean {
     const answerVal = answers[condition.questionId]
     switch (condition.operator) {
-        case "equals":       return answerVal == condition.value
-        case "not_equals":   return answerVal != condition.value
-        case "contains":     return typeof answerVal === "string" && answerVal.includes(String(condition.value))
+        case "equals": return answerVal == condition.value
+        case "not_equals": return answerVal != condition.value
+        case "contains": return typeof answerVal === "string" && answerVal.includes(String(condition.value))
         case "not_contains": return typeof answerVal === "string" && !answerVal.includes(String(condition.value))
         case "greater_than": return Number(answerVal) > Number(condition.value)
-        case "less_than":    return Number(answerVal) < Number(condition.value)
-        case "is_empty":     return answerVal == null || answerVal === ""
+        case "less_than": return Number(answerVal) < Number(condition.value)
+        case "is_empty": return answerVal == null || answerVal === ""
         case "is_not_empty": return answerVal != null && answerVal !== ""
-        default:             return false
+        default: return false
     }
 }
 

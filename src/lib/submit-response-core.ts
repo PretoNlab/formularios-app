@@ -283,10 +283,10 @@ export async function submitResponseCore(params: {
       .findFirst({ where: eq(users.id, form.createdById), columns: { email: true } })
       .then((creator) => {
         if (creator?.email) {
-          sendFirstResponseEmail({ toEmail: creator.email, formId, formTitle: form.title }).catch(() => {})
+          sendFirstResponseEmail({ toEmail: creator.email, formId, formTitle: form.title }).catch(() => { })
         }
       })
-      .catch(() => {})
+      .catch(() => { })
   }
 
   // 10c. Auto-Responder / Email to Lead (fire-and-forget)
@@ -322,7 +322,7 @@ export async function submitResponseCore(params: {
       if (!wh.enabled) continue
       const url = (wh.config as { url?: string })?.url
       if (!url || !isAllowedWebhookUrl(url)) continue
-      fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload }).catch(() => {})
+      fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload }).catch(() => { })
     }
   }
 
@@ -349,7 +349,7 @@ export async function submitResponseCore(params: {
           onTokenRefresh: (newAccessToken, newExpiry) => {
             updateIntegration(integration.id, {
               config: { ...config, accessToken: newAccessToken, tokenExpiry: newExpiry },
-            }).catch(() => {})
+            }).catch(() => { })
           },
         })
         // Refetch to pick up any token rotation that onTokenRefresh may have persisted

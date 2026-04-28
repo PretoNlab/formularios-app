@@ -76,39 +76,49 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
 // ─── Field types table data ────────────────────────────────────────────────────
 
 const FIELD_TYPES = [
-  { category: "Texto", types: [
-    { name: "Texto curto", icon: "Aa", description: "Resposta em uma linha. Ideal para nome, título ou resposta breve." },
-    { name: "Texto longo", icon: "¶", description: "Caixa de texto expandida. Ideal para comentários, feedback livre ou descrições." },
-    { name: "E-mail", icon: "@", description: "Valida automaticamente o formato de e-mail." },
-    { name: "Número", icon: "#", description: "Aceita apenas valores numéricos. Suporta mínimo, máximo e incremento." },
-    { name: "Telefone", icon: "☎", description: "Campo de telefone com seletor de país." },
-    { name: "WhatsApp", icon: "📱", description: "Igual ao telefone, formatado para contato via WhatsApp." },
-    { name: "CPF", icon: "🪪", description: "Valida automaticamente o CPF brasileiro (formato 000.000.000-00)." },
-    { name: "CNPJ", icon: "🏢", description: "Valida automaticamente o CNPJ (formato 00.000.000/0000-00)." },
-    { name: "Data", icon: "📅", description: "Seletor de data." },
-    { name: "URL", icon: "🔗", description: "Valida o formato de uma URL (http/https)." },
-  ]},
-  { category: "Seleção", types: [
-    { name: "Múltipla escolha", icon: "◉", description: "Escolha única — apenas uma opção pode ser selecionada. Suporta opção 'Outro' (campo livre) e ordem aleatória." },
-    { name: "Caixas de seleção", icon: "☑", description: "Várias respostas — permite marcar mais de uma opção. Também suporta 'Outro' e ordem aleatória." },
-    { name: "Lista suspensa", icon: "▾", description: "Dropdown com escolha única. Ideal para listas longas onde mostrar todas as opções ocuparia muito espaço." },
-    { name: "Sim / Não", icon: "✓✗", description: "Escolha binária com ícones visuais. Avança automaticamente após a seleção." },
-  ]},
-  { category: "Avaliação", types: [
-    { name: "Avaliação", icon: "★", description: "Escala visual com estrelas, corações, polegares ou números. Padrão: 5 estrelas." },
-    { name: "Escala", icon: "◀▶", description: "Escala de 1 a 10 (tipo Likert) com rótulos configuráveis nas pontas." },
-    { name: "NPS", icon: "📊", description: "Net Promoter Score. Escala 0–10 com cálculo automático de Promotores, Neutros e Detratores." },
-  ]},
-  { category: "Layout", types: [
-    { name: "Tela de boas-vindas", icon: "👋", description: "Primeira tela do formulário. Não coleta dados — apresenta o form." },
-    { name: "Declaração", icon: "📢", description: "Tela informativa no meio do formulário (sem input)." },
-    { name: "Tela de agradecimento", icon: "🎉", description: "Última tela. Exibida após o envio." },
-  ]},
-  { category: "Avançado", types: [
-    { name: "Upload de arquivo", icon: "📎", description: "Permite que o respondente anexe um arquivo (PDF, imagem, doc, zip — máx. 10MB)." },
-    { name: "Assinatura", icon: "✍", description: "Canvas para assinatura digital." },
-    { name: "Download", icon: "⬇", description: "Exibe um botão de download para um arquivo configurado pelo criador." },
-  ]},
+  {
+    category: "Texto", types: [
+      { name: "Texto curto", icon: "Aa", description: "Resposta em uma linha. Ideal para nome, título ou resposta breve." },
+      { name: "Texto longo", icon: "¶", description: "Caixa de texto expandida. Ideal para comentários, feedback livre ou descrições." },
+      { name: "E-mail", icon: "@", description: "Valida automaticamente o formato de e-mail." },
+      { name: "Número", icon: "#", description: "Aceita apenas valores numéricos. Suporta mínimo, máximo e incremento." },
+      { name: "Telefone", icon: "☎", description: "Campo de telefone com seletor de país." },
+      { name: "WhatsApp", icon: "📱", description: "Igual ao telefone, formatado para contato via WhatsApp." },
+      { name: "CPF", icon: "🪪", description: "Valida automaticamente o CPF brasileiro (formato 000.000.000-00)." },
+      { name: "CNPJ", icon: "🏢", description: "Valida automaticamente o CNPJ (formato 00.000.000/0000-00)." },
+      { name: "Data", icon: "📅", description: "Seletor de data." },
+      { name: "URL", icon: "🔗", description: "Valida o formato de uma URL (http/https)." },
+    ]
+  },
+  {
+    category: "Seleção", types: [
+      { name: "Múltipla escolha", icon: "◉", description: "Escolha única — apenas uma opção pode ser selecionada. Suporta opção 'Outro' (campo livre) e ordem aleatória." },
+      { name: "Caixas de seleção", icon: "☑", description: "Várias respostas — permite marcar mais de uma opção. Também suporta 'Outro' e ordem aleatória." },
+      { name: "Lista suspensa", icon: "▾", description: "Dropdown com escolha única. Ideal para listas longas onde mostrar todas as opções ocuparia muito espaço." },
+      { name: "Sim / Não", icon: "✓✗", description: "Escolha binária com ícones visuais. Avança automaticamente após a seleção." },
+    ]
+  },
+  {
+    category: "Avaliação", types: [
+      { name: "Avaliação", icon: "★", description: "Escala visual com estrelas, corações, polegares ou números. Padrão: 5 estrelas." },
+      { name: "Escala", icon: "◀▶", description: "Escala de 1 a 10 (tipo Likert) com rótulos configuráveis nas pontas." },
+      { name: "NPS", icon: "📊", description: "Net Promoter Score. Escala 0–10 com cálculo automático de Promotores, Neutros e Detratores." },
+    ]
+  },
+  {
+    category: "Layout", types: [
+      { name: "Tela de boas-vindas", icon: "👋", description: "Primeira tela do formulário. Não coleta dados — apresenta o form." },
+      { name: "Declaração", icon: "📢", description: "Tela informativa no meio do formulário (sem input)." },
+      { name: "Tela de agradecimento", icon: "🎉", description: "Última tela. Exibida após o envio." },
+    ]
+  },
+  {
+    category: "Avançado", types: [
+      { name: "Upload de arquivo", icon: "📎", description: "Permite que o respondente anexe um arquivo (PDF, imagem, doc, zip — máx. 10MB)." },
+      { name: "Assinatura", icon: "✍", description: "Canvas para assinatura digital." },
+      { name: "Download", icon: "⬇", description: "Exibe um botão de download para um arquivo configurado pelo criador." },
+    ]
+  },
 ]
 
 // ─── Main component ────────────────────────────────────────────────────────────
@@ -155,11 +165,10 @@ export function HelpClient() {
               <button
                 key={id}
                 onClick={() => scrollTo(id)}
-                className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors ${
-                  activeSection === id
+                className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors ${activeSection === id
                     ? "bg-foreground text-background font-medium"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
+                  }`}
               >
                 {label}
               </button>

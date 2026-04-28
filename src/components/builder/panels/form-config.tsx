@@ -77,7 +77,7 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
   const origin = typeof window !== "undefined" ? window.location.origin : "https://formularios.ia"
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 pr-10 space-y-6">
       <div className="space-y-2">
         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Título</label>
         <Input
@@ -122,24 +122,26 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
       <div className="space-y-4">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Exibição</h4>
 
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Barra de progresso</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Mostra % de conclusão</p>
           </div>
           <Switch
-            checked={form.settings.showProgressBar}
+            className="shrink-0"
+            checked={form.settings?.showProgressBar ?? false}
             onCheckedChange={(v) => onSettingsChange({ showProgressBar: v })}
           />
         </div>
 
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Numerar perguntas</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Ex: "1 →"</p>
           </div>
           <Switch
-            checked={form.settings.showQuestionNumbers}
+            className="shrink-0"
+            checked={form.settings?.showQuestionNumbers ?? false}
             onCheckedChange={(v) => onSettingsChange({ showQuestionNumbers: v })}
           />
         </div>
@@ -200,13 +202,14 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
       <div className="space-y-4">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Controle de acesso</h4>
 
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Salvar respostas parciais</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Salva progresso mesmo sem concluir</p>
           </div>
           <Switch
-            checked={form.settings.allowPartialResponses}
+            className="shrink-0"
+            checked={form.settings?.allowPartialResponses ?? false}
             onCheckedChange={(v) => onSettingsChange({ allowPartialResponses: v })}
           />
         </div>
@@ -241,13 +244,14 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
       <div className="space-y-4">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notificações</h4>
 
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Encaminhar respostas</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Envia cópia das respostas por e-mail</p>
           </div>
           <Switch
-            checked={form.settings.notifyOnResponse}
+            className="shrink-0"
+            checked={form.settings?.notifyOnResponse ?? false}
             onCheckedChange={(v) => onSettingsChange({ notifyOnResponse: v })}
           />
         </div>
@@ -271,13 +275,14 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
       <div className="space-y-4">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Auto-Responder</h4>
 
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">E-mail para o Respondente</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Enviar uma confirmação ou material automático</p>
           </div>
           <Switch
-            checked={form.settings.autoResponderEnabled ?? false}
+            className="shrink-0"
+            checked={form.settings?.autoResponderEnabled ?? false}
             onCheckedChange={(v) => onSettingsChange({ autoResponderEnabled: v })}
           />
         </div>

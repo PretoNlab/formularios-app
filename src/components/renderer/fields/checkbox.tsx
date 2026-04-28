@@ -12,8 +12,10 @@ export function CheckboxField({ question, value, onChange }: FieldProps) {
     const options = useMemo(() => {
         if (!randomize) return rawOptions
         return [...rawOptions].sort(() => Math.random() - 0.5)
-    // Depend on stable option IDs so order is fixed for the lifetime of the component
-    }, [randomize, rawOptions.map((o) => o.id).join(",")])
+    // Depend on question.id so we recompute when navigating between questions,
+    // and on stable option IDs so order is fixed for the lifetime of the component
+    }, [question.id, randomize, rawOptions.map((o) => o.id).join(",")])
+
 
     const selected: string[] = Array.isArray(value) ? (value as string[]) : []
     const [otherText, setOtherText] = useState(() => {

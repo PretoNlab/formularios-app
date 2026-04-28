@@ -55,8 +55,8 @@ export function FormRendererPage({ form, isPreview }: FormRendererPageProps) {
       .then((data: { responseId?: string }) => {
         if (data.responseId) responseIdRef.current = data.responseId
       })
-      .catch(() => {})
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+      .catch(() => { })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Register Service Worker and cache this page on the very first visit.
@@ -68,10 +68,10 @@ export function FormRendererPage({ form, isPreview }: FormRendererPageProps) {
 
     navigator.serviceWorker
       .register("/sw.js", { scope: "/f/" })
-      .catch(() => {})
+      .catch(() => { })
 
     function cacheSelf() {
-      fetch(window.location.href).catch(() => {})
+      fetch(window.location.href).catch(() => { })
     }
 
     if (navigator.serviceWorker.controller) {
@@ -101,7 +101,7 @@ export function FormRendererPage({ form, isPreview }: FormRendererPageProps) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ responseId: responseIdRef.current, questionId, value }),
-    }).catch(() => {})
+    }).catch(() => { })
   }, [isPreview])
 
   async function handleSubmit(answers: Record<string, AnswerValue>) {
