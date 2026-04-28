@@ -135,10 +135,10 @@ export interface FormSettings {
   closedAt: string | null
   downloadUrl: string | null
   downloadLabel: string | null
-  autoResponderEnabled?: boolean
-  autoResponderEmailFieldId?: string | null
-  autoResponderSubject?: string | null
-  autoResponderBody?: string | null
+  autoResponderEnabled: boolean
+  autoResponderEmailFieldId: string | null
+  autoResponderSubject: string | null
+  autoResponderBody: string | null
 }
 
 export interface ThemeConfig {

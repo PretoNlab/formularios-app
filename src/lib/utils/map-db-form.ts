@@ -1,14 +1,14 @@
 import type { Form, Question, QuestionType } from "@/lib/types/form"
 import type { FormWithQuestions } from "@/lib/db/queries/forms"
 
-const DEFAULT_THEME: Form["theme"] = {
+export const DEFAULT_THEME: Form["theme"] = {
   id: "midnight",
   colors: { bg: "#0f0f1a", card: "#1a1a2e", accent: "#6c63ff", text: "#e8e8f0", muted: "#6b6b8d" },
   font: { heading: "Fraunces", body: "DM Sans" },
   borderRadius: "12px",
 }
 
-const DEFAULT_SETTINGS: Form["settings"] = {
+export const DEFAULT_SETTINGS: Form["settings"] = {
   showProgressBar: true,
   showQuestionNumbers: true,
   allowPartialResponses: true,
@@ -22,8 +22,8 @@ const DEFAULT_SETTINGS: Form["settings"] = {
   downloadLabel: null,
   autoResponderEnabled: false,
   autoResponderEmailFieldId: null,
-  autoResponderSubject: null,
-  autoResponderBody: null,
+  autoResponderSubject: "Recebemos sua resposta!",
+  autoResponderBody: "Obrigado por preencher nosso formulário. Segue em anexo o material prometido.",
 }
 
 export function mapDbForm(dbForm: FormWithQuestions): Form {

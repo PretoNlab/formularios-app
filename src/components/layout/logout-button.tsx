@@ -15,7 +15,7 @@ export function LogoutButton() {
   }
 
   return (
-    <Button variant="ghost" className="hidden sm:inline-flex" onClick={handleLogout}>
+    <Button variant="ghost" onClick={handleLogout}>
       Sair
     </Button>
   )

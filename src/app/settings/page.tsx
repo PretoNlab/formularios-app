@@ -6,6 +6,7 @@ import { ensureUserExists } from "@/lib/db/queries/users"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { LogoutButton } from "@/components/layout/logout-button"
+import { SecuritySection } from "./security-section"
 
 const PLAN_LABELS: Record<string, string> = {
   free: "Gratuito",
@@ -175,16 +176,19 @@ export default async function SettingsPage() {
       </section>
 
       {/* ── Segurança ── */}
-      <section className="rounded-xl border bg-card p-6 space-y-5 mt-6">
-        <div className="flex items-center gap-3">
-          <Shield className="h-4 w-4 text-muted-foreground" />
-          <h2 className="font-semibold">Sessão</h2>
+      <SecuritySection email={user.email} />
+
+      {/* ── Sessão ── */}
+      <section className="rounded-xl border bg-card p-6 space-y-5 mt-6 mb-12">
+        <div className="flex items-center gap-3 text-destructive">
+          <Shield className="h-4 w-4" />
+          <h2 className="font-semibold text-foreground">Sessão</h2>
         </div>
         <Separator />
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium">Sair da conta</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Encerra sua sessão neste dispositivo.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Encerra sua sessão de forma segura neste dispositivo.</p>
           </div>
           <LogoutButton />
         </div>

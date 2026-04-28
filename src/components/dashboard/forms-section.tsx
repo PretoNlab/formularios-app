@@ -85,8 +85,6 @@ function WelcomeModal() {
           </DialogTitle>
           <DialogDescription className="text-center text-base mt-2">
             Crie formulários inteligentes e colete dados com muito mais qualidade.
-            <br/><br/>
-            🎁 <strong>Bônus Especial:</strong> Adicionamos <strong>50 créditos gratuitos</strong> na sua conta para você testar nossas funcionalidades com IA!
           </DialogDescription>
         </DialogHeader>
 

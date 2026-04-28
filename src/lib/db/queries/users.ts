@@ -120,7 +120,7 @@ export async function ensureUserExists(authUser: {
     })
 
     // Fire-and-forget: welcome email on first login
-    sendWelcomeEmail({ toEmail: authUser.email, name: result.user.name ?? authUser.email.split("@")[0] }).catch(() => {})
+    sendWelcomeEmail({ toEmail: authUser.email, name: result.user.name ?? authUser.email.split("@")[0] }).catch(() => { })
 
     return {
       success: true,

@@ -8,6 +8,7 @@ import { parseJsonImport } from "@/lib/import/json-import"
 import { requireUser } from "@/lib/auth"
 import type { ApiResponse } from "@/lib/types/form"
 import type { ImportWarning, ImportResult } from "@/lib/import/types"
+import { DEFAULT_SETTINGS, DEFAULT_THEME } from "@/lib/utils/map-db-form"
 
 // ─── Shared ─────────────────────────────────────────────────────────────────
 
@@ -26,6 +27,8 @@ async function createFormFromImport(
     createdById: userId,
     title: result.title || "Formulário importado",
     description: result.description,
+    settings: DEFAULT_SETTINGS,
+    theme: DEFAULT_THEME,
   })
 
   if (!formResult.success || !formResult.data) {

@@ -77,28 +77,28 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
   const origin = typeof window !== "undefined" ? window.location.origin : "https://formularios.ia"
 
   return (
-    <div className="p-4 pr-6 space-y-6 overflow-x-hidden w-full">
-      <div className="space-y-2">
+    <div className="flex flex-col w-full min-w-0 p-5 space-y-6 overflow-x-hidden box-border">
+      <div className="space-y-2 min-w-0">
         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Título</label>
         <Input
           value={form.title}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder="Formulário sem título"
-          className="text-sm"
+          className="text-sm w-full min-w-0"
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 min-w-0">
         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Descrição</label>
         <textarea
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[72px] resize-none"
+          className="w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[72px] resize-none"
           value={form.description ?? ""}
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder="Descrição opcional..."
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 min-w-0">
         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">URL pública</label>
         <div className={cn("flex items-center rounded-md border bg-background overflow-hidden text-sm min-w-0 w-full", slugError ? "border-destructive" : "border-input")}>
           <span className="px-2 py-2 text-muted-foreground bg-muted border-r border-input text-xs shrink-0">/f/</span>
@@ -113,16 +113,16 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
         {slugError ? (
           <p className="text-[11px] text-destructive">{slugError}</p>
         ) : (
-          <p className="text-[11px] text-muted-foreground truncate">{origin}/f/{form.slug}</p>
+          <p className="text-[11px] text-muted-foreground truncate w-full">{origin}/f/{form.slug}</p>
         )}
       </div>
 
       <Separator />
 
-      <div className="space-y-4">
+      <div className="space-y-4 min-w-0">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Exibição</h4>
 
-        <div className="flex items-center justify-between gap-4 pr-2">
+        <div className="flex items-center justify-between gap-4 min-w-0">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Barra de progresso</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Mostra % de conclusão</p>
@@ -134,7 +134,7 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
           />
         </div>
 
-        <div className="flex items-center justify-between gap-4 pr-2">
+        <div className="flex items-center justify-between gap-4 min-w-0">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Numerar perguntas</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Ex: "1 →"</p>
@@ -149,40 +149,40 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
 
       <Separator />
 
-      <div className="space-y-4">
+      <div className="space-y-4 min-w-0">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Conclusão</h4>
 
-        <div className="space-y-2">
+        <div className="space-y-2 min-w-0">
           <label className="text-xs font-medium text-muted-foreground">Mensagem de encerramento</label>
           <textarea
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[60px] resize-none"
+            className="w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[60px] resize-none"
             value={form.settings.closeMessage}
             onChange={(e) => onSettingsChange({ closeMessage: e.target.value })}
             placeholder="Sua resposta foi registrada."
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 min-w-0">
           <label className="text-xs font-medium text-muted-foreground">Redirecionar para (URL)</label>
           <Input
             type="url"
             value={form.settings.redirectUrl ?? ""}
             onChange={(e) => onSettingsChange({ redirectUrl: e.target.value || null })}
             placeholder="https://exemplo.com/obrigado"
-            className="text-sm h-9"
+            className="text-sm h-9 w-full min-w-0"
           />
           <p className="text-[11px] text-muted-foreground">Após conclusão, redireciona para esta URL.</p>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 min-w-0">
           <label className="text-xs font-medium text-muted-foreground">Arquivo para download</label>
-          <div className="flex gap-2">
+          <div className="flex gap-2 min-w-0">
             <Input
               type="url"
               value={form.settings.downloadUrl ?? ""}
               onChange={(e) => onSettingsChange({ downloadUrl: e.target.value || null })}
               placeholder="https://drive.google.com/..."
-              className="text-sm h-9 flex-1"
+              className="text-sm h-9 flex-1 min-w-0"
             />
             <DownloadFileUploadButton onUrl={(url) => onSettingsChange({ downloadUrl: url })} />
           </div>
@@ -191,7 +191,7 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
             value={form.settings.downloadLabel ?? ""}
             onChange={(e) => onSettingsChange({ downloadLabel: e.target.value || null })}
             placeholder="Texto do botão (ex: Baixar material)"
-            className="text-sm h-9"
+            className="text-sm h-9 w-full min-w-0"
           />
           <p className="text-[11px] text-muted-foreground">Exibe um botão de download na tela de conclusão.</p>
         </div>
@@ -199,10 +199,10 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
 
       <Separator />
 
-      <div className="space-y-4">
+      <div className="space-y-4 min-w-0">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Controle de acesso</h4>
 
-        <div className="flex items-center justify-between gap-4 pr-2">
+        <div className="flex items-center justify-between gap-4 min-w-0">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Salvar respostas parciais</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Salva progresso mesmo sem concluir</p>
@@ -214,7 +214,7 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 min-w-0">
           <label className="text-xs font-medium text-muted-foreground">Limite de respostas</label>
           <Input
             type="number"
@@ -222,18 +222,18 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
             value={form.settings.responseLimit ?? ""}
             onChange={(e) => onSettingsChange({ responseLimit: e.target.value ? Number(e.target.value) : null })}
             placeholder="Ilimitado"
-            className="text-sm h-9"
+            className="text-sm h-9 w-full min-w-0"
           />
           <p className="text-[11px] text-muted-foreground">Fecha automaticamente ao atingir o número.</p>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 min-w-0">
           <label className="text-xs font-medium text-muted-foreground">Encerrar em</label>
           <Input
             type="datetime-local"
             value={form.settings.closedAt ? new Date(form.settings.closedAt).toISOString().slice(0, 16) : ""}
             onChange={(e) => onSettingsChange({ closedAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
-            className="text-sm h-9"
+            className="text-sm h-9 w-full min-w-0"
           />
           <p className="text-[11px] text-muted-foreground">Fecha automaticamente na data e hora definidas.</p>
         </div>
@@ -241,10 +241,10 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
 
       <Separator />
 
-      <div className="space-y-4">
+      <div className="space-y-4 min-w-0">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notificações</h4>
 
-        <div className="flex items-center justify-between gap-4 pr-2">
+        <div className="flex items-center justify-between gap-4 min-w-0">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Encaminhar respostas</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Envia cópia das respostas por e-mail</p>
@@ -257,14 +257,14 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
         </div>
 
         {form.settings.notifyOnResponse && (
-          <div className="space-y-2">
+          <div className="space-y-2 min-w-0">
             <label className="text-xs font-medium text-muted-foreground">E-mail(s) de destino <span className="font-normal">(sep. por vírgula)</span></label>
             <Input
               type="text"
               value={form.settings.notificationEmail ?? ""}
               onChange={(e) => onSettingsChange({ notificationEmail: e.target.value || null })}
               placeholder="email@exemplo.com, outro@exemplo.com"
-              className="text-sm h-9"
+              className="text-sm h-9 w-full min-w-0"
             />
           </div>
         )}
@@ -272,10 +272,10 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
 
       <Separator />
 
-      <div className="space-y-4">
+      <div className="space-y-4 min-w-0">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Auto-Responder</h4>
 
-        <div className="flex items-center justify-between gap-4 pr-2">
+        <div className="flex items-center justify-between gap-4 min-w-0">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">E-mail para o Respondente</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Enviar uma confirmação ou material automático</p>
@@ -288,17 +288,17 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
         </div>
 
         {form.settings.autoResponderEnabled && (
-          <div className="space-y-4 pt-2 border-l-2 border-border pl-3 ml-1">
+          <div className="space-y-4 pt-2 border-l-2 border-border pl-3 ml-1 min-w-0">
             {emailQuestions.length === 0 ? (
               <p className="text-sm text-destructive">
                 Você precisa adicionar uma pergunta do tipo "E-mail" ao seu formulário para usar o Auto-Responder.
               </p>
             ) : (
               <>
-                <div className="space-y-2">
+                <div className="space-y-2 min-w-0">
                   <label className="text-xs font-medium text-muted-foreground">Campo de destino</label>
                   <select
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     value={form.settings.autoResponderEmailFieldId ?? ""}
                     onChange={(e) => onSettingsChange({ autoResponderEmailFieldId: e.target.value || null })}
                   >
@@ -311,21 +311,21 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
                   </select>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 min-w-0">
                   <label className="text-xs font-medium text-muted-foreground">Assunto do E-mail</label>
                   <Input
                     type="text"
                     value={form.settings.autoResponderSubject ?? ""}
                     onChange={(e) => onSettingsChange({ autoResponderSubject: e.target.value || null })}
                     placeholder="Confirmação de Resposta"
-                    className="text-sm h-9"
+                    className="text-sm h-9 w-full min-w-0"
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 min-w-0">
                   <label className="text-xs font-medium text-muted-foreground">Corpo do E-mail</label>
                   <textarea
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[120px] resize-y"
+                    className="w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[120px] resize-y"
                     value={form.settings.autoResponderBody ?? ""}
                     onChange={(e) => onSettingsChange({ autoResponderBody: e.target.value || null })}
                     placeholder="Olá! Muito obrigado por responder. Segue em anexo o que você solicitou..."

@@ -5,6 +5,7 @@ import { forms, questions } from "../schema"
 import type { FormThemeConfig, FormSettings } from "../schema"
 import type { ApiResponse } from "../../types/form"
 import { generateSlug } from "../../utils/slug"
+import { DEFAULT_SETTINGS, DEFAULT_THEME } from "../../utils/map-db-form"
 
 // ─── Inferred row types ───────────────────────────────────────────────────────
 
@@ -21,6 +22,8 @@ export interface CreateFormInput {
   createdById: string
   title?: string
   description?: string
+  settings?: FormSettings
+  theme?: FormThemeConfig
 }
 
 export type UpdateFormInput = Partial<
@@ -133,6 +136,8 @@ export async function createForm(
         title,
         description: input.description,
         slug,
+        settings: input.settings ?? DEFAULT_SETTINGS,
+        theme: input.theme ?? DEFAULT_THEME,
       })
       .returning()
 
