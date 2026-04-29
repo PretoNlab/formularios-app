@@ -10,6 +10,9 @@ import { MatrixViz } from "./matrix-viz"
 import { RankingViz } from "./ranking-viz"
 import { SignatureViz } from "./signature-viz"
 
+import { AiInsightsSection } from "./ai-insights-section"
+import { AnalyticsPeriod } from "@/lib/types/form"
+
 const CRITICALITY_BADGE = {
   high: { label: "Alta atenção", cls: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
   medium: { label: "Observar", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
@@ -28,12 +31,15 @@ function VizSwitch({ stat }: { stat: QuestionAnalytics }) {
   return <TextViz stat={stat} />
 }
 
-export function QuestionCard({ stat, order, criticality, dropoffRate }: {
+export function QuestionCard({ formId, period, stat, order, criticality, dropoffRate }: {
+  formId: string
+  period: AnalyticsPeriod
   stat: QuestionAnalytics
   order: number | string
   criticality?: "high" | "medium" | "ok"
   dropoffRate?: number
 }) {
+  const isTextType = ["short_text", "long_text", "email", "url", "number", "phone", "whatsapp"].includes(stat.questionType)
   const badge = criticality ? CRITICALITY_BADGE[criticality] : null
 
   return (
@@ -66,6 +72,15 @@ export function QuestionCard({ stat, order, criticality, dropoffRate }: {
       </div>
 
       <VizSwitch stat={stat} />
+
+      {isTextType && (
+        <AiInsightsSection 
+          formId={formId} 
+          questionId={stat.questionId} 
+          period={period}
+          totalAnswers={stat.totalAnswers}
+        />
+      )}
     </div>
   )
 }

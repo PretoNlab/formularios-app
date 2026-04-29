@@ -200,6 +200,8 @@ export function AnalyticsView({
         {viewMode === "questions" && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <QuestionIntelligence
+              formId={formId}
+              period={period}
               questionStats={analytics.questionStats}
               questions={questions}
               dropoffByQuestion={analytics.dropoffByQuestion}

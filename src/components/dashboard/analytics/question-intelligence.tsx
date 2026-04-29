@@ -3,7 +3,9 @@ import type { QuestionSummary } from "./types"
 import { NPSHighlight } from "./nps-highlight"
 import { QuestionCard } from "./question-viz/question-card"
 
-export function QuestionIntelligence({ questionStats, questions, dropoffByQuestion }: {
+export function QuestionIntelligence({ formId, period, questionStats, questions, dropoffByQuestion }: {
+  formId: string
+  period: AnalyticsPeriod
   questionStats: QuestionAnalytics[]
   questions: QuestionSummary[]
   dropoffByQuestion: FormAnalytics["dropoffByQuestion"]
@@ -39,6 +41,8 @@ export function QuestionIntelligence({ questionStats, questions, dropoffByQuesti
           return (
             <QuestionCard
               key={stat.questionId}
+              formId={formId}
+              period={period}
               stat={stat}
               order={order}
               criticality={criticality}
