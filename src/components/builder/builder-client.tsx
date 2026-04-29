@@ -2,6 +2,7 @@
 
 import { useEffect, useTransition, useState, useMemo } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import {
   Type, PenTool, Settings2, Eye, Plus,
   Loader2, Share2,
@@ -11,7 +12,7 @@ import {
   Image as ImageIcon,
   Monitor, PanelRightClose, PanelRight, RefreshCw, Smartphone,
   Globe, Copy, PartyPopper,
-  X,
+  X, Mail, Palette,
 } from "lucide-react"
 import {
   DndContext,
@@ -54,6 +55,8 @@ import { WebhooksPanel } from "@/components/builder/panels/webhooks"
 import { GoogleSheetsPanel } from "@/components/builder/panels/google-sheets"
 import { PropertiesPanel } from "@/components/builder/panels/properties-panel"
 import { LogicPanel } from "@/components/builder/panels/logic-panel"
+import { OnboardingBanner } from "@/components/shared/onboarding-banner"
+import { ONBOARDING_KEYS, readFlag, setFlag } from "@/lib/utils/onboarding"
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -104,8 +107,18 @@ export function BuilderClient({
     }))
   )
 
-  const [sidebarTab, setSidebarTab] = useState<"fields" | "config" | "webhooks" | "theme">("fields")
+  const searchParams = useSearchParams()
+  const initialTabParam = searchParams.get("tab")
+  const initialTab: "fields" | "config" | "webhooks" | "theme" =
+    initialTabParam === "theme" || initialTabParam === "config" || initialTabParam === "webhooks"
+      ? initialTabParam
+      : "fields"
+  const [sidebarTab, setSidebarTab] = useState<"fields" | "config" | "webhooks" | "theme">(initialTab)
   const [builderMode, setBuilderMode] = useState<"editor" | "logic">("editor")
+  const [logicHintDismissed, setLogicHintDismissed] = useState(true)
+  useEffect(() => {
+    setLogicHintDismissed(readFlag(ONBOARDING_KEYS.LOGIC_HINT_DISMISSED))
+  }, [])
   const [previewOpen, setPreviewOpen] = useState(true)
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop")
   const [previewKey, setPreviewKey] = useState<number>(Date.now())
@@ -239,6 +252,7 @@ export function BuilderClient({
   function handleCopyLink() {
     const link = `${typeof window !== "undefined" ? window.location.origin : "https://formularios.ia"}/f/${form.slug}`
     navigator.clipboard.writeText(link)
+    setFlag(ONBOARDING_KEYS.SHARE_COMPLETED)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -246,11 +260,19 @@ export function BuilderClient({
   function handleCopyEmbed() {
     const code = `<iframe src="${shareLink}" width="100%" height="600" frameborder="0" style="border:0;border-radius:8px"></iframe>`
     navigator.clipboard.writeText(code)
+    setFlag(ONBOARDING_KEYS.SHARE_COMPLETED)
     setCopiedEmbed(true)
     setTimeout(() => setCopiedEmbed(false), 2000)
   }
 
   const shareLink = `${typeof window !== "undefined" ? window.location.origin : "https://formularios.ia"}/f/${form.slug}`
+
+  const showLogicHint = useMemo(
+    () =>
+      form.questions.length >= 3 &&
+      form.questions.every((q) => !q.logicRules || q.logicRules.length === 0),
+    [form.questions]
+  )
 
   const filteredFields = useMemo(() =>
     SIDEBAR_TYPES.filter((type) =>
@@ -419,10 +441,16 @@ export function BuilderClient({
           <Button
             variant="ghost"
             size="sm"
-            className={`rounded-full px-4 h-8 text-xs font-medium transition-all ${builderMode === "logic" ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`}
+            className={`relative rounded-full px-4 h-8 text-xs font-medium transition-all ${builderMode === "logic" ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`}
             onClick={() => setBuilderMode("logic")}
           >
             Lógica
+            {showLogicHint && !logicHintDismissed && builderMode !== "logic" && (
+              <span className="absolute -top-1 -right-1 flex h-2 w-2" aria-hidden="true">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+              </span>
+            )}
           </Button>
           {!previewOpen && (
             <Button
@@ -501,6 +529,37 @@ export function BuilderClient({
 
         <ScrollArea className="flex-1 p-8 pt-24">
             <div className="mx-auto max-w-2xl space-y-4">
+              {form.status === "published" && (
+                <OnboardingBanner
+                  storageKey={ONBOARDING_KEYS.postPublish(form.id)}
+                  icon={PartyPopper}
+                  title="Formulário publicado! Próximos passos"
+                  description="Maximize seu formulário com estes 3 cliques."
+                  className="mb-6"
+                  actions={[
+                    {
+                      label: copied ? "Link copiado!" : "Copiar link",
+                      icon: copied ? CheckCircle2 : Copy,
+                      onClick: handleCopyLink,
+                    },
+                    {
+                      label: "Configurar notificação",
+                      icon: Mail,
+                      onClick: () => {
+                        setSidebarTab("config")
+                      },
+                    },
+                    {
+                      label: "Personalizar tema",
+                      icon: Palette,
+                      onClick: () => {
+                        setSidebarTab("theme")
+                      },
+                    },
+                  ]}
+                />
+              )}
+
               {/* Logotipo do formulário */}
             {form.theme.logo?.url && (
               <div

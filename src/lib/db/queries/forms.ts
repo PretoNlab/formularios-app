@@ -1,4 +1,5 @@
 import { cache } from "react"
+import { randomUUID } from "crypto"
 import { eq, desc, sql, getTableColumns } from "drizzle-orm"
 import { db } from "../client"
 import { forms, questions } from "../schema"
@@ -263,8 +264,13 @@ export async function duplicateForm(
       .returning()
 
     if (original.questions.length > 0) {
-      await db.insert(questions).values(
-        original.questions.map((q) => ({
+      const idMap = new Map<string, string>()
+      
+      const newQuestions = original.questions.map((q) => {
+        const newId = randomUUID()
+        idMap.set(q.id, newId)
+        return {
+          id: newId,
           formId: newForm.id,
           type: q.type,
           title: q.title,
@@ -273,8 +279,31 @@ export async function duplicateForm(
           order: q.order,
           properties: q.properties,
           logicRules: q.logicRules,
-        }))
-      )
+        }
+      })
+
+      for (const q of newQuestions) {
+        if (q.logicRules && q.logicRules.length > 0) {
+          q.logicRules = q.logicRules.map((rule) => {
+            const updatedCondition = { ...rule.condition }
+            if (updatedCondition.questionId && idMap.has(updatedCondition.questionId)) {
+              updatedCondition.questionId = idMap.get(updatedCondition.questionId)!
+            }
+            const updatedAction = { ...rule.action }
+            if (updatedAction.targetQuestionId && idMap.has(updatedAction.targetQuestionId)) {
+              updatedAction.targetQuestionId = idMap.get(updatedAction.targetQuestionId)!
+            }
+            return {
+              ...rule,
+              id: randomUUID(),
+              condition: updatedCondition,
+              action: updatedAction,
+            }
+          })
+        }
+      }
+
+      await db.insert(questions).values(newQuestions)
     }
 
     return { success: true, data: newForm }

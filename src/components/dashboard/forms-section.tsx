@@ -7,7 +7,7 @@ import {
   Search, BarChart3, Users, Zap, Link2,
   Trash2, Globe, FileText, Clock, ChevronRight,
   PlusCircle, Sparkles, MessageCircle, Check, X, Rocket,
-  Copy, Eye, PauseCircle,
+  Copy, Eye, PauseCircle, Share2, Palette, Mail,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,6 +42,7 @@ import { CreateFormButton } from "./create-form-button"
 import { ImportFormDialog } from "./import-form-dialog"
 import { deleteFormAction, publishFormAction, createFormFromTemplateAction, duplicateFormAction, closeFormAction } from "@/app/actions/forms"
 import type { FormListItem } from "@/lib/db/queries/forms"
+import { ONBOARDING_KEYS, isThemeCustomized, hasEmailNotifications, readFlag, setFlag } from "@/lib/utils/onboarding"
 
 // ─── Welcome Modal ────────────────────────────────────────────────────────────
 
@@ -126,13 +127,24 @@ const CHECKLIST_KEY = "formularios_checklist_v1"
 function OnboardingChecklist({ forms }: { forms: FormListItem[] }) {
   const [dismissed, setDismissed] = useState<boolean | null>(null)
   const [celebrating, setCelebrating] = useState(false)
+  const [shareDone, setShareDone] = useState(false)
 
   useEffect(() => {
     setDismissed(!!localStorage.getItem(CHECKLIST_KEY))
+    setShareDone(readFlag(ONBOARDING_KEYS.SHARE_COMPLETED))
+    const refresh = () => setShareDone(readFlag(ONBOARDING_KEYS.SHARE_COMPLETED))
+    document.addEventListener("visibilitychange", refresh)
+    window.addEventListener("focus", refresh)
+    return () => {
+      document.removeEventListener("visibilitychange", refresh)
+      window.removeEventListener("focus", refresh)
+    }
   }, [])
 
   const firstForm = forms[0]
   const publishedForm = forms.find((f) => f.status === "published")
+  const themeCustomizedForm = forms.find((f) => isThemeCustomized(f.theme))
+  const notifyForm = forms.find((f) => hasEmailNotifications(f.settings))
 
   const steps: { id: string; label: string; description: string; done: boolean; href: string | null }[] = [
     {
@@ -165,6 +177,35 @@ function OnboardingChecklist({ forms }: { forms: FormListItem[] }) {
         ? `/responses/${publishedForm.id}`
         : firstForm
         ? `/builder/${firstForm.id}`
+        : null,
+    },
+    {
+      id: "share",
+      label: "Compartilhar formulário",
+      description: "Copie o link público ou o código de embed",
+      done: shareDone,
+      href: publishedForm ? `/builder/${publishedForm.id}` : firstForm ? `/builder/${firstForm.id}` : null,
+    },
+    {
+      id: "theme",
+      label: "Personalizar o tema",
+      description: "Escolha cores e fontes que combinam com sua marca",
+      done: !!themeCustomizedForm,
+      href: themeCustomizedForm
+        ? `/builder/${themeCustomizedForm.id}?tab=theme`
+        : firstForm
+        ? `/builder/${firstForm.id}?tab=theme`
+        : null,
+    },
+    {
+      id: "notify",
+      label: "Receber respostas por e-mail",
+      description: "Seja notificado a cada nova resposta enviada",
+      done: !!notifyForm,
+      href: notifyForm
+        ? `/builder/${notifyForm.id}?tab=config`
+        : firstForm
+        ? `/builder/${firstForm.id}?tab=config`
         : null,
     },
   ]
@@ -543,7 +584,7 @@ function FormCard({ form, onDelete, onPublish, onDuplicate, onClose }: { form: F
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/f/${form.slug}`); }}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/f/${form.slug}`); setFlag(ONBOARDING_KEYS.SHARE_COMPLETED); }}>
                   <Link2 className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>

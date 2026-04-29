@@ -113,6 +113,14 @@ export function FormRenderer({
         ...initialState,
     })
 
+    // Mirror of state.answers in a ref, so callbacks (goNext) can read the
+    // latest answers even when invoked from a stale closure (e.g. setTimeout
+    // inside auto-submit fields like yes_no, multiple_choice, rating).
+    const answersRef = useRef(state.answers)
+    useEffect(() => {
+        answersRef.current = state.answers
+    }, [state.answers])
+
     // Direction for the slide animation
     const [direction, setDirection] = useState<"up" | "down">("up")
     const [animating, setAnimating] = useState(false)
@@ -142,7 +150,7 @@ export function FormRenderer({
     // ── Validation ──
     const isValid = useCallback(() => {
         if (!currentQ) return true
-        const val = state.answers[currentQ.id]
+        const val = answersRef.current[currentQ.id]
         // Block navigation while a file upload is in progress (required or not)
         if (val === "__uploading__") return false
         if (!currentQ.required) return true
@@ -154,15 +162,19 @@ export function FormRenderer({
         if (typeof val === "string" && val === "__other__") return false
         if (Array.isArray(val) && val.some((v) => typeof v === "string" && v === "__other__")) return false
         return true
-    }, [currentQ, state.answers])
+    }, [currentQ])
 
     // ── Navigate forward ──
     const goNext = useCallback(async () => {
         if (!isValid()) return
         if (state.isComplete) return
 
-        const hidden = computeHiddenQuestions(questions, state.answers)
-        const nextIdx = resolveNextIndex(state.currentQuestionIndex, questions, state.answers, hidden)
+        // Read from ref so auto-submit fields (yes_no, multiple_choice, rating)
+        // see the answer they just set, even when goNext fires from a stale
+        // setTimeout closure.
+        const latestAnswers = answersRef.current
+        const hidden = computeHiddenQuestions(questions, latestAnswers)
+        const nextIdx = resolveNextIndex(state.currentQuestionIndex, questions, latestAnswers, hidden)
 
         const nextQuestion = questions[nextIdx]
         const isNextThankYou = nextQuestion?.type === "thank_you"
@@ -170,7 +182,7 @@ export function FormRenderer({
         if (nextIdx >= questions.length || isLastQuestion || isNextThankYou) {
             setState((s) => ({ ...s, isSubmitting: true }))
             try {
-                await onSubmit?.(state.answers)
+                await onSubmit?.(latestAnswers)
             } finally {
                 setState((s) => ({
                     ...s,
@@ -183,7 +195,7 @@ export function FormRenderer({
         }
 
         if (currentQ && onProgress) {
-            onProgress(currentQ.id, state.answers[currentQ.id] ?? null)
+            onProgress(currentQ.id, latestAnswers[currentQ.id] ?? null)
         }
 
         setDirection("up")
@@ -198,7 +210,7 @@ export function FormRenderer({
             setAnimating(false)
         }, 220)
     }, [currentQ, isLastQuestion, isValid, onProgress, onSubmit, questions,
-        state.isComplete, state.answers, state.currentQuestionIndex])
+        state.isComplete, state.currentQuestionIndex])
 
     // ── Navigate back ──
     const goBack = useCallback(() => {

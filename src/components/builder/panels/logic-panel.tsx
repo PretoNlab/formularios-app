@@ -1,10 +1,12 @@
 "use client"
 
-import { Plus, Trash2, X, Zap } from "lucide-react"
+import { Plus, Trash2, X, Zap, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useBuilderStore } from "@/stores/builder-store"
 import type { Question, QuestionType, LogicRule, LogicOperator } from "@/lib/types/form"
 import { cn } from "@/lib/utils"
+import { OnboardingHint } from "@/components/shared/onboarding-banner"
+import { ONBOARDING_KEYS, setFlag } from "@/lib/utils/onboarding"
 
 const OPERATOR_LABELS: Record<LogicOperator, string> = {
   equals: "é igual a",
@@ -47,6 +49,7 @@ export function LogicPanel({ question, allQuestions }: { question: Question; all
       action: { type: "jump_to", targetQuestionId: undefined },
     }
     updateQuestion(question.id, { logicRules: [...rules, newRule] })
+    setFlag(ONBOARDING_KEYS.LOGIC_HINT_DISMISSED)
   }
 
   function updateRule(ruleId: string, partial: Partial<LogicRule>) {
@@ -67,6 +70,13 @@ export function LogicPanel({ question, allQuestions }: { question: Question; all
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Regras de lógica</p>
         <p className="text-[11px] text-muted-foreground">Controle o fluxo baseado na resposta desta pergunta.</p>
       </div>
+
+      <OnboardingHint
+        storageKey={ONBOARDING_KEYS.LOGIC_HINT_DISMISSED}
+        icon={Sparkles}
+        title="Crie fluxos dinâmicos"
+        description="Pule perguntas, oculte campos ou encerre o formulário com base na resposta — diferencial vs Google Forms."
+      />
 
       {rules.length === 0 ? (
         <div className="flex flex-col items-center py-8 text-center text-muted-foreground">
@@ -136,7 +146,8 @@ function ConditionInput({
       {showValue && (
         isYesNo ? (
           <select className={selectClass} value={String(condition.value)}
-            onChange={(e) => onChange({ value: e.target.value })}>
+            onChange={(e) => onChange({ value: e.target.value === "true" })}>
+            <option value="">Escolha...</option>
             <option value="true">Sim</option>
             <option value="false">Não</option>
           </select>

@@ -33,6 +33,7 @@ export function ThemePickerPanel({
     if (!workspaceBrandKit) return
     const updated: ThemeConfig = {
       ...form.theme,
+      id: "brand-kit",
       ...(workspaceBrandKit.colors ? { colors: workspaceBrandKit.colors } : {}),
       ...(workspaceBrandKit.font ? { font: workspaceBrandKit.font } : {}),
       ...(workspaceBrandKit.borderRadius ? { borderRadius: workspaceBrandKit.borderRadius } : {}),

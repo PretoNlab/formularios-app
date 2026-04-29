@@ -60,7 +60,7 @@ export function PublicShareDialog({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button data-public-share-trigger variant="outline" size="sm" className="gap-2">
           <Share2 className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Compartilhar</span>
         </Button>

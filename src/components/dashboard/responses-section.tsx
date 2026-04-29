@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation"
 import {
   ArrowLeft, Eye, Users, TrendingUp, Clock,
   CheckCircle2, Circle, Copy, ExternalLink, Download,
-  Smartphone, Filter, X, ChevronLeft, ChevronRight, Monitor, Tablet, Printer, Share2
+  Smartphone, Filter, X, ChevronLeft, ChevronRight, Monitor, Tablet, Printer, Share2,
+  Sparkles, Zap
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,6 +18,8 @@ import type { ResponseWithAnswers } from "@/lib/db/queries/responses"
 import { exportResponsesAction } from "@/app/actions/responses"
 import { ImportResponsesDialog } from "@/components/responses/import-responses-dialog"
 import { PublicShareDialog } from "./public-share-dialog"
+import { OnboardingBanner } from "@/components/shared/onboarding-banner"
+import { ONBOARDING_KEYS, setFlag } from "@/lib/utils/onboarding"
 import { StatCard } from "./analytics/stat-card"
 import { AnalyticsView } from "./analytics/analytics-view"
 import { pct, formatDuration } from "./analytics/utils"
@@ -445,7 +448,7 @@ function FilterBar({
     "h-8 rounded-lg border bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
 
   return (
-    <div className="flex flex-wrap items-center gap-2 mb-4">
+    <div data-filter-bar className="flex flex-wrap items-center gap-2 mb-4 scroll-mt-24">
       <Filter className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
       <select className={sel} value={filters.period} onChange={(e) => set("period", e.target.value as FilterPeriod)}>
         <option value="all">Todos os períodos</option>
@@ -607,6 +610,7 @@ export function ResponsesSection({
 
   function copyLink() {
     navigator.clipboard.writeText(publicUrl)
+    setFlag(ONBOARDING_KEYS.SHARE_COMPLETED)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -697,6 +701,51 @@ export function ResponsesSection({
         <StatCard icon={Clock} label="Tempo médio"
           value={avgTime > 0 ? formatDuration(avgTime) : "—"} sub="para concluir" />
       </div>
+
+      {responses.length >= 1 && (
+        <OnboardingBanner
+          storageKey={ONBOARDING_KEYS.FIRST_RESPONSE_SEEN}
+          icon={Sparkles}
+          title="Primeiras respostas chegaram"
+          description="Aproveite ao máximo: filtre, exporte, compartilhe um dashboard público ou conecte com outras ferramentas."
+          className="mb-6 print-hide"
+          actions={[
+            {
+              label: "Filtrar respostas",
+              icon: Filter,
+              onClick: () => {
+                setTab("responses")
+                setTimeout(() => {
+                  document
+                    .querySelector("[data-filter-bar]")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }, 50)
+              },
+              hint: "cruzamento",
+            },
+            {
+              label: "Exportar CSV",
+              icon: Download,
+              onClick: handleExport,
+            },
+            {
+              label: "Dashboard público",
+              icon: Share2,
+              onClick: () => {
+                document
+                  .querySelector<HTMLButtonElement>("[data-public-share-trigger]")
+                  ?.click()
+              },
+            },
+            {
+              label: "Conectar integrações",
+              icon: Zap,
+              variant: "outline",
+              onClick: () => router.push(`/builder/${formId}?tab=webhooks`),
+            },
+          ]}
+        />
+      )}
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
