@@ -40,7 +40,7 @@ export function AnalyticsView({
   const [period, setPeriod] = useState<AnalyticsPeriod>(initialPeriod)
   const [analytics, setAnalytics] = useState<FormAnalytics | null>(initialAnalytics)
   const [isPending, startTransition] = useTransition()
-  const [viewMode, setViewMode] = useState<"overview" | "questions">("overview")
+  const [viewMode, setViewMode] = useState<"overview" | "questions">("questions")
 
   function handlePeriodChange(next: AnalyticsPeriod) {
     setPeriod(next)
@@ -72,8 +72,8 @@ export function AnalyticsView({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <Tabs value={viewMode} onValueChange={(v: any) => setViewMode(v)} className="w-full sm:w-auto">
           <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:flex h-auto p-1">
-            <TabsTrigger value="overview" className="py-2">Análise de Performance</TabsTrigger>
             <TabsTrigger value="questions" className="py-2">Resultados por Pergunta</TabsTrigger>
+            <TabsTrigger value="overview" className="py-2">Análise de Performance</TabsTrigger>
           </TabsList>
         </Tabs>
 
