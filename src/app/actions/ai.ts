@@ -96,30 +96,28 @@ export async function getSemanticInsightsAction(
 }
 
 /**
- * Generates a form structure from an uploaded image using Vision AI.
+ * Generates a form structure from a text prompt using AI.
  */
-export async function generateFormFromImageAction(formData: FormData) {
+export async function generateFormFromTextAction(promptText: string) {
   const user = await requireUser()
-  const file = formData.get("file") as File
   
-  if (!file) {
-    throw new Error("Nenhum arquivo enviado.")
+  if (!promptText || promptText.trim().length < 5) {
+    throw new Error("O prompt deve ser mais descritivo.")
   }
 
   try {
     const model = getGeminiModel("gemini-1.5-flash")
     
-    // Convert File to base64
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const base64Data = buffer.toString("base64")
-
-    const prompt = `
-      Você é um assistente que converte imagens de formulários físicos ou prints de formulários digitais em JSON estruturado para uma plataforma de formulários.
-      Analise a imagem e identifique o título e todas as perguntas.
+    const systemPrompt = `
+      Você é um especialista em UX e design de formulários.
+      Sua tarefa é converter o desejo do usuário em um formulário estruturado em JSON.
+      
+      Instrução do Usuário: "${promptText}"
       
       Retorne APENAS um objeto JSON válido (sem markdown, sem blocos de código \`\`\`) com o seguinte formato:
       {
-        "title": "Título sugerido para o formulário",
+        "title": "Título estratégico do formulário",
+        "description": "Uma breve descrição amigável",
         "questions": [
           {
             "type": "short_text" | "long_text" | "multiple_choice" | "checkbox" | "dropdown" | "rating" | "nps" | "yes_no",
@@ -131,26 +129,17 @@ export async function generateFormFromImageAction(formData: FormData) {
       }
       
       Regras:
-      - Use apenas os tipos listados acima.
-      - Se for uma pergunta de nota de 0 a 10, use "nps".
-      - Se for uma pergunta de estrelas, use "rating".
-      - Responda em Português (PT-BR).
+      - Crie no máximo 10 perguntas.
+      - Use uma mistura inteligente de tipos de perguntas.
+      - Responda sempre em Português (PT-BR).
     `
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: file.type
-        }
-      }
-    ])
-
+    const result = await model.generateContent(systemPrompt)
     const responseText = result.response.text()
     const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim()
     const formStructure = JSON.parse(cleanJson) as {
       title: string
+      description: string
       questions: Array<{
         type: string
         title: string
@@ -163,11 +152,12 @@ export async function generateFormFromImageAction(formData: FormData) {
     const formResult = await createForm({
       workspaceId: user.defaultWorkspace.id,
       createdById: user.id,
-      title: formStructure.title || "Formulário Importado",
+      title: formStructure.title || "Novo Formulário IA",
+      description: formStructure.description
     })
 
     if (!formResult.success || !formResult.data) {
-      throw new Error("Falha ao criar formulário no banco.")
+      throw new Error("Falha ao criar formulário.")
     }
 
     const formId = formResult.data.id
@@ -194,10 +184,10 @@ export async function generateFormFromImageAction(formData: FormData) {
     return { success: true, data: { formId } }
 
   } catch (error) {
-    console.error("[generateFormFromImageAction] Error:", error)
+    console.error("[generateFormFromTextAction] Error:", error)
     return {
       success: false,
-      error: { code: "VISION_ERROR", message: "Não foi possível interpretar a imagem do formulário." }
+      error: { code: "AI_GENERATION_ERROR", message: "Não foi possível gerar o formulário com esse prompt." }
     }
   }
 }

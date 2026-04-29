@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Sparkles, Loader2, Camera, FileUp, ChevronRight, Wand2 } from "lucide-react"
+import { Sparkles, Loader2, ChevronRight, Wand2, MessageSquare, Lightbulb } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -11,39 +11,29 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { generateFormFromImageAction } from "@/app/actions/ai"
+import { Textarea } from "@/components/ui/textarea"
+import { generateFormFromTextAction } from "@/app/actions/ai"
 import { useRouter } from "next/navigation"
+
+const SUGGESTIONS = [
+  "Pesquisa de satisfação para uma hamburgueria",
+  "Inscrição para workshop de marketing digital",
+  "Feedback pós-evento com NPS",
+  "Formulário de contato para consultoria",
+]
 
 export function AiFormGeneratorDialog() {
   const [open, setOpen] = useState(false)
-  const [file, setFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
+  const [prompt, setPrompt] = useState("")
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const selectedFile = e.target.files?.[0]
-    if (selectedFile) {
-      setFile(selectedFile)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPreview(reader.result as string)
-      }
-      reader.readAsDataURL(selectedFile)
-    }
-  }
-
   async function handleGenerate() {
-    if (!file) return
+    if (!prompt.trim() || prompt.length < 5) return
 
     startTransition(async () => {
-      const formData = new FormData()
-      formData.append("file", file)
-
       try {
-        const result = await generateFormFromImageAction(formData)
+        const result = await generateFormFromTextAction(prompt)
         if (result.success && result.data) {
           setOpen(false)
           router.push(`/builder/${result.data.formId}`)
@@ -51,7 +41,7 @@ export function AiFormGeneratorDialog() {
           alert(result.error?.message || "Erro ao gerar formulário.")
         }
       } catch (error) {
-        alert("Erro inesperado ao processar imagem.")
+        alert("Erro inesperado ao processar o comando.")
       }
     })
   }
@@ -64,7 +54,7 @@ export function AiFormGeneratorDialog() {
         onClick={() => setOpen(true)}
       >
         <Sparkles className="h-4 w-4" />
-        Criar com IA (Foto/PDF)
+        Criar com IA
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -73,64 +63,61 @@ export function AiFormGeneratorDialog() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Wand2 className="h-6 w-6" />
             </div>
-            <DialogTitle className="text-center text-xl font-bold">Smart Builder IA</DialogTitle>
+            <DialogTitle className="text-center text-xl font-bold font-heading">Gerador Mágico IA</DialogTitle>
             <DialogDescription className="text-center">
-              Tire uma foto de um formulário impresso ou envie um PDF/Print. Nossa IA vai transformar em um formulário digital em segundos.
+              Descreva o formulário que você precisa e nossa IA criará a estrutura completa com as melhores perguntas.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            {!preview ? (
-              <Label 
-                htmlFor="ai-upload" 
-                className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-2xl cursor-pointer hover:bg-muted/50 transition-colors border-primary/20 bg-primary/5"
-              >
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <Camera className="w-10 h-10 mb-3 text-primary/40" />
-                  <p className="mb-2 text-sm font-semibold">Clique para enviar ou tirar foto</p>
-                  <p className="text-xs text-muted-foreground">PNG, JPG ou PDF (Max 10MB)</p>
+            <div className="space-y-2">
+              <div className="relative">
+                <Textarea
+                  placeholder="Ex: Crie uma pesquisa de satisfação para clientes de uma clínica estética, focando no atendimento e ambiente..."
+                  className="min-h-[120px] resize-none rounded-2xl border-primary/10 focus-visible:ring-primary/20 p-4 text-sm"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  disabled={isPending}
+                />
+                <div className="absolute bottom-3 right-3 text-[10px] text-muted-foreground bg-background/50 backdrop-blur-sm px-2 py-0.5 rounded-full border">
+                  Gemini 1.5 Flash
                 </div>
-                <Input 
-                  id="ai-upload" 
-                  type="file" 
-                  accept="image/*,application/pdf" 
-                  className="hidden" 
-                  onChange={handleFileChange}
-                />
-              </Label>
-            ) : (
-              <div className="relative group">
-                <img 
-                  src={preview} 
-                  alt="Preview" 
-                  className="w-full h-48 object-cover rounded-2xl border" 
-                />
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => { setFile(null); setPreview(null); }}
-                >
-                  Trocar imagem
-                </Button>
               </div>
-            )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground mb-1">
+                <Lightbulb className="h-3 w-3" />
+                Sugestões:
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {SUGGESTIONS.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setPrompt(s)}
+                    className="text-[10px] bg-muted hover:bg-primary/10 hover:text-primary border border-transparent hover:border-primary/20 transition-all px-2.5 py-1 rounded-full text-muted-foreground text-left"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           <DialogFooter>
             <Button 
-              className="w-full rounded-full gap-2 h-11 text-base font-semibold shadow-lg shadow-primary/20"
-              disabled={!file || isPending}
+              className="w-full rounded-full gap-2 h-11 text-base font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]"
+              disabled={!prompt.trim() || prompt.length < 5 || isPending}
               onClick={handleGenerate}
             >
               {isPending ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Mágica acontecendo...
+                  Criando seu formulário...
                 </>
               ) : (
                 <>
-                  Gerar Formulário Digital
+                  Gerar com IA
                   <ChevronRight className="h-4 w-4" />
                 </>
               )}
