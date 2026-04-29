@@ -1,4 +1,4 @@
-import type { FormAnalytics, QuestionAnalytics } from "@/lib/types/form"
+import type { FormAnalytics, QuestionAnalytics, AnalyticsPeriod } from "@/lib/types/form"
 import type { QuestionSummary } from "./types"
 import { NPSHighlight } from "./nps-highlight"
 import { QuestionCard } from "./question-viz/question-card"
