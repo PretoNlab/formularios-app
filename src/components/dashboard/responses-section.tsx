@@ -7,15 +7,25 @@ import {
   ArrowLeft, Eye, Users, TrendingUp, Clock,
   CheckCircle2, Circle, Copy, ExternalLink, Download,
   Smartphone, Filter, X, ChevronLeft, ChevronRight, Monitor, Tablet, Printer, Share2,
-  Sparkles, Zap
+  Sparkles, Zap, Trash2, AlertCircle, Loader2
 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { FormAnalytics, QuestionType } from "@/lib/types/form"
 import type { ResponseWithAnswers } from "@/lib/db/queries/responses"
-import { exportResponsesAction } from "@/app/actions/responses"
+import { exportResponsesAction, deleteResponsesAction } from "@/app/actions/responses"
 import { ImportResponsesDialog } from "@/components/responses/import-responses-dialog"
 import { PublicShareDialog } from "./public-share-dialog"
 import { OnboardingBanner } from "@/components/shared/onboarding-banner"
@@ -315,10 +325,22 @@ function ResponseDetailPanel({
 
 // ─── Responses Table ──────────────────────────────────────────────────────────
 
-function ResponsesTable({ responses, questions, onOpen }: {
+function ResponsesTable({
+  responses,
+  questions,
+  onOpen,
+  selectedIds,
+  onToggleSelect,
+  onToggleSelectAll,
+  isAllSelected,
+}: {
   responses: ResponseWithAnswers[]
   questions: QuestionSummary[]
   onOpen: (index: number) => void
+  selectedIds: Set<string>
+  onToggleSelect: (id: string) => void
+  onToggleSelectAll: () => void
+  isAllSelected: boolean
 }) {
   if (responses.length === 0) {
     return (
@@ -341,7 +363,15 @@ function ResponsesTable({ responses, questions, onOpen }: {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/30">
-              <th className="text-left px-4 py-3 font-semibold text-muted-foreground w-10 sticky left-0 bg-muted/30">#</th>
+              <th className="px-4 py-3 w-10 sticky left-0 bg-muted/30 z-10">
+                <input
+                  type="checkbox"
+                  checked={isAllSelected}
+                  onChange={onToggleSelectAll}
+                  className="h-4 w-4 rounded border-input bg-background accent-primary cursor-pointer"
+                />
+              </th>
+              <th className="text-left px-4 py-3 font-semibold text-muted-foreground w-10">#</th>
               <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Data</th>
               {visibleQuestions.map((q) => (
                 <th key={q.id} className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[160px] max-w-[220px]">
@@ -359,7 +389,15 @@ function ResponsesTable({ responses, questions, onOpen }: {
                 className="border-b last:border-0 hover:bg-muted/40 cursor-pointer transition-colors group"
                 onClick={() => onOpen(i)}
               >
-                <td className="px-4 py-3 text-muted-foreground sticky left-0 bg-card group-hover:bg-muted/40 transition-colors">{i + 1}</td>
+                <td className="px-4 py-3 sticky left-0 bg-card group-hover:bg-muted/40 transition-colors z-10" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(r.id)}
+                    onChange={() => onToggleSelect(r.id)}
+                    className="h-4 w-4 rounded border-input bg-background accent-primary cursor-pointer"
+                  />
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
                 <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">{formatDate(r.startedAt)}</td>
                 {visibleQuestions.map((q) => {
                   const ans = r.answers.find((a) => a.questionId === q.id)
@@ -531,6 +569,10 @@ export function ResponsesSection({
   const [isExporting, setIsExporting] = useState(false)
   const [filters, setFilters] = useState<ResponseFilters>(DEFAULT_FILTERS)
   const [openResponseIndex, setOpenResponseIndex] = useState<number | null>(null)
+  
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const sources = useMemo(() => {
     const set = new Set<string>()
@@ -614,6 +656,41 @@ export function ResponsesSection({
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
+  function handleToggleSelect(id: string) {
+    const next = new Set(selectedIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setSelectedIds(next)
+  }
+
+  function handleToggleSelectAll() {
+    if (selectedIds.size === filteredResponses.length && filteredResponses.length > 0) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredResponses.map(r => r.id)))
+    }
+  }
+
+  async function handleDeleteResponses() {
+    if (selectedIds.size === 0) return
+    setIsDeleting(true)
+    try {
+      const res = await deleteResponsesAction(formId, Array.from(selectedIds))
+      if (res.success) {
+        window.location.reload()
+      } else {
+        alert("Falha ao excluir respostas.")
+      }
+    } catch {
+      alert("Falha ao excluir respostas.")
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
+  const isAllSelected = filteredResponses.length > 0 && selectedIds.size === filteredResponses.length
 
   async function handleExport() {
     setIsExporting(true)
@@ -767,10 +844,31 @@ export function ResponsesSection({
             totalCount={responses.length}
             crossFilters={crossFilters}
           />
+          
+          {selectedIds.size > 0 && (
+            <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-center justify-between mb-4 animate-in slide-in-from-top-2">
+              <span className="text-sm font-medium text-destructive">
+                {selectedIds.size} resposta(s) selecionada(s)
+              </span>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())} className="h-8">
+                  Cancelar
+                </Button>
+                <Button variant="destructive" size="sm" className="h-8 gap-2" onClick={() => setShowDeleteConfirm(true)}>
+                  <Trash2 className="h-3.5 w-3.5" /> Excluir
+                </Button>
+              </div>
+            </div>
+          )}
+
           <ResponsesTable
             responses={filteredResponses}
             questions={questions}
             onOpen={setOpenResponseIndex}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
+            onToggleSelectAll={handleToggleSelectAll}
+            isAllSelected={isAllSelected}
           />
           {pagination && pagination.totalPages > 1 && (
             <div className="flex items-center justify-between mt-4 px-1">
@@ -797,6 +895,34 @@ export function ResponsesSection({
               </div>
             </div>
           )}
+
+          <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-destructive" />
+                  Excluir Respostas
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Você está prestes a excluir <strong>{selectedIds.size}</strong> resposta(s). Esta ação é permanente e não poderá ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={isDeleting}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handleDeleteResponses()
+                  }}
+                >
+                  {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                  Excluir permanentemente
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       )}
 

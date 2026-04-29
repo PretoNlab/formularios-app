@@ -1,6 +1,6 @@
 "use server"
 
-import { eq, asc, and, inArray } from "drizzle-orm"
+import { eq, asc, and, inArray, sql } from "drizzle-orm"
 import { headers } from "next/headers"
 import { db } from "@/lib/db/client"
 import { questions, responses, forms } from "@/lib/db/schema"
@@ -150,6 +150,44 @@ export async function togglePublicAnalyticsAction(
     return {
       success: false,
       error: { code: "DB_ERROR", message: "Failed to update form visibility." }
+    }
+  }
+}
+
+/**
+ * Deletes specific responses from a form and decrements the form's responseCount.
+ */
+export async function deleteResponsesAction(
+  formId: string,
+  responseIds: string[]
+): Promise<ApiResponse<{ deletedCount: number }>> {
+  await requireFormOwner(formId)
+
+  if (!responseIds || responseIds.length === 0) {
+    return { success: true, data: { deletedCount: 0 } }
+  }
+
+  try {
+    const deleted = await db
+      .delete(responses)
+      .where(and(eq(responses.formId, formId), inArray(responses.id, responseIds)))
+      .returning({ id: responses.id })
+
+    const deletedCount = deleted.length
+
+    if (deletedCount > 0) {
+      await db
+        .update(forms)
+        .set({ responseCount: sql`GREATEST(${forms.responseCount} - ${deletedCount}, 0)` })
+        .where(eq(forms.id, formId))
+    }
+
+    return { success: true, data: { deletedCount } }
+  } catch (error) {
+    console.error("[deleteResponsesAction] Error:", error)
+    return {
+      success: false,
+      error: { code: "DB_ERROR", message: "Failed to delete responses." }
     }
   }
 }
