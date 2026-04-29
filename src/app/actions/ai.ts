@@ -1,5 +1,6 @@
 "use server"
 
+import { randomUUID } from "crypto"
 import { db } from "@/lib/db/client"
 import { answers, responses } from "@/lib/db/schema"
 import { eq, and, inArray, sql } from "drizzle-orm"
@@ -9,7 +10,6 @@ import { AnalyticsPeriod, QuestionType } from "@/lib/types/form"
 import { createForm } from "@/lib/db/queries/forms"
 import { upsertQuestions, UpsertQuestionInput } from "@/lib/db/queries/questions"
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
 const PERIOD_DAYS: Record<Exclude<AnalyticsPeriod, "all">, number> = {
   "7d": 7,
@@ -164,30 +164,35 @@ export async function generateFormFromTextAction(promptText: string) {
 
     // 2. Prepare and upsert questions
     const upsertInput: UpsertQuestionInput[] = formStructure.questions.map((q, i) => ({
+      id: randomUUID(),
       formId,
       type: q.type as QuestionType,
       title: q.title,
-      required: q.required,
+      required: q.required ?? false,
       order: i,
       properties: q.options ? {
         options: q.options.map(opt => ({
-          id: Math.random().toString(36).substring(2, 11),
+          id: randomUUID(),
           label: opt
         }))
       } : {},
       logicRules: [],
     }))
 
-    await upsertQuestions(formId, upsertInput)
+    const upsertResult = await upsertQuestions(formId, upsertInput)
+    if (!upsertResult.success) {
+      throw new Error(`Falha ao salvar perguntas: ${upsertResult.error?.message}`)
+    }
 
     revalidatePath("/dashboard")
     return { success: true, data: { formId } }
 
   } catch (error) {
-    console.error("[generateFormFromTextAction] Error:", error)
+    const message = error instanceof Error ? error.message : "Erro desconhecido"
+    console.error("[generateFormFromTextAction] Error:", message)
     return {
       success: false,
-      error: { code: "AI_GENERATION_ERROR", message: "Não foi possível gerar o formulário com esse prompt." }
+      error: { code: "AI_GENERATION_ERROR", message }
     }
   }
 }
