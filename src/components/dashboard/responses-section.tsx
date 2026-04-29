@@ -737,6 +737,20 @@ export function ResponsesSection({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20" 
+            onClick={() => {
+              if (filteredResponses.length === 0) return
+              setSelectedIds(new Set(filteredResponses.map(r => r.id)))
+              setShowDeleteConfirm(true)
+            }}
+            disabled={filteredResponses.length === 0}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Excluir</span>
+          </Button>
           <ImportResponsesDialog formId={formId} />
           <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}
             disabled={isExporting || responses.length === 0}>
