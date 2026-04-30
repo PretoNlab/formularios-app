@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getUserByAuthId } from "@/lib/db/queries/users"
 import { LogoutButton } from "./logout-button"
 import { CreateFormButton } from "@/components/dashboard/create-form-button"
+import { MainNav } from "./main-nav"
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return "?"
@@ -45,36 +46,31 @@ export async function Header() {
 
         {/* Left section: Logo & Nav */}
         <div className="flex items-center gap-8">
-          <Link href="/dashboard" className="flex items-center gap-2 transition-opacity hover:opacity-80">
-            <div className="flex bg-foreground text-background items-center justify-center p-1 rounded-sm">
+          <Link href="/dashboard" className="flex items-center gap-2.5 transition-opacity hover:opacity-80 group">
+            <div className="flex bg-gradient-to-br from-zinc-800 to-black dark:from-zinc-100 dark:to-zinc-300 text-white dark:text-black items-center justify-center p-1.5 rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300">
               <Sparkles className="h-5 w-5" />
             </div>
             <span className="font-heading text-xl font-bold tracking-tight">formularios.ia</span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-6 text-sm font-medium">
-            <Link href="/dashboard" className="text-foreground transition-colors hover:text-foreground/80">Dashboard</Link>
-            <Link href="/templates" className="text-foreground/60 transition-colors hover:text-foreground">Templates</Link>
-            <Link href="/analytics" className="text-foreground/60 transition-colors hover:text-foreground">Analytics</Link>
-            <Link href="/settings/brand-kit" className="text-foreground/60 transition-colors hover:text-foreground">Brand Kit</Link>
-            <Link href="/settings" className="text-foreground/60 transition-colors hover:text-foreground">Settings</Link>
-            <Link href="/help" className="text-foreground/60 transition-colors hover:text-foreground">Ajuda</Link>
-          </nav>
+          <MainNav />
         </div>
 
         {/* Right section: Profile & Actions */}
         <div className="flex items-center gap-4 shrink-0">
           {authUser ? (
             <>
-              <div className="hidden sm:flex items-center gap-3 rounded-full border bg-card px-3 py-1.5 shadow-sm">
-                <Avatar className="h-6 w-6">
+              <div className="hidden sm:flex items-center gap-3 rounded-full border bg-background px-1.5 py-1.5 shadow-sm pr-4">
+                <Avatar className="h-8 w-8 border">
                   {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
-                  <AvatarFallback className="text-[10px]">{getInitials(displayName)}</AvatarFallback>
+                  <AvatarFallback className="text-[10px] bg-muted">{getInitials(displayName)}</AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium">{displayName.split(" ")[0]}</span>
-                <span className="flex h-5 items-center justify-center rounded-md bg-accent px-1.5 text-[10px] font-bold uppercase text-accent-foreground tracking-widest">
-                  {plan}
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold leading-none">{displayName.split(" ")[0]}</span>
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
+                    {plan} plan
+                  </span>
+                </div>
               </div>
               <LogoutButton />
             </>
