@@ -339,12 +339,14 @@ export function BuilderClient({
                               key={type}
                               type="button"
                               title={meta.description}
-                              className="w-full flex items-start gap-3 rounded-md border border-dashed border-input bg-muted/20 px-3 py-2.5 text-left hover:bg-muted/50 hover:border-solid transition-all group"
+                              className="w-full flex items-start gap-3 rounded-xl border border-transparent bg-muted/30 px-3 py-2.5 text-left hover:bg-muted/80 hover:border-border/60 hover:shadow-sm transition-all group"
                               onClick={() => { handleAddQuestion(type); setFieldSearch("") }}
                             >
-                              <Icon className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground group-hover:text-foreground" />
-                              <div className="flex-1 min-w-0">
-                                <div className="text-xs font-medium text-foreground leading-tight">{meta.label}</div>
+                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background shadow-sm border border-border/40 shrink-0 group-hover:scale-105 transition-transform">
+                                <Icon className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                              </div>
+                              <div className="flex-1 min-w-0 pt-0.5">
+                                <div className="text-xs font-semibold text-foreground leading-tight">{meta.label}</div>
                                 <div className="text-[10px] text-muted-foreground leading-snug mt-0.5 line-clamp-2">{meta.description}</div>
                               </div>
                             </button>
@@ -359,19 +361,24 @@ export function BuilderClient({
                       {filteredFields.length > 0 && <Separator />}
                       <div className="space-y-3">
                         {!fieldSearch && <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Páginas Especiais</h4>}
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                           {filteredSpecialFields.map((type) => {
                             const Icon = TYPE_ICONS[type] ?? Type
                             return (
-                              <Button
+                              <button
                                 key={type}
-                                variant="outline"
-                                className="w-full justify-start text-sm h-10 border-dashed"
+                                type="button"
+                                title={QUESTION_TYPES[type].description}
+                                className="w-full flex items-center gap-3 rounded-xl border border-transparent bg-muted/30 px-3 py-2.5 text-left hover:bg-muted/80 hover:border-border/60 hover:shadow-sm transition-all group"
                                 onClick={() => { handleAddQuestion(type); setFieldSearch("") }}
                               >
-                                <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                                {QUESTION_TYPES[type].label}
-                              </Button>
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background shadow-sm border border-border/40 shrink-0 group-hover:scale-105 transition-transform">
+                                  <Icon className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-semibold text-foreground leading-tight">{QUESTION_TYPES[type].label}</div>
+                                </div>
+                              </button>
                             )
                           })}
                         </div>
@@ -430,7 +437,7 @@ export function BuilderClient({
       {/* ── CENTER CANVAS ─────────────────────────────────────────────── */}
       <main className="flex-1 flex flex-col bg-muted/10 relative">
         {/* Floating toolbar */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full border bg-background/80 backdrop-blur-md p-1.5 shadow-sm z-10 whitespace-nowrap">
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border/50 bg-background/60 backdrop-blur-xl p-1.5 shadow-md z-10 whitespace-nowrap">
           <Button
             variant="ghost"
             size="sm"
@@ -576,15 +583,16 @@ export function BuilderClient({
             )}
 
             {/* Editable form title */}
-            <div className="mb-8 pb-6 border-b">
+            <div className="mb-8 group">
               <input
-                className="w-full text-3xl font-bold bg-transparent border-0 outline-none focus:ring-0 placeholder:text-muted-foreground/30 font-heading"
+                className="w-full text-4xl font-bold bg-transparent border-0 outline-none focus:ring-0 placeholder:text-muted-foreground/20 font-heading tracking-tight transition-colors hover:bg-muted/30 focus:bg-transparent rounded-lg px-2 -ml-2 py-1"
                 value={form.title}
                 onChange={(e) => updateFormTitle(e.target.value)}
                 placeholder="Formulário sem título"
               />
-              <input
-                className="w-full mt-2 text-sm text-muted-foreground bg-transparent border-0 outline-none focus:ring-0 placeholder:text-muted-foreground/30"
+              <textarea
+                className="w-full mt-2 text-base text-muted-foreground bg-transparent border-0 outline-none focus:ring-0 placeholder:text-muted-foreground/30 resize-none transition-colors hover:bg-muted/30 focus:bg-transparent rounded-lg px-2 -ml-2 py-1"
+                rows={2}
                 value={form.description ?? ""}
                 onChange={(e) => updateFormDescription(e.target.value || "")}
                 placeholder="Descrição do formulário (opcional)..."
@@ -592,9 +600,12 @@ export function BuilderClient({
             </div>
 
             {form.questions.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                <Plus className="h-10 w-10 mb-4 opacity-20" />
-                <p className="text-sm">Adicione campos usando o painel à esquerda.</p>
+              <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground/60 border-2 border-dashed border-border/50 rounded-2xl bg-muted/10 transition-colors hover:bg-muted/20 hover:border-border">
+                <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-4 border border-border/50 shadow-sm">
+                  <Plus className="h-6 w-6 text-muted-foreground/70" />
+                </div>
+                <h3 className="text-base font-semibold text-foreground mb-1">Comece a construir</h3>
+                <p className="text-sm">Clique nos campos à esquerda para adicionar perguntas.</p>
               </div>
             )}
 
