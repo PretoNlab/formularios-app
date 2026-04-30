@@ -701,36 +701,48 @@ function TemplateCard({ template, onUse }: { template: FormTemplate; onUse: () =
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border bg-card transition-all hover:shadow-xl hover:-translate-y-1 duration-300">
       <div className={`h-40 w-full relative flex items-center justify-center overflow-hidden bg-gradient-to-br ${template.color}`}>
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\"40\" height=\"40\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Ccircle cx=\"2\" cy=\"2\" r=\"1.5\" fill=\"%23ffffff\"%3E%3C/circle%3E%3C/svg%3E')" }} />
-        <div className="w-3/4 max-w-[200px] space-y-2.5 rounded-xl bg-white/15 backdrop-blur-sm p-4 transform group-hover:scale-105 transition-transform duration-500">
-          <div className="h-2.5 w-2/3 rounded-full bg-white/80" />
-          <div className="h-2 w-full rounded-full bg-white/40" />
-          <div className="h-2 w-4/5 rounded-full bg-white/40" />
-          <div className="mt-3 h-7 w-full rounded-lg bg-white/25 border border-white/30" />
+        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg width=\"20\" height=\"20\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Ccircle cx=\"2\" cy=\"2\" r=\"1\" fill=\"%23ffffff\"%3E%3C/circle%3E%3C/svg%3E')" }} />
+        
+        {/* Simplified mock UI inside the template header */}
+        <div className="w-3/4 max-w-[200px] space-y-3 rounded-lg bg-white/10 backdrop-blur-md p-4 shadow-sm transform group-hover:scale-105 transition-transform duration-500 border border-white/20">
+          <div className="h-2 w-1/3 rounded-full bg-white/90" />
+          <div className="h-4 w-3/4 rounded-full bg-white/60" />
+          <div className="h-8 w-full rounded-md mt-4 bg-white/20" />
         </div>
+        
         <div className="absolute top-4 left-4">
-          <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm text-xs">
+          <Badge variant="secondary" className="bg-white/90 text-black hover:bg-white border-0 shadow-sm font-medium capitalize">
             {TEMPLATE_CATEGORIES[template.category]}
           </Badge>
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col p-5">
-        <h3 className="font-heading text-lg font-bold line-clamp-1 mb-1">{template.title}</h3>
-        <p className="text-sm text-muted-foreground line-clamp-2 flex-1">{template.description}</p>
-        <div className="flex items-center gap-3 mt-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <FileText className="h-3.5 w-3.5" />
-            {questionCount} perguntas
-          </span>
-          <span className="flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5" />
-            {template.estimatedTime}
-          </span>
+      <div className="flex flex-1 flex-col p-5 bg-card">
+        <h3 className="font-heading text-xl font-bold line-clamp-1">{template.title}</h3>
+        <p className="mt-1 text-sm text-muted-foreground line-clamp-2 flex-1">{template.description}</p>
+        
+        <div className="mt-5 flex items-center justify-between relative z-20">
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 items-center gap-1.5 rounded-md bg-muted px-2.5 text-xs font-semibold text-muted-foreground">
+              <FileText className="h-3.5 w-3.5" />
+              {questionCount} perguntas
+            </span>
+            <span className="flex h-7 items-center gap-1.5 rounded-md bg-transparent px-1 text-xs font-medium text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" />
+              {template.estimatedTime}
+            </span>
+          </div>
+          
+          <Button 
+            size="sm" 
+            variant="secondary"
+            className="rounded-full gap-1.5 px-4 font-semibold hover:bg-foreground hover:text-background transition-colors" 
+            onClick={onUse}
+          >
+            Usar
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
         </div>
-        <Button className="mt-4 w-full rounded-full gap-2" onClick={onUse}>
-          Usar template <ChevronRight className="h-4 w-4" />
-        </Button>
       </div>
     </div>
   )
