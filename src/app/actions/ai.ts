@@ -54,7 +54,7 @@ export async function getSemanticInsightsAction(
       }
     }
 
-    const model = getGeminiModel("gemini-2.0-flash")
+    const model = getGeminiModel("gemini-2.5-flash")
     
     const prompt = `
       Você é um analista de dados especialista em pesquisas e formulários.
@@ -106,7 +106,7 @@ export async function generateFormFromTextAction(promptText: string) {
   }
 
   try {
-    const model = getGeminiModel("gemini-2.0-flash")
+    const model = getGeminiModel("gemini-2.5-flash")
     
     const systemPrompt = `
       Você é um especialista em UX e design de formulários.
