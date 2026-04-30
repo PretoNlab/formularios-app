@@ -305,132 +305,134 @@ export function BuilderClient({
         </div>
 
         <ScrollArea className="flex-1">
-          {sidebarTab === "fields" && (
-            <div className="p-4 space-y-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={fieldSearch}
-                  onChange={(e) => setFieldSearch(e.target.value)}
-                  placeholder="Buscar campo..."
-                  className="w-full h-8 rounded-md border border-input bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-                <Type className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                {fieldSearch && (
-                  <button onClick={() => setFieldSearch("")} className="absolute right-2 top-2 text-muted-foreground hover:text-foreground">
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-
-              {filteredFields.length === 0 && filteredSpecialFields.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Nenhum campo encontrado</p>
-              ) : (
-                <>
-                  {filteredFields.length > 0 && (
-                    <div className="space-y-3">
-                      {!fieldSearch && <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Adicionar Campo</h4>}
-                      <div className="space-y-1.5">
-                        {filteredFields.map((type) => {
-                          const Icon = TYPE_ICONS[type] ?? Type
-                          const meta = QUESTION_TYPES[type]
-                          return (
-                            <button
-                              key={type}
-                              type="button"
-                              title={meta.description}
-                              className="w-full flex items-start gap-3 rounded-xl border border-transparent bg-muted/30 px-3 py-2.5 text-left hover:bg-muted/80 hover:border-border/60 hover:shadow-sm transition-all group"
-                              onClick={() => { handleAddQuestion(type); setFieldSearch("") }}
-                            >
-                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background shadow-sm border border-border/40 shrink-0 group-hover:scale-105 transition-transform">
-                                <Icon className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                              </div>
-                              <div className="flex-1 min-w-0 pt-0.5">
-                                <div className="text-xs font-semibold text-foreground leading-tight">{meta.label}</div>
-                                <div className="text-[10px] text-muted-foreground leading-snug mt-0.5 line-clamp-2">{meta.description}</div>
-                              </div>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
+          <div className="p-4 pb-20">
+            {sidebarTab === "fields" && (
+              <div className="space-y-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={fieldSearch}
+                    onChange={(e) => setFieldSearch(e.target.value)}
+                    placeholder="Buscar campo..."
+                    className="w-full h-8 rounded-md border border-input bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                  <Type className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  {fieldSearch && (
+                    <button onClick={() => setFieldSearch("")} className="absolute right-2 top-2 text-muted-foreground hover:text-foreground">
+                      <X className="h-4 w-4" />
+                    </button>
                   )}
+                </div>
 
-                  {filteredSpecialFields.length > 0 && (
-                    <>
-                      {filteredFields.length > 0 && <Separator />}
+                {filteredFields.length === 0 && filteredSpecialFields.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">Nenhum campo encontrado</p>
+                ) : (
+                  <>
+                    {filteredFields.length > 0 && (
                       <div className="space-y-3">
-                        {!fieldSearch && <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Páginas Especiais</h4>}
+                        {!fieldSearch && <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Adicionar Campo</h4>}
                         <div className="space-y-1.5">
-                          {filteredSpecialFields.map((type) => {
+                          {filteredFields.map((type) => {
                             const Icon = TYPE_ICONS[type] ?? Type
+                            const meta = QUESTION_TYPES[type]
                             return (
                               <button
                                 key={type}
                                 type="button"
-                                title={QUESTION_TYPES[type].description}
-                                className="w-full flex items-center gap-3 rounded-xl border border-transparent bg-muted/30 px-3 py-2.5 text-left hover:bg-muted/80 hover:border-border/60 hover:shadow-sm transition-all group"
+                                title={meta.description}
+                                className="w-full flex items-start gap-3 rounded-xl border border-transparent bg-muted/30 px-3 py-2.5 text-left hover:bg-muted/80 hover:border-border/60 hover:shadow-sm transition-all group"
                                 onClick={() => { handleAddQuestion(type); setFieldSearch("") }}
                               >
                                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background shadow-sm border border-border/40 shrink-0 group-hover:scale-105 transition-transform">
                                   <Icon className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-xs font-semibold text-foreground leading-tight">{QUESTION_TYPES[type].label}</div>
+                                <div className="flex-1 min-w-0 pt-0.5">
+                                  <div className="text-xs font-semibold text-foreground leading-tight">{meta.label}</div>
+                                  <div className="text-[10px] text-muted-foreground leading-snug mt-0.5 line-clamp-2">{meta.description}</div>
                                 </div>
                               </button>
                             )
                           })}
                         </div>
                       </div>
-                    </>
-                  )}
-                </>
-              )}
+                    )}
 
-              {!fieldSearch && (
-                <div className="rounded-md bg-muted/50 p-2.5 space-y-1">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Atalhos</p>
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
-                    <span><kbd className="font-mono">↑↓</kbd> Navegar</span>
-                    <span><kbd className="font-mono">Ctrl+D</kbd> Duplicar</span>
-                    <span><kbd className="font-mono">Ctrl+S</kbd> Salvar</span>
-                    <span><kbd className="font-mono">Del</kbd> Excluir</span>
-                    <span><kbd className="font-mono">Ctrl+Z</kbd> Desfazer</span>
-                    <span><kbd className="font-mono">Esc</kbd> Desselecionar</span>
-                    <span><kbd className="font-mono">Ctrl+Y</kbd> Refazer</span>
+                    {filteredSpecialFields.length > 0 && (
+                      <>
+                        {filteredFields.length > 0 && <Separator />}
+                        <div className="space-y-3">
+                          {!fieldSearch && <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Páginas Especiais</h4>}
+                          <div className="space-y-1.5">
+                            {filteredSpecialFields.map((type) => {
+                              const Icon = TYPE_ICONS[type] ?? Type
+                              return (
+                                <button
+                                  key={type}
+                                  type="button"
+                                  title={QUESTION_TYPES[type].description}
+                                  className="w-full flex items-center gap-3 rounded-xl border border-transparent bg-muted/30 px-3 py-2.5 text-left hover:bg-muted/80 hover:border-border/60 hover:shadow-sm transition-all group"
+                                  onClick={() => { handleAddQuestion(type); setFieldSearch("") }}
+                                >
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background shadow-sm border border-border/40 shrink-0 group-hover:scale-105 transition-transform">
+                                    <Icon className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-semibold text-foreground leading-tight">{QUESTION_TYPES[type].label}</div>
+                                  </div>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+
+                {!fieldSearch && (
+                  <div className="rounded-md bg-muted/50 p-2.5 space-y-1">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Atalhos</p>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
+                      <span><kbd className="font-mono">↑↓</kbd> Navegar</span>
+                      <span><kbd className="font-mono">Ctrl+D</kbd> Duplicar</span>
+                      <span><kbd className="font-mono">Ctrl+S</kbd> Salvar</span>
+                      <span><kbd className="font-mono">Del</kbd> Excluir</span>
+                      <span><kbd className="font-mono">Ctrl+Z</kbd> Desfazer</span>
+                      <span><kbd className="font-mono">Esc</kbd> Desselecionar</span>
+                      <span><kbd className="font-mono">Ctrl+Y</kbd> Refazer</span>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
-          {sidebarTab === "theme" && (
-            <ThemePickerPanel
-              form={form}
-              onSelect={updateFormTheme}
-              onUpdateLogo={(logo) => updateFormTheme({ ...form.theme, logo })}
-              workspaceBrandKit={workspaceBrandKit ?? null}
-            />
-          )}
+            {sidebarTab === "theme" && (
+              <ThemePickerPanel
+                form={form}
+                onSelect={updateFormTheme}
+                onUpdateLogo={(logo) => updateFormTheme({ ...form.theme, logo })}
+                workspaceBrandKit={workspaceBrandKit ?? null}
+              />
+            )}
 
-          {sidebarTab === "config" && (
-            <FormConfigPanel
-              form={form}
-              formId={form.id}
-              onTitleChange={updateFormTitle}
-              onDescriptionChange={updateFormDescription}
-              onSettingsChange={updateFormSettings}
-              onSlugChange={updateFormSlug}
-            />
-          )}
+            {sidebarTab === "config" && (
+              <FormConfigPanel
+                form={form}
+                formId={form.id}
+                onTitleChange={updateFormTitle}
+                onDescriptionChange={updateFormDescription}
+                onSettingsChange={updateFormSettings}
+                onSlugChange={updateFormSlug}
+              />
+            )}
 
-          {sidebarTab === "webhooks" && (
-            <>
-              <WebhooksPanel formId={form.id} />
-              <GoogleSheetsPanel formId={form.id} />
-            </>
-          )}
+            {sidebarTab === "webhooks" && (
+              <>
+                <WebhooksPanel formId={form.id} />
+                <GoogleSheetsPanel formId={form.id} />
+              </>
+            )}
+          </div>
         </ScrollArea>
       </aside>
 
