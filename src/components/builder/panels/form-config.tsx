@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { Loader2 } from "lucide-react"
+import { useState, useRef, useCallback, useEffect } from "react"
+import { Loader2, Wand2, CheckCircle2, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -9,13 +9,29 @@ import { Separator } from "@/components/ui/separator"
 import type { Form } from "@/lib/types/form"
 import { cn } from "@/lib/utils"
 
+// Slugify function mirroring the server-side utility (without random suffix)
+function slugifyTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 48)
+}
+
 interface FormConfigPanelProps {
   form: Form
+  formId: string
   onTitleChange: (t: string) => void
   onDescriptionChange: (d: string) => void
   onSettingsChange: (s: Partial<Form["settings"]>) => void
   onSlugChange: (slug: string) => void
 }
+
+type SlugStatus = "idle" | "checking" | "available" | "taken" | "error"
 
 function DownloadFileUploadButton({ onUrl }: { onUrl: (url: string) => void }) {
   const ref = useRef<HTMLInputElement>(null)
@@ -57,24 +73,73 @@ function DownloadFileUploadButton({ onUrl }: { onUrl: (url: string) => void }) {
   )
 }
 
-export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSettingsChange, onSlugChange }: FormConfigPanelProps) {
+export function FormConfigPanel({ form, formId, onTitleChange, onDescriptionChange, onSettingsChange, onSlugChange }: FormConfigPanelProps) {
   const [slugError, setSlugError] = useState("")
-  
+  const [slugStatus, setSlugStatus] = useState<SlugStatus>("idle")
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const emailQuestions = form.questions?.filter((q) => q.type === "email") ?? []
+
+  const checkSlugAvailability = useCallback(async (slug: string) => {
+    if (slug.length < 3 || slug.length > 60 || !/^[a-z0-9-]+$/.test(slug)) return
+    setSlugStatus("checking")
+    try {
+      const res = await fetch(`/api/forms/check-slug?slug=${encodeURIComponent(slug)}&formId=${encodeURIComponent(formId)}`)
+      const data = await res.json() as { available?: boolean }
+      setSlugStatus(data.available ? "available" : "taken")
+    } catch {
+      setSlugStatus("error")
+    }
+  }, [formId])
 
   function handleSlugChange(raw: string) {
     const formatted = raw.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
     onSlugChange(formatted)
+
+    // Reset status and clear previous debounce
+    setSlugStatus("idle")
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
     if (formatted.length > 0 && formatted.length < 3) {
       setSlugError("Mínimo de 3 caracteres")
+      return
     } else if (formatted.length > 60) {
       setSlugError("Máximo de 60 caracteres")
+      return
     } else {
       setSlugError("")
     }
+
+    if (formatted.length >= 3) {
+      debounceRef.current = setTimeout(() => checkSlugAvailability(formatted), 500)
+    }
   }
 
+  function handleSuggestSlug() {
+    const suggestion = slugifyTitle(form.title)
+    if (!suggestion) return
+    onSlugChange(suggestion)
+    setSlugError("")
+    setSlugStatus("idle")
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => checkSlugAvailability(suggestion), 300)
+  }
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [])
+
   const origin = typeof window !== "undefined" ? window.location.origin : "https://formularios.ia"
+
+  // Determine border color based on status
+  const borderClass = slugError
+    ? "border-destructive"
+    : slugStatus === "available"
+    ? "border-green-500"
+    : slugStatus === "taken"
+    ? "border-destructive"
+    : "border-input"
 
   return (
     <div className="flex flex-col w-full min-w-0 p-5 space-y-6 overflow-x-hidden box-border">
@@ -99,8 +164,22 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
       </div>
 
       <div className="space-y-2 min-w-0">
-        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">URL pública</label>
-        <div className={cn("flex items-center rounded-md border bg-background overflow-hidden text-sm min-w-0 w-full", slugError ? "border-destructive" : "border-input")}>
+        {/* Label row with suggest button */}
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">URL pública</label>
+          <button
+            type="button"
+            onClick={handleSuggestSlug}
+            title="Sugerir slug a partir do título"
+            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors rounded px-1.5 py-0.5 hover:bg-primary/5"
+          >
+            <Wand2 className="h-3 w-3" />
+            Sugerir
+          </button>
+        </div>
+
+        {/* Input with status indicator */}
+        <div className={cn("flex items-center rounded-md border bg-background overflow-hidden text-sm min-w-0 w-full transition-colors", borderClass)}>
           <span className="px-2 py-2 text-muted-foreground bg-muted border-r border-input text-xs shrink-0">/f/</span>
           <input
             className="flex-1 px-2 py-2 bg-transparent outline-none focus-visible:ring-0 text-sm min-w-0"
@@ -109,9 +188,27 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
             placeholder="meu-formulario"
             spellCheck={false}
           />
+          {/* Status icon */}
+          <div className="px-2 shrink-0">
+            {slugStatus === "checking" && (
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+            )}
+            {slugStatus === "available" && (
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+            )}
+            {slugStatus === "taken" && (
+              <XCircle className="h-3.5 w-3.5 text-destructive" />
+            )}
+          </div>
         </div>
+
+        {/* Status / error message */}
         {slugError ? (
           <p className="text-[11px] text-destructive">{slugError}</p>
+        ) : slugStatus === "available" ? (
+          <p className="text-[11px] text-green-600 dark:text-green-400">✓ Disponível</p>
+        ) : slugStatus === "taken" ? (
+          <p className="text-[11px] text-destructive">✗ Este link já está em uso. Escolha outro.</p>
         ) : (
           <p className="text-[11px] text-muted-foreground truncate w-full">{origin}/f/{form.slug}</p>
         )}
@@ -291,7 +388,7 @@ export function FormConfigPanel({ form, onTitleChange, onDescriptionChange, onSe
           <div className="space-y-4 pt-2 border-l-2 border-border pl-3 ml-1 min-w-0">
             {emailQuestions.length === 0 ? (
               <p className="text-sm text-destructive">
-                Você precisa adicionar uma pergunta do tipo "E-mail" ao seu formulário para usar o Auto-Responder.
+                Você precisa adicionar uma pergunta do tipo &quot;E-mail&quot; ao seu formulário para usar o Auto-Responder.
               </p>
             ) : (
               <>

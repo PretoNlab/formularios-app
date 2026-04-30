@@ -410,6 +410,7 @@ export function BuilderClient({
           {sidebarTab === "config" && (
             <FormConfigPanel
               form={form}
+              formId={form.id}
               onTitleChange={updateFormTitle}
               onDescriptionChange={updateFormDescription}
               onSettingsChange={updateFormSettings}

@@ -522,6 +522,16 @@ export function FormsSection({ forms }: FormsSectionProps) {
 function FormCard({ form, onDelete, onPublish, onDuplicate, onClose }: { form: FormListItem; onDelete: () => void; onPublish: () => void; onDuplicate: () => void; onClose: () => void }) {
   const themeId = (form.theme as { id?: string } | null)?.id ?? "midnight"
   const themeConfig = PRESET_THEMES.find((t) => t.id === themeId) ?? PRESET_THEMES[0]
+  const [linkCopied, setLinkCopied] = useState(false)
+
+  function handleCopyLink(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    navigator.clipboard.writeText(`${window.location.origin}/f/${form.slug}`)
+    setFlag(ONBOARDING_KEYS.SHARE_COMPLETED)
+    setLinkCopied(true)
+    setTimeout(() => setLinkCopied(false), 2000)
+  }
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border bg-card transition-all hover:shadow-xl hover:-translate-y-1 duration-300">
@@ -545,8 +555,15 @@ function FormCard({ form, onDelete, onPublish, onDuplicate, onClose }: { form: F
       </div>
       <div className="flex flex-1 flex-col p-5 bg-card">
         <h3 className="font-heading text-xl font-bold line-clamp-1">{form.title}</h3>
-        {form.description && <p className="mt-1 flex-1 text-sm text-muted-foreground line-clamp-2">{form.description}</p>}
-        <div className="mt-6 flex items-center justify-between relative z-20">
+        {form.description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{form.description}</p>}
+        {/* Custom slug display */}
+        {form.status === "published" && (
+          <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground/70 font-mono truncate">
+            <Link2 className="h-3 w-3 shrink-0" />
+            /f/{form.slug}
+          </p>
+        )}
+        <div className="mt-4 flex items-center justify-between relative z-20">
           <div className="flex items-center gap-2">
             <span className="flex h-7 items-center rounded-md bg-muted px-2.5 text-sm font-medium">{form.responseCount} respostas</span>
             {form.viewCount > 0 && (
@@ -586,11 +603,16 @@ function FormCard({ form, onDelete, onPublish, onDuplicate, onClose }: { form: F
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(`${window.location.origin}/f/${form.slug}`); setFlag(ONBOARDING_KEYS.SHARE_COMPLETED); }}>
-                  <Link2 className="h-4 w-4" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`h-8 w-8 rounded-full transition-colors ${linkCopied ? "text-green-600 bg-green-50 dark:bg-green-900/20" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={handleCopyLink}
+                >
+                  {linkCopied ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Copiar link público</TooltipContent>
+              <TooltipContent>{linkCopied ? "Link copiado!" : "Copiar link público"}</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>

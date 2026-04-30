@@ -323,6 +323,10 @@ export interface QuestionProperties {
   allowOther?: boolean
   randomizeOptions?: boolean
 
+  // Checkbox: limite de seleções
+  minSelections?: number
+  maxSelections?: number
+
   // Numéricos
   min?: number
   max?: number

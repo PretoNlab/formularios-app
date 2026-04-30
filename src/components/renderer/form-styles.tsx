@@ -211,6 +211,20 @@ const FF_CSS = `
   border-color: var(--ff-accent);
   background: color-mix(in srgb, var(--ff-accent) 12%, transparent);
 }
+.ff-option--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.ff-checkbox-hint {
+  font-size: 0.8rem;
+  color: var(--ff-muted);
+  margin: 0 0 6px;
+}
+.ff-checkbox-count {
+  font-weight: 600;
+  color: var(--ff-accent);
+}
 .ff-option-letter {
   display: inline-flex;
   align-items: center;

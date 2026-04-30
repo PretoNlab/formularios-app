@@ -70,6 +70,64 @@ export function PropertiesPanel({ question }: { question: Question }) {
         </>
       )}
 
+      {question.type === "checkbox" && (
+        <>
+          <Separator />
+          <div className="space-y-3">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Limite de seleções</label>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-[11px] text-muted-foreground">Mínimo</label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={question.properties.options?.length ?? 99}
+                  value={question.properties.minSelections ?? ""}
+                  onChange={(e) =>
+                    updateQuestion(question.id, {
+                      properties: {
+                        ...question.properties,
+                        minSelections: e.target.value ? Number(e.target.value) : undefined,
+                      },
+                    })
+                  }
+                  placeholder="—"
+                  className="text-sm h-8"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[11px] text-muted-foreground">Máximo</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={question.properties.options?.length ?? 99}
+                  value={question.properties.maxSelections ?? ""}
+                  onChange={(e) =>
+                    updateQuestion(question.id, {
+                      properties: {
+                        ...question.properties,
+                        maxSelections: e.target.value ? Number(e.target.value) : undefined,
+                      },
+                    })
+                  }
+                  placeholder="—"
+                  className="text-sm h-8"
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-tight">
+              {question.properties.maxSelections
+                ? question.properties.minSelections
+                  ? `Respondente deve escolher entre ${question.properties.minSelections} e ${question.properties.maxSelections} opções.`
+                  : `Respondente pode escolher no máximo ${question.properties.maxSelections} opção${question.properties.maxSelections !== 1 ? "s" : ""}.`
+                : question.properties.minSelections
+                ? `Respondente deve escolher pelo menos ${question.properties.minSelections} opção${question.properties.minSelections !== 1 ? "s" : ""}.`
+                : "Sem limite — respondente pode marcar qualquer quantidade."}
+            </p>
+          </div>
+        </>
+      )}
+
       {["welcome", "statement", "thank_you", "download"].includes(question.type) && (
         <>
           <Separator />
