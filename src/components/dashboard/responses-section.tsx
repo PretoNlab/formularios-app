@@ -7,8 +7,15 @@ import {
   ArrowLeft, Eye, Users, TrendingUp, Clock,
   CheckCircle2, Circle, Copy, ExternalLink, Download,
   Smartphone, Filter, X, ChevronLeft, ChevronRight, Monitor, Tablet, Printer, Share2,
-  Sparkles, Zap, Trash2, AlertCircle, Loader2
+  Sparkles, Zap, Trash2, AlertCircle, Loader2, MoreHorizontal, FileDown, FileUp, Link2,
 } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -344,10 +351,12 @@ function ResponsesTable({
 }) {
   if (responses.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground rounded-xl border bg-card">
-        <Users className="h-10 w-10 mb-4 opacity-20" />
-        <p className="font-medium">Nenhuma resposta ainda</p>
-        <p className="text-sm mt-1">Compartilhe o link do formulário para começar a receber respostas.</p>
+      <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground rounded-2xl border bg-card/50">
+        <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mb-4">
+          <Users className="h-6 w-6 opacity-40" />
+        </div>
+        <p className="font-semibold text-foreground">Nenhuma resposta ainda</p>
+        <p className="text-sm mt-1 max-w-xs">Compartilhe o link do formulário para começar a receber respostas.</p>
       </div>
     )
   }
@@ -358,7 +367,7 @@ function ResponsesTable({
     .sort((a, b) => a.order - b.order)
 
   return (
-    <div className="rounded-xl border bg-card overflow-hidden">
+    <div className="rounded-2xl border bg-card overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -371,25 +380,25 @@ function ResponsesTable({
                   className="h-4 w-4 rounded border-input bg-background accent-primary cursor-pointer"
                 />
               </th>
-              <th className="text-left px-4 py-3 font-semibold text-muted-foreground w-10">#</th>
-              <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Data</th>
+              <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider uppercase w-10">#</th>
+              <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider uppercase whitespace-nowrap">Data</th>
               {visibleQuestions.map((q) => (
-                <th key={q.id} className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[160px] max-w-[220px]">
+                <th key={q.id} className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider uppercase min-w-[150px] max-w-[200px]">
                   <span className="block truncate" title={q.title}>{q.title}</span>
                 </th>
               ))}
-              <th className="text-left px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">Status</th>
+              <th className="text-left px-3 py-3 text-[11px] font-semibold text-muted-foreground tracking-wider uppercase whitespace-nowrap">Status</th>
               <th className="w-8" />
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border/50">
             {responses.map((r, i) => (
               <tr
                 key={r.id}
-                className="border-b last:border-0 hover:bg-muted/40 cursor-pointer transition-colors group"
+                className="hover:bg-muted/30 cursor-pointer transition-colors group"
                 onClick={() => onOpen(i)}
               >
-                <td className="px-4 py-3 sticky left-0 bg-card group-hover:bg-muted/40 transition-colors z-10" onClick={(e) => e.stopPropagation()}>
+                <td className="px-4 py-3.5 sticky left-0 bg-card group-hover:bg-muted/30 transition-colors z-10" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
                     checked={selectedIds.has(r.id)}
@@ -397,30 +406,30 @@ function ResponsesTable({
                     className="h-4 w-4 rounded border-input bg-background accent-primary cursor-pointer"
                   />
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">{formatDate(r.startedAt)}</td>
+                <td className="px-3 py-3.5 text-muted-foreground text-xs tabular-nums">{i + 1}</td>
+                <td className="px-3 py-3.5 whitespace-nowrap text-xs text-muted-foreground">{formatDate(r.startedAt)}</td>
                 {visibleQuestions.map((q) => {
                   const ans = r.answers.find((a) => a.questionId === q.id)
                   const val = ans ? formatAnswerValue(ans.value) : "—"
                   return (
-                    <td key={q.id} className="px-4 py-3 max-w-[220px]">
-                      <span className="block truncate" title={val !== "—" ? val : undefined}>{val}</span>
+                    <td key={q.id} className="px-3 py-3.5 max-w-[200px]">
+                      <span className="block truncate text-sm" title={val !== "—" ? val : undefined}>{val}</span>
                     </td>
                   )
                 })}
-                <td className="px-4 py-3">
+                <td className="px-3 py-3.5">
                   {r.completedAt ? (
-                    <span className="inline-flex items-center gap-1.5 text-green-600 whitespace-nowrap">
-                      <CheckCircle2 className="h-3.5 w-3.5" />Completa
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 whitespace-nowrap">
+                      <CheckCircle2 className="h-3 w-3" />Completa
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 text-muted-foreground whitespace-nowrap">
-                      <Circle className="h-3.5 w-3.5" />Parcial
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground whitespace-nowrap">
+                      <Circle className="h-3 w-3" />Parcial
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 pr-3">
-                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-30 group-hover:opacity-100 transition-opacity" />
+                <td className="px-3 py-3.5 pr-3">
+                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-60 transition-opacity" />
                 </td>
               </tr>
             ))}
@@ -718,79 +727,125 @@ export function ResponsesSection({
   return (
     <div className="container py-8 max-w-6xl">
 
-      {/* Header */}
-      <div className="flex flex-wrap items-center gap-4 mb-8 print-hide">
+      {/* ── Header ──────────────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-3 mb-8 print-hide">
         <Link href={`/builder/${formId}`}>
-          <Button variant="ghost" size="sm" className="gap-2">
+          <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />Editor
           </Button>
         </Link>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold font-heading truncate">{formTitle}</h1>
-            <Badge
-              variant={formStatus === "published" ? "default" : "secondary"}
-              className={formStatus === "published" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : ""}
-            >
-              {formStatus === "published" ? "Publicado" : formStatus === "draft" ? "Rascunho" : "Fechado"}
-            </Badge>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20" 
-            onClick={() => {
-              if (filteredResponses.length === 0) return
-              setSelectedIds(new Set(filteredResponses.map(r => r.id)))
-              setShowDeleteConfirm(true)
-            }}
-            disabled={filteredResponses.length === 0}
+
+        <div className="flex-1 min-w-0 flex items-center gap-3">
+          <h1 className="text-xl font-bold font-heading truncate max-w-[320px]" title={formTitle}>{formTitle}</h1>
+          <Badge
+            variant={formStatus === "published" ? "default" : "secondary"}
+            className={formStatus === "published"
+              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0 font-semibold"
+              : ""}
           >
-            <Trash2 className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Excluir</span>
-          </Button>
-          <ImportResponsesDialog formId={formId} />
-          <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}
-            disabled={isExporting || responses.length === 0}>
-            <Download className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">{isExporting ? "Exportando..." : "Exportar CSV"}</span>
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => window.print()}>
-            <Printer className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">PDF</span>
-          </Button>
-          <PublicShareDialog 
-            formId={formId} 
-            initialIsPublic={isAnalyticsPublic ?? false} 
-            initialShareToken={shareToken ?? null} 
-          />
+            {formStatus === "published" ? "Publicado" : formStatus === "draft" ? "Rascunho" : "Fechado"}
+          </Badge>
+        </div>
+
+        {/* Primary actions */}
+        <div className="flex items-center gap-2">
+          {/* Share public link */}
           <Button variant="outline" size="sm" className="gap-2" onClick={copyLink}>
-            <Copy className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">{copied ? "Copiado!" : "Link"}</span>
+            <Link2 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{copied ? "Copiado!" : "Copiar link"}</span>
           </Button>
+
+          {/* View form */}
           {formStatus === "published" && (
             <a href={`/f/${formSlug}`} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm" className="gap-2">
-                <ExternalLink className="h-3.5 w-3.5" /><span className="hidden sm:inline">Ver formulário</span>
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Ver formulário</span>
               </Button>
             </a>
           )}
+
+          {/* Share analytics */}
+          <PublicShareDialog
+            formId={formId}
+            initialIsPublic={isAnalyticsPublic ?? false}
+            initialShareToken={shareToken ?? null}
+          />
+
+          {/* ··· More actions */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 px-2.5">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem
+                onClick={handleExport}
+                disabled={isExporting || responses.length === 0}
+                className="gap-2"
+              >
+                <FileDown className="h-4 w-4" />
+                {isExporting ? "Exportando..." : "Exportar CSV"}
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="gap-2">
+                <span onClick={() => document.querySelector<HTMLButtonElement>("[data-import-trigger]")?.click()} className="cursor-pointer gap-2 flex items-center">
+                  <FileUp className="h-4 w-4" />Importar CSV
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="gap-2" onClick={() => window.print()}>
+                <Printer className="h-4 w-4" />Salvar como PDF
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
+                disabled={filteredResponses.length === 0}
+                onClick={() => {
+                  if (filteredResponses.length === 0) return
+                  setSelectedIds(new Set(filteredResponses.map(r => r.id)))
+                  setShowDeleteConfirm(true)
+                }}
+              >
+                <Trash2 className="h-4 w-4" />Excluir respostas
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Hidden import trigger */}
+          <div className="hidden">
+            <ImportResponsesDialog formId={formId} />
+          </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {/* ── Stats ────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
         <StatCard icon={Eye} label="Visualizações"
-          value={(analytics?.totalViews ?? 0).toLocaleString("pt-BR")} />
+          value={(analytics?.totalViews ?? 0).toLocaleString("pt-BR")}
+          sub="visitas únicas" />
         <StatCard icon={Users} label="Respostas"
           value={(analytics?.totalResponses ?? responses.length).toLocaleString("pt-BR")}
           sub={`${completedCount} completas`} />
         <StatCard icon={TrendingUp} label="Taxa de conclusão"
-          value={pct(completionRate)} sub={`${responses.length} iniciadas`} />
+          value={pct(completionRate)}
+          sub={`${responses.length} iniciadas`}
+          accent />
         <StatCard icon={Clock} label="Tempo médio"
-          value={avgTime > 0 ? formatDuration(avgTime) : "—"} sub="para concluir" />
+          value={avgTime > 0 ? formatDuration(avgTime) : "—"}
+          sub="para concluir" />
+      </div>
+
+      {/* Completion progress bar */}
+      <div className="mb-8">
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-700"
+            style={{ width: `${Math.round(completionRate * 100)}%` }}
+          />
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-1.5 tabular-nums">
+          {Math.round(completionRate * 100)}% de conclusão — {completedCount} de {responses.length} respostas completas
+        </p>
       </div>
 
       {responses.length >= 1 && (
