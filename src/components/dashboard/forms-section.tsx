@@ -7,8 +7,15 @@ import {
   Search, BarChart3, Users, Zap, Link2,
   Trash2, Globe, FileText, Clock, ChevronRight,
   PlusCircle, Sparkles, MessageCircle, Check, X, Rocket,
-  Copy, Eye, PauseCircle, Share2, Palette, Mail,
+  Copy, Eye, PauseCircle, MoreHorizontal,
 } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -335,7 +342,7 @@ interface FormsSectionProps {
 
 export function FormsSection({ forms }: FormsSectionProps) {
   const [activeTab, setActiveTab] = useState<"forms" | "templates">("forms")
-  const [filter, setFilter] = useState<"all" | "published" | "draft">("all")
+  const [filter, setFilter] = useState<"all" | "published" | "draft" | "high-conversion" | "surveys">("all")
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [, startTransition] = useTransition()
@@ -344,7 +351,9 @@ export function FormsSection({ forms }: FormsSectionProps) {
     const matchesFilter =
       filter === "all" ||
       (filter === "published" && f.status === "published") ||
-      (filter === "draft" && f.status === "draft")
+      (filter === "draft" && f.status === "draft") ||
+      (filter === "high-conversion" && f.status === "published" && f.viewCount > 0 && (f.responseCount / f.viewCount) >= 0.3) ||
+      (filter === "surveys" && f.questionCount >= 5)
     const matchesSearch =
       search === "" ||
       f.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -383,11 +392,11 @@ export function FormsSection({ forms }: FormsSectionProps) {
       <div className="absolute inset-0 -z-10 h-[600px] w-full bg-white [background:radial-gradient(125%_125%_at_50%_10%,#fff_40%,#f0f0f5_100%)]" />
 
       {/* Hero */}
-      <section className="container pt-20 pb-16 text-center">
-        <div className="mx-auto mb-10 inline-flex items-center rounded-full border bg-background/50 p-1 shadow-sm backdrop-blur-md">
+      <section className="container pt-10 pb-8 text-center">
+        <div className="mx-auto mb-8 inline-flex items-center rounded-full border bg-background/50 p-1 shadow-sm backdrop-blur-md">
           <button
             onClick={() => setActiveTab("forms")}
-            className={`rounded-full px-6 py-2 text-sm font-medium transition-all ${
+            className={`rounded-full px-5 py-1.5 text-sm font-medium transition-all ${
               activeTab === "forms"
                 ? "bg-foreground text-background shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -397,7 +406,7 @@ export function FormsSection({ forms }: FormsSectionProps) {
           </button>
           <button
             onClick={() => setActiveTab("templates")}
-            className={`rounded-full px-6 py-2 text-sm font-medium transition-all ${
+            className={`rounded-full px-5 py-1.5 text-sm font-medium transition-all ${
               activeTab === "templates"
                 ? "bg-foreground text-background shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -409,19 +418,21 @@ export function FormsSection({ forms }: FormsSectionProps) {
 
         {activeTab === "forms" ? (
           <>
-            <h1 className="font-heading mx-auto max-w-3xl text-5xl font-bold tracking-tight sm:text-7xl">
-              Um novo jeito<br />de coletar dados
+            <h1 className="font-heading mx-auto max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl">
+              {forms.length === 0 ? "Um novo jeito de coletar dados" : "Seus formulários"}
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              Crie formulários inteligentes, descubra insights automáticos e conecte com suas ferramentas favoritas.
-            </p>
-            <div className="mx-auto mt-12 flex max-w-2xl items-center rounded-full border bg-background p-2 shadow-lg transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+            {forms.length === 0 && (
+              <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">
+                Crie formulários inteligentes, descubra insights automáticos e conecte com suas ferramentas favoritas.
+              </p>
+            )}
+            <div className="mx-auto mt-8 flex max-w-xl items-center rounded-full border bg-background p-2 shadow-lg transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
               <div className="flex flex-1 items-center px-4">
-                <Search className="h-5 w-5 text-muted-foreground shrink-0" />
+                <Search className="h-4 w-4 text-muted-foreground shrink-0" />
                 <Input
                   type="text"
-                  placeholder="Pesquisar em seus formulários..."
-                  className="border-0 bg-transparent text-base shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/50 h-10 w-full ml-2"
+                  placeholder="Pesquisar formulários..."
+                  className="border-0 bg-transparent text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/50 h-9 w-full ml-2"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -433,10 +444,10 @@ export function FormsSection({ forms }: FormsSectionProps) {
           </>
         ) : (
           <>
-            <h1 className="font-heading mx-auto max-w-3xl text-5xl font-bold tracking-tight sm:text-7xl">
-              Comece mais rápido<br />com templates
+            <h1 className="font-heading mx-auto max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl">
+              Comece mais rápido com templates
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
+            <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">
               10 templates prontos para os casos de uso mais comuns. Personalize em segundos.
             </p>
           </>
@@ -449,23 +460,46 @@ export function FormsSection({ forms }: FormsSectionProps) {
           <OnboardingChecklist forms={forms} />
 
           {/* Filters */}
-          <section className="container mb-8">
-            <div className="flex items-center gap-3 overflow-x-auto pb-4">
-              {(["all", "published", "draft"] as const).map((f) => (
-                <Button key={f} variant={filter === f ? "default" : "outline"} className="rounded-full shrink-0" onClick={() => setFilter(f)}>
-                  {f === "all" ? "Todos" : f === "published" ? "Publicados" : "Rascunhos"}
-                </Button>
+          <section className="container mb-6">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2">
+              {([
+                { key: "all", label: "Todos" },
+                { key: "published", label: "Publicados" },
+                { key: "draft", label: "Rascunhos" },
+              ] as const).map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key)}
+                  className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-all border ${
+                    filter === f.key
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-background text-muted-foreground border-border hover:text-foreground hover:border-foreground/30"
+                  }`}
+                >
+                  {f.label}
+                </button>
               ))}
-              <div className="w-px h-6 bg-border mx-2 shrink-0" />
-              <Button variant="ghost" className="rounded-full shrink-0 text-muted-foreground hover:bg-muted/50">
-                <BarChart3 className="mr-2 h-4 w-4" /> Alta conversão
-              </Button>
-              <Button variant="ghost" className="rounded-full shrink-0 text-muted-foreground hover:bg-muted/50">
-                <Users className="mr-2 h-4 w-4" /> Pesquisas
-              </Button>
-              <Button variant="ghost" className="rounded-full shrink-0 text-muted-foreground hover:bg-muted/50">
-                <Zap className="mr-2 h-4 w-4" /> Integrações ativas
-              </Button>
+              <div className="w-px h-5 bg-border mx-1 shrink-0" />
+              <button
+                onClick={() => setFilter(filter === "high-conversion" ? "all" : "high-conversion")}
+                className={`shrink-0 flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all border ${
+                  filter === "high-conversion"
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-background text-muted-foreground border-border hover:text-foreground hover:border-foreground/30"
+                }`}
+              >
+                <BarChart3 className="h-3.5 w-3.5" />Alta conversão
+              </button>
+              <button
+                onClick={() => setFilter(filter === "surveys" ? "all" : "surveys")}
+                className={`shrink-0 flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all border ${
+                  filter === "surveys"
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-background text-muted-foreground border-border hover:text-foreground hover:border-foreground/30"
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />Pesquisas
+              </button>
             </div>
           </section>
 
@@ -542,57 +576,43 @@ function FormCard({ form, onDelete, onPublish, onDuplicate, onClose }: { form: F
           <div className="h-4 w-3/4 rounded-full" style={{ backgroundColor: themeConfig.colors.text }} />
           <div className="h-8 w-full rounded-md mt-4 opacity-50" style={{ backgroundColor: themeConfig.colors.muted }} />
         </div>
-        <div className="absolute top-4 left-4">
-          <Badge variant="secondary" className="bg-white/90 text-black hover:bg-white border-0 shadow-sm font-medium capitalize">{themeId}</Badge>
+        
+        {/* Status Pill */}
+        <div className="absolute top-4 right-4">
+          <Badge variant="secondary" className="bg-white/95 text-black border-0 shadow-sm font-medium gap-1.5 px-2.5 py-1">
+            <span className={`h-1.5 w-1.5 rounded-full ${form.status === "published" ? "bg-green-500 animate-pulse" : "bg-muted-foreground/40"}`} />
+            {form.status === "published" ? "Publicado" : "Rascunho"}
+          </Badge>
         </div>
-        {form.status === "published" && (
-          <div className="absolute top-4 right-4">
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-white shadow-sm ring-2 ring-white/20">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-            </div>
-          </div>
-        )}
       </div>
+      
       <div className="flex flex-1 flex-col p-5 bg-card">
         <h3 className="font-heading text-xl font-bold line-clamp-1">{form.title}</h3>
         {form.description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{form.description}</p>}
-        {/* Custom slug display */}
+        
+        {/* Slug Chip */}
         {form.status === "published" && (
-          <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground/70 font-mono truncate">
-            <Link2 className="h-3 w-3 shrink-0" />
+          <button
+            onClick={handleCopyLink}
+            className="mt-3 flex w-fit items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground relative z-20"
+          >
+            {linkCopied ? <Check className="h-3 w-3 text-green-500" /> : <Link2 className="h-3 w-3" />}
             /f/{form.slug}
-          </p>
+          </button>
         )}
-        <div className="mt-4 flex items-center justify-between relative z-20">
+        
+        <div className="mt-5 flex items-center justify-between relative z-20">
           <div className="flex items-center gap-2">
-            <span className="flex h-7 items-center rounded-md bg-muted px-2.5 text-sm font-medium">{form.responseCount} respostas</span>
+            <span className="flex h-7 items-center rounded-md bg-muted px-2.5 text-xs font-semibold">
+              {form.responseCount} respost{form.responseCount !== 1 ? "as" : "a"}
+            </span>
             {form.viewCount > 0 && (
-              <span className="flex h-7 items-center gap-1 rounded-md bg-muted/60 px-2.5 text-xs text-muted-foreground">
-                <Eye className="h-3 w-3" />{form.viewCount}
+              <span className="flex h-7 items-center gap-1 rounded-md bg-transparent px-1 text-xs text-muted-foreground font-medium">
+                <Eye className="h-3.5 w-3.5" />{form.viewCount}
               </span>
             )}
           </div>
           <div className="flex items-center gap-1">
-            {form.status === "draft" && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-green-600" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPublish(); }}>
-                    <Globe className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Publicar formulário</TooltipContent>
-              </Tooltip>
-            )}
-            {form.status === "published" && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-orange-500" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }}>
-                    <PauseCircle className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Encerrar coleta de respostas</TooltipContent>
-              </Tooltip>
-            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link href={`/responses/${form.id}`} onClick={(e) => e.stopPropagation()} className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
@@ -601,6 +621,7 @@ function FormCard({ form, onDelete, onPublish, onDuplicate, onClose }: { form: F
               </TooltipTrigger>
               <TooltipContent>Ver respostas</TooltipContent>
             </Tooltip>
+            
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -614,41 +635,52 @@ function FormCard({ form, onDelete, onPublish, onDuplicate, onClose }: { form: F
               </TooltipTrigger>
               <TooltipContent>{linkCopied ? "Link copiado!" : "Copiar link público"}</TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(); }}>
-                  <Copy className="h-4 w-4" />
+
+            {/* Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground">
+                  <MoreHorizontal className="h-4 w-4" />
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>Duplicar formulário</TooltipContent>
-            </Tooltip>
-            <AlertDialog>
-              <Tooltip>
-              <TooltipTrigger asChild>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive" onClick={(e) => e.stopPropagation()}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              </TooltipTrigger>
-              <TooltipContent>Excluir formulário</TooltipContent>
-              </Tooltip>
-              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o formulário
-                    <strong className="text-foreground ml-1">{form.title}</strong> e todos os dados de respostas coletados.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={(e) => { e.stopPropagation(); onDelete(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Excluir Formulário
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {form.status === "draft" ? (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onPublish(); }} className="gap-2">
+                    <Globe className="h-4 w-4" /> Publicar formulário
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onClose(); }} className="gap-2 text-orange-600 focus:text-orange-600">
+                    <PauseCircle className="h-4 w-4" /> Encerrar coleta
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate(); }} className="gap-2">
+                  <Copy className="h-4 w-4" /> Duplicar
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="gap-2 text-destructive focus:text-destructive focus:bg-destructive/10">
+                      <Trash2 className="h-4 w-4" /> Excluir
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o formulário
+                        <strong className="text-foreground ml-1">{form.title}</strong> e todos os dados coletados.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={(e) => { e.stopPropagation(); onDelete(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Excluir Formulário
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
