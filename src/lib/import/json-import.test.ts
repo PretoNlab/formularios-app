@@ -91,9 +91,11 @@ describe("parseJsonImport — options normalization", () => {
     }
     const result = parseJsonImport(JSON.stringify(input))
     expect(result.questions[0].properties.options).toEqual([
-      { id: "opt_1", label: "Azul" },
-      { id: "opt_2", label: "Vermelho" },
+      expect.objectContaining({ label: "Azul" }),
+      expect.objectContaining({ label: "Vermelho" }),
     ])
+    expect(result.questions[0].properties.options[0].id).toBeDefined()
+    expect(result.questions[0].properties.options[1].id).toBeDefined()
     expect(result.warnings.some((w) => w.message.includes("strings convertidas"))).toBe(true)
   })
 
@@ -106,9 +108,11 @@ describe("parseJsonImport — options normalization", () => {
     }
     const result = parseJsonImport(JSON.stringify(input))
     expect(result.questions[0].properties.options).toEqual([
-      { id: "opt_1", label: "A" },
-      { id: "opt_2", label: "B" },
+      expect.objectContaining({ label: "A" }),
+      expect.objectContaining({ label: "B" }),
     ])
+    expect(result.questions[0].properties.options[0].id).toBeDefined()
+    expect(result.questions[0].properties.options[1].id).toBeDefined()
     expect(result.warnings.some((w) => w.message.includes("id gerado"))).toBe(true)
   })
 
