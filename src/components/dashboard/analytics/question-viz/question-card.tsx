@@ -43,7 +43,7 @@ export function QuestionCard({ formId, period, stat, order, criticality, dropoff
   const badge = criticality ? CRITICALITY_BADGE[criticality] : null
 
   return (
-    <div className="rounded-xl border bg-card p-6">
+    <div className="rounded-2xl border border-border/40 bg-card shadow-sm p-6 mb-4">
       <div className="flex items-start justify-between gap-4 mb-5">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           <span className="text-xs font-semibold text-muted-foreground bg-muted rounded-md px-2 py-1 shrink-0 tabular-nums">

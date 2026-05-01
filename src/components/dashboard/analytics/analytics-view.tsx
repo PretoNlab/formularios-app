@@ -59,7 +59,7 @@ export function AnalyticsView({
 
   if (!analytics) {
     return (
-      <div className="flex items-center justify-center py-20 text-muted-foreground text-sm rounded-xl border bg-card">
+      <div className="flex items-center justify-center py-20 text-muted-foreground text-sm rounded-2xl border border-border/40 bg-card shadow-sm">
         Dados analíticos não disponíveis.
       </div>
     )
@@ -95,36 +95,36 @@ export function AnalyticsView({
             </div>
 
             <div className="grid lg:grid-cols-2 gap-6 mt-6">
-              <div className="rounded-xl border bg-card p-6">
-                <h3 className="font-semibold mb-4">Respostas nos {PERIOD_LABEL[period]}</h3>
+              <div className="rounded-2xl border border-border/40 bg-card shadow-sm p-6 flex flex-col">
+                <h3 className="font-semibold text-foreground/90 mb-4">Respostas nos {PERIOD_LABEL[period]}</h3>
                 <MiniBarChart data={analytics.responsesByDay} period={period} />
               </div>
 
-              <div className="rounded-xl border bg-card p-6">
-                <h3 className="font-semibold mb-4">Abandono por pergunta</h3>
+              <div className="rounded-2xl border border-border/40 bg-card shadow-sm p-6 flex flex-col">
+                <h3 className="font-semibold text-foreground/90 mb-4">Abandono por pergunta</h3>
                 {analytics.dropoffByQuestion.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Sem dados suficientes.</p>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {analytics.dropoffByQuestion.slice(0, 8).map((d) => {
                       const q = questions.find((x) => x.id === d.questionId)
                       const answered = 1 - d.dropoffRate
                       return (
                         <div key={d.questionId}>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs text-muted-foreground truncate max-w-[200px]" title={q?.title ?? d.questionId}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-xs text-muted-foreground font-medium truncate max-w-[200px]" title={q?.title ?? d.questionId}>
                               {q?.title ?? d.questionId}
                             </span>
                             <span className={`text-xs font-semibold tabular-nums ${
-                              answered < 0.6 ? "text-red-600" : answered < 0.8 ? "text-amber-600" : "text-green-600"
+                              answered < 0.6 ? "text-red-600" : answered < 0.8 ? "text-amber-600" : "text-emerald-600"
                             }`}>
                               {pct(answered)}
                             </span>
                           </div>
-                          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div className="h-2 rounded-full bg-muted/60 overflow-hidden">
                             <div
                               className={`h-full rounded-full transition-all ${
-                                answered < 0.6 ? "bg-red-400" : answered < 0.8 ? "bg-amber-400" : "bg-primary"
+                                answered < 0.6 ? "bg-red-400" : answered < 0.8 ? "bg-amber-400" : "bg-emerald-500"
                               }`}
                               style={{ width: `${answered * 100}%` }}
                             />
@@ -136,31 +136,32 @@ export function AnalyticsView({
                 )}
               </div>
 
-              <div className="rounded-xl border bg-card p-6">
-                <h3 className="font-semibold mb-4">Taxa de conclusão</h3>
+              <div className="rounded-2xl border border-border/40 bg-card shadow-sm p-6 flex flex-col justify-center">
+                <h3 className="font-semibold text-foreground/90 mb-4">Taxa de conclusão</h3>
                 <div className="flex items-center gap-6">
                   <div className="relative h-24 w-24 shrink-0">
                     <svg viewBox="0 0 36 36" className="rotate-[-90deg]" width="96" height="96">
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" className="text-muted/40" strokeWidth="3.5" />
                       <circle
                         cx="18" cy="18" r="15.9" fill="none"
-                        stroke={completionRate >= 0.75 ? "#22c55e" : completionRate >= 0.5 ? "#f59e0b" : "#ef4444"}
-                        strokeWidth="3"
+                        stroke={completionRate >= 0.75 ? "#10b981" : completionRate >= 0.5 ? "#f59e0b" : "#ef4444"}
+                        strokeWidth="3.5"
                         strokeDasharray={`${completionRate * 100} 100`}
                         strokeLinecap="round"
+                        className="transition-all duration-1000 ease-out"
                       />
                     </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-lg font-bold">
+                    <span className="absolute inset-0 flex items-center justify-center text-xl font-bold tracking-tight">
                       {pct(completionRate)}
                     </span>
                   </div>
-                  <div className="space-y-1.5 text-sm text-muted-foreground">
-                    <p>{analytics.totalResponses} respostas totais</p>
-                    <p className="text-green-600">{Math.round(analytics.totalResponses * completionRate)} concluídas</p>
-                    <p className="text-red-500">{Math.round(analytics.totalResponses * (1 - completionRate))} abandonadas</p>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground">{analytics.totalResponses} respostas totais</p>
+                    <p className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500" />{Math.round(analytics.totalResponses * completionRate)} concluídas</p>
+                    <p className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-red-400" />{Math.round(analytics.totalResponses * (1 - completionRate))} abandonadas</p>
                     {analytics.mobilePercentage > 0 && (
-                      <p className="flex items-center gap-1">
-                        <Smartphone className="h-3 w-3" />
+                      <p className="flex items-center gap-1.5 mt-2 pt-2 border-t border-border/40">
+                        <Smartphone className="h-3.5 w-3.5" />
                         {pct(analytics.mobilePercentage)} mobile
                       </p>
                     )}
@@ -168,29 +169,31 @@ export function AnalyticsView({
                 </div>
               </div>
 
-              <div className="rounded-xl border bg-card p-6">
-                <h3 className="font-semibold mb-4">Tempo médio de conclusão</h3>
-                {analytics.averageCompletionTime > 0 ? (
-                  <span className="text-5xl font-bold">{formatDuration(analytics.averageCompletionTime)}</span>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Sem dados suficientes para calcular.</p>
-                )}
+              <div className="rounded-2xl border border-border/40 bg-card shadow-sm p-6 flex flex-col">
+                <h3 className="font-semibold text-foreground/90 mb-4">Tempo médio de conclusão</h3>
+                <div className="flex-1 flex items-center">
+                  {analytics.averageCompletionTime > 0 ? (
+                    <span className="text-5xl font-extrabold tracking-tight bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent">{formatDuration(analytics.averageCompletionTime)}</span>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Sem dados suficientes para calcular.</p>
+                  )}
+                </div>
               </div>
 
-              <div className="rounded-xl border bg-card p-6">
-                <h3 className="font-semibold mb-4">Dispositivos</h3>
+              <div className="rounded-2xl border border-border/40 bg-card shadow-sm p-6 flex flex-col">
+                <h3 className="font-semibold text-foreground/90 mb-4">Dispositivos</h3>
                 <DeviceBreakdown data={analytics.deviceBreakdown} />
               </div>
             </div>
 
-            <div className="rounded-xl border bg-card p-6 mt-6">
+            <div className="rounded-2xl border border-border/40 bg-card shadow-sm p-6 mt-6">
               <h3 className="font-semibold mb-1">Quando as pessoas respondem</h3>
               <p className="text-xs text-muted-foreground mb-5">Dia da semana × hora do dia (horário de Brasília)</p>
               <HourHeatmap data={analytics.responsesByHour} />
             </div>
 
-            <div className="rounded-xl border bg-card p-6 mt-6">
-              <h3 className="font-semibold mb-1">Performance por canal de origem</h3>
+            <div className="rounded-2xl border border-border/40 bg-card shadow-sm p-6 mt-6">
+              <h3 className="font-semibold text-foreground/90 mb-1">Performance por canal de origem</h3>
               <p className="text-xs text-muted-foreground mb-5">Taxa de conclusão e tempo médio por fonte de tráfego</p>
               <UTMComparison data={analytics.sourceBreakdown} />
             </div>

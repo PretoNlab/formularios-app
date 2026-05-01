@@ -33,10 +33,10 @@ export function UTMComparison({ data }: { data: FormAnalytics["sourceBreakdown"]
       {data.slice(0, 8).map((row) => (
         <div key={row.source} className="grid grid-cols-[1fr_5rem_5rem_5rem] gap-2 py-2 border-b last:border-0 items-center">
           <div className="min-w-0">
-            <span className="text-sm font-medium truncate block">{trimSource(row.source)}</span>
-            <div className="mt-1 h-1 rounded-full bg-muted overflow-hidden">
+            <span className="text-sm font-medium truncate block text-foreground/90">{trimSource(row.source)}</span>
+            <div className="mt-1.5 h-1.5 rounded-full bg-muted/60 overflow-hidden">
               <div
-                className="h-full rounded-full bg-primary/60 transition-all duration-500"
+                className="h-full rounded-full bg-primary/80 transition-all duration-700 ease-out"
                 style={{ width: `${(row.count / maxCount) * 100}%` }}
               />
             </div>

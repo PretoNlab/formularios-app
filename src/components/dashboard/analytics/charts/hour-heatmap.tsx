@@ -34,18 +34,18 @@ export function HourHeatmap({ data }: { data: FormAnalytics["responsesByHour"] }
               const count = countMap.get(`${dow}-${hour}`) ?? 0
               const intensity = count / maxCount
               return (
-                <div
-                  key={hour}
-                  className="flex-1 rounded-sm transition-colors"
-                  style={{
-                    aspectRatio: "1",
-                    minWidth: 0,
-                    backgroundColor: count === 0
-                      ? "hsl(var(--muted))"
-                      : `hsl(var(--primary) / ${Math.max(intensity * 0.9 + 0.1, 0.12)})`,
-                  }}
-                  title={`${day} ${String(hour).padStart(2, "0")}h: ${count} resposta${count !== 1 ? "s" : ""}`}
-                />
+                  <div
+                    key={hour}
+                    className="flex-1 rounded-sm transition-all duration-300 hover:scale-110 hover:z-10 hover:shadow-sm"
+                    style={{
+                      aspectRatio: "1",
+                      minWidth: 0,
+                      backgroundColor: count === 0
+                        ? "hsl(var(--muted) / 0.5)"
+                        : `hsl(var(--primary) / ${Math.max(intensity * 0.9 + 0.1, 0.15)})`,
+                    }}
+                    title={`${day} ${String(hour).padStart(2, "0")}h: ${count} resposta${count !== 1 ? "s" : ""}`}
+                  />
               )
             })}
           </div>

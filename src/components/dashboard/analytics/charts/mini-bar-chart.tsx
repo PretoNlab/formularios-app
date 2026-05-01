@@ -32,16 +32,16 @@ export function MiniBarChart({ data, period = "30d" }: {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-end gap-0.5 h-24">
+      <div className="flex items-end gap-[3px] h-24 group">
         {bars.map((d) => (
           <div
             key={d.date}
             title={`${d.date}: ${d.count} resposta${d.count !== 1 ? "s" : ""}`}
-            className="flex-1 rounded-sm transition-all cursor-default"
+            className="flex-1 rounded-t-sm transition-all duration-300 cursor-default hover:bg-primary"
             style={{
               height: d.count === 0 ? "4px" : `${(d.count / max) * 100}%`,
               backgroundColor: d.count === 0 ? "hsl(var(--muted))" : "hsl(var(--primary))",
-              opacity: d.count === 0 ? 0.3 : 0.85,
+              opacity: d.count === 0 ? 0.3 : 0.9,
             }}
           />
         ))}

@@ -22,11 +22,11 @@ export function DeviceBreakdown({ data }: { data: FormAnalytics["deviceBreakdown
 
   return (
     <div className="space-y-4">
-      <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
+      <div className="flex h-2.5 rounded-full overflow-hidden gap-[2px]">
         {data.map((row) => (
           <div
             key={row.device}
-            className={`transition-all ${DEVICE_COLORS[row.device] ?? "bg-muted"}`}
+            className={`transition-all duration-500 hover:brightness-110 ${DEVICE_COLORS[row.device] ?? "bg-muted"}`}
             style={{ width: `${row.percentage * 100}%` }}
             title={`${DEVICE_LABELS[row.device] ?? row.device}: ${pct(row.percentage)}`}
           />

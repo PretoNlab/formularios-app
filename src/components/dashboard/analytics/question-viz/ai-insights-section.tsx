@@ -129,9 +129,9 @@ export function AiInsightsSection({
 
 function SentimentBadge({ sentiment }: { sentiment: 'positive' | 'neutral' | 'negative' }) {
   const configs = {
-    positive: { icon: TrendingUp, label: "Positivo", class: "text-green-600 bg-green-50 dark:bg-green-950/20" },
-    neutral: { icon: Minus, label: "Neutro", class: "text-amber-600 bg-amber-50 dark:bg-amber-950/20" },
-    negative: { icon: TrendingDown, label: "Negativo", class: "text-red-600 bg-red-50 dark:bg-red-950/20" }
+    positive: { icon: TrendingUp, label: "Positivo", class: "text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20" },
+    neutral: { icon: Minus, label: "Neutro", class: "text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20" },
+    negative: { icon: TrendingDown, label: "Negativo", class: "text-red-700 dark:text-red-400 bg-red-500/10 border border-red-500/20" }
   }
 
   const { icon: Icon, label, class: cls } = configs[sentiment]
