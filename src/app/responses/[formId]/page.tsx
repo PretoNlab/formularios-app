@@ -49,10 +49,10 @@ export default async function ResponsesPage({
     getFormAnalytics(formId),
   ])
 
-  // Map questions to simple objects for the client component
   const questions = dbForm.questions.map((q) => ({
     id: q.id,
     title: q.title,
+    description: q.description,
     type: q.type as QuestionType,
     order: q.order,
   }))
@@ -69,6 +69,7 @@ export default async function ResponsesPage({
       pagination={responsesResult.pagination}
       shareToken={dbForm.shareToken}
       isAnalyticsPublic={dbForm.isAnalyticsPublic}
+      userPlan={user.plan}
     />
   )
 }

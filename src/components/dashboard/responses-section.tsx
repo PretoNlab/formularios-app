@@ -62,6 +62,7 @@ interface ResponsesSectionProps {
   pagination?: PaginationMeta
   shareToken?: string | null
   isAnalyticsPublic?: boolean | null
+  userPlan?: string
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -175,12 +176,14 @@ function ResponseDetailPanel({
   responses,
   questions,
   index,
+  userPlan,
   onClose,
   onNavigate,
 }: {
   responses: ResponseWithAnswers[]
   questions: QuestionSummary[]
   index: number
+  userPlan?: string
   onClose: () => void
   onNavigate: (i: number) => void
 }) {
@@ -219,12 +222,18 @@ function ResponseDetailPanel({
     return (qa?.order ?? 0) - (qb?.order ?? 0)
   })
 
+  // Find custom thank you page
+  const thankYouPage = questions.find(q => q.type === "thank_you")
+  
+  // Conditionally hide watermark for paid plans
+  const showWatermark = !userPlan || userPlan === "free"
+
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/40 z-40 print-hide" onClick={onClose} />
 
-      <div className="fixed right-0 top-0 h-full w-full max-w-[540px] bg-background border-l shadow-2xl z-50 flex flex-col">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b">
+      <div className="fixed right-0 top-0 h-full w-full max-w-[540px] bg-background border-l shadow-2xl z-50 flex flex-col print-full-width print-no-border print-shadow-none">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b print-hide">
           <div className="flex items-center gap-1">
             <button
               onClick={() => onNavigate(index - 1)}
@@ -246,12 +255,21 @@ function ResponseDetailPanel({
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.print()}
+              className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground"
+              title="Imprimir / Salvar PDF"
+            >
+              <Printer className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         <div className="px-5 py-3 border-b bg-muted/20 flex flex-wrap items-center gap-x-4 gap-y-1.5">
@@ -271,16 +289,16 @@ function ResponseDetailPanel({
             </span>
           )}
           {DeviceIcon && (
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground capitalize">
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground capitalize print-hide">
               <DeviceIcon className="h-3 w-3" />{meta?.deviceType}
             </span>
           )}
           {source && (
-            <span className="text-xs text-muted-foreground">via {source}</span>
+            <span className="text-xs text-muted-foreground print-hide">via {source}</span>
           )}
         </div>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 print:overflow-visible print:h-auto">
           <div className="px-5 py-6 space-y-7">
             {sortedAnswers.length === 0 ? (
               <p className="text-sm text-muted-foreground italic text-center py-10">
@@ -290,8 +308,8 @@ function ResponseDetailPanel({
               sortedAnswers.map((a) => {
                 const q = questionMap.get(a.questionId)
                 return (
-                  <div key={a.questionId} className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide line-clamp-2">
+                  <div key={a.questionId} className="space-y-1.5 print-break-inside-avoid">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide line-clamp-2 print:line-clamp-none">
                       {q?.title ?? "Pergunta"}
                     </p>
                     <AnswerDisplay value={a.value} type={q?.type} />
@@ -299,10 +317,31 @@ function ResponseDetailPanel({
                 )
               })
             )}
+
+            {/* Custom Thank You Page Injection for PDF */}
+            {thankYouPage && (
+              <div className="hidden print:block print:mt-12 print:pt-8 print:border-t print-break-inside-avoid">
+                <p className="text-sm font-medium text-muted-foreground uppercase mb-2">Mensagem Final</p>
+                <h2 className="text-xl font-bold mb-2">{thankYouPage.title}</h2>
+                {thankYouPage.description && (
+                  <p className="text-sm text-muted-foreground">{thankYouPage.description}</p>
+                )}
+              </div>
+            )}
+
+            {/* Print Watermark */}
+            {showWatermark && (
+              <div className="hidden print:flex print:items-center print:justify-center print:mt-16 print:pt-8 print:opacity-50 print-break-inside-avoid">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Sparkles className="h-3 w-3" />
+                  <span>Powered by <strong>Formulários IA</strong></span>
+                </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
 
-        <div className="px-5 py-3.5 border-t flex items-center justify-between">
+        <div className="px-5 py-3.5 border-t flex items-center justify-between print-hide">
           <Button
             variant="ghost"
             size="sm"
@@ -570,7 +609,7 @@ function FilterBar({
 export function ResponsesSection({
   formId, formTitle, formStatus, formSlug,
   questions, responses, analytics, pagination,
-  shareToken, isAnalyticsPublic,
+  shareToken, isAnalyticsPublic, userPlan
 }: ResponsesSectionProps) {
   const router = useRouter()
   const [tab, setTab] = useState<"responses" | "analytics">("responses")
@@ -1000,6 +1039,7 @@ export function ResponsesSection({
           responses={filteredResponses}
           questions={questions}
           index={openResponseIndex}
+          userPlan={userPlan}
           onClose={() => setOpenResponseIndex(null)}
           onNavigate={setOpenResponseIndex}
         />

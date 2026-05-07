@@ -102,6 +102,9 @@
     max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
   }
   
   .print-no-border {
