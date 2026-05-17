@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { ensureUserExists } from "@/lib/db/queries/users"
 import { getFormById } from "@/lib/db/queries/forms"
 import { getResponsesByForm } from "@/lib/db/queries/responses"
-import { getFormAnalytics } from "@/lib/db/queries/responses"
+import { getFormAnalytics, getFormCounters } from "@/lib/db/queries/responses"
 import type {
   ResponseFilters,
   FilterPeriod,
@@ -93,10 +93,11 @@ export default async function ResponsesPage({
   if (!dbForm) notFound()
   if (dbForm.createdById !== user.id) notFound()
 
-  // ── Responses (filtered) + analytics (parallel) ───────────────────────────
-  const [responsesResult, analyticsResult] = await Promise.all([
+  // ── Responses (filtered) + analytics + form counters (parallel) ──────────
+  const [responsesResult, analyticsResult, countersResult] = await Promise.all([
     getResponsesByForm(formId, page, pageSize, filters),
     getFormAnalytics(formId),
+    getFormCounters(formId),
   ])
 
   const questions = dbForm.questions.map((q) => ({
@@ -116,6 +117,7 @@ export default async function ResponsesPage({
       questions={questions}
       responses={responsesResult.data ?? []}
       analytics={analyticsResult.data ?? null}
+      counters={countersResult.data ?? null}
       pagination={responsesResult.pagination}
       filters={filters}
       shareToken={dbForm.shareToken}

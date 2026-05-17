@@ -263,6 +263,53 @@ export async function getResponsesByForm(
 }
 
 /**
+ * Lightweight form-level counters (all-time, no period scoping, no per-question aggregation).
+ * Used for the summary cards above the responses table.
+ */
+export async function getFormCounters(formId: string): Promise<ApiResponse<{
+  total: number
+  completed: number
+  averageCompletionTime: number
+  totalViews: number
+}>> {
+  try {
+    const [statsRows, form] = await Promise.all([
+      db
+        .select({
+          total: sql<number>`count(*)::int`,
+          completed: sql<number>`count(case when ${responses.completedAt} is not null then 1 end)::int`,
+          avgSeconds: sql<number | null>`avg(case when ${responses.completedAt} is not null then extract(epoch from (${responses.completedAt} - ${responses.startedAt})) end)`,
+        })
+        .from(responses)
+        .where(eq(responses.formId, formId)),
+      db.query.forms.findFirst({
+        where: eq(forms.id, formId),
+        columns: { viewCount: true },
+      }),
+    ])
+
+    const stats = statsRows[0]
+    return {
+      success: true,
+      data: {
+        total: stats?.total ?? 0,
+        completed: stats?.completed ?? 0,
+        averageCompletionTime: Math.round(stats?.avgSeconds ?? 0),
+        totalViews: form?.viewCount ?? 0,
+      },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: "DB_ERROR",
+        message: error instanceof Error ? error.message : "Database error",
+      },
+    }
+  }
+}
+
+/**
  * Fast count of total (not necessarily completed) responses for a form.
  */
 export async function getResponseCount(formId: string): Promise<ApiResponse<number>> {

@@ -55,6 +55,13 @@ interface PaginationMeta {
   totalPages: number
 }
 
+interface FormCounters {
+  total: number
+  completed: number
+  averageCompletionTime: number
+  totalViews: number
+}
+
 interface ResponsesSectionProps {
   formId: string
   formTitle: string
@@ -63,6 +70,7 @@ interface ResponsesSectionProps {
   questions: QuestionSummary[]
   responses: ResponseWithAnswers[]
   analytics: FormAnalytics | null
+  counters: FormCounters | null
   pagination?: PaginationMeta
   filters: ResponseFilters
   shareToken?: string | null
@@ -595,7 +603,7 @@ function FilterBar({
 
 export function ResponsesSection({
   formId, formTitle, formStatus, formSlug,
-  questions, responses, analytics, pagination, filters,
+  questions, responses, analytics, counters, pagination, filters,
   shareToken, isAnalyticsPublic, userPlan
 }: ResponsesSectionProps) {
   const router = useRouter()
@@ -725,10 +733,12 @@ export function ResponsesSection({
     }
   }
 
-  const completedCount = responses.filter((r) => r.completedAt).length
-  const completionRate = analytics?.completionRate ??
-    (responses.length > 0 ? completedCount / responses.length : 0)
-  const avgTime = analytics?.averageCompletionTime ?? 0
+  // Form-level totals (all-time, no filters) — fonte da verdade dos cards de cima
+  const totalResponses = counters?.total ?? 0
+  const completedCount = counters?.completed ?? 0
+  const totalViews = counters?.totalViews ?? analytics?.totalViews ?? 0
+  const completionRate = totalResponses > 0 ? completedCount / totalResponses : 0
+  const avgTime = counters?.averageCompletionTime ?? 0
 
   return (
     <div className="container py-8 max-w-6xl">
@@ -830,14 +840,14 @@ export function ResponsesSection({
       {/* ── Stats ────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
         <StatCard icon={Eye} label="Visualizações"
-          value={(analytics?.totalViews ?? 0).toLocaleString("pt-BR")}
+          value={totalViews.toLocaleString("pt-BR")}
           sub="visitas únicas" />
         <StatCard icon={Users} label="Respostas"
-          value={(analytics?.totalResponses ?? responses.length).toLocaleString("pt-BR")}
-          sub={`${completedCount} completas`} />
+          value={totalResponses.toLocaleString("pt-BR")}
+          sub={`${completedCount.toLocaleString("pt-BR")} completas`} />
         <StatCard icon={TrendingUp} label="Taxa de conclusão"
           value={pct(completionRate)}
-          sub={`${responses.length} iniciadas`}
+          sub={`${totalResponses.toLocaleString("pt-BR")} iniciadas`}
           accent />
         <StatCard icon={Clock} label="Tempo médio"
           value={avgTime > 0 ? formatDuration(avgTime) : "—"}
@@ -853,7 +863,7 @@ export function ResponsesSection({
           />
         </div>
         <p className="text-[11px] text-muted-foreground mt-1.5 tabular-nums">
-          {Math.round(completionRate * 100)}% de conclusão — {completedCount} de {responses.length} respostas completas
+          {Math.round(completionRate * 100)}% de conclusão — {completedCount.toLocaleString("pt-BR")} de {totalResponses.toLocaleString("pt-BR")} respostas completas
         </p>
       </div>
 
