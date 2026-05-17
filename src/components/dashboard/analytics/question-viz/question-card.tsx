@@ -19,7 +19,7 @@ const CRITICALITY_BADGE = {
   ok: { label: "OK", cls: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
 }
 
-function VizSwitch({ stat }: { stat: QuestionAnalytics }) {
+function VizSwitch({ stat, formId }: { stat: QuestionAnalytics; formId: string }) {
   if (stat.questionType === "signature") return <SignatureViz stat={stat} />
   if (stat.questionType === "matrix") return <MatrixViz stat={stat} />
   if (stat.questionType === "ranking") return <RankingViz stat={stat} />
@@ -28,7 +28,7 @@ function VizSwitch({ stat }: { stat: QuestionAnalytics }) {
   if ((stat.questionType === "scale" || stat.questionType === "opinion_scale") && stat.distribution && stat.average !== undefined) return <ScaleViz stat={stat} />
   if (stat.distribution && stat.average !== undefined) return <NumericViz stat={stat} />
   if (stat.optionCounts && stat.optionCounts.length > 0) return <ChoiceViz stat={stat} />
-  return <TextViz stat={stat} />
+  return <TextViz stat={stat} formId={formId} />
 }
 
 export function QuestionCard({ formId, period, stat, order, criticality, dropoffRate }: {
@@ -71,7 +71,7 @@ export function QuestionCard({ formId, period, stat, order, criticality, dropoff
         </div>
       </div>
 
-      <VizSwitch stat={stat} />
+      <VizSwitch stat={stat} formId={formId} />
 
       {isTextType && (
         <AiInsightsSection 

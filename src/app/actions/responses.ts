@@ -1,9 +1,9 @@
 "use server"
 
-import { eq, asc, and, inArray, sql } from "drizzle-orm"
+import { eq, asc, and, desc, inArray, isNotNull, sql } from "drizzle-orm"
 import { headers } from "next/headers"
 import { db } from "@/lib/db/client"
-import { questions, responses, forms } from "@/lib/db/schema"
+import { questions, responses, answers, forms } from "@/lib/db/schema"
 import { submitResponseCore, submitBodySchema, hashIp } from "@/lib/submit-response-core"
 import { requireFormOwner } from "@/lib/auth"
 import { getFormAnalytics, buildResponsesFilter, type ResponseFilters } from "@/lib/db/queries/responses"
@@ -188,6 +188,67 @@ export async function deleteResponsesAction(
     return {
       success: false,
       error: { code: "DB_ERROR", message: "Failed to delete responses." }
+    }
+  }
+}
+
+// ─── Question answers (for "Ver todas" in analytics tab) ────────────────────
+
+export interface QuestionAnswerRow {
+  responseId: string
+  value: AnswerValue
+  startedAt: string
+  completedAt: string | null
+}
+
+/**
+ * Returns every non-empty answer for a single question on a form.
+ * Used by the "Ver todas" dialog in the analytics tab for open-ended questions.
+ */
+export async function getQuestionAnswersAction(
+  formId: string,
+  questionId: string,
+): Promise<ApiResponse<QuestionAnswerRow[]>> {
+  await requireFormOwner(formId)
+
+  try {
+    const rows = await db
+      .select({
+        responseId: answers.responseId,
+        value: answers.value,
+        startedAt: responses.startedAt,
+        completedAt: responses.completedAt,
+      })
+      .from(answers)
+      .innerJoin(responses, eq(answers.responseId, responses.id))
+      .where(
+        and(
+          eq(responses.formId, formId),
+          eq(answers.questionId, questionId),
+          isNotNull(answers.value),
+        ),
+      )
+      .orderBy(desc(responses.startedAt))
+
+    const data: QuestionAnswerRow[] = rows
+      .filter((r) => {
+        if (r.value === null || r.value === undefined) return false
+        if (typeof r.value === "string" && r.value.trim() === "") return false
+        return true
+      })
+      .map((r) => ({
+        responseId: r.responseId,
+        value: r.value as AnswerValue,
+        startedAt: r.startedAt.toISOString(),
+        completedAt: r.completedAt ? r.completedAt.toISOString() : null,
+      }))
+
+    return { success: true, data }
+  } catch (error) {
+    console.error("[getQuestionAnswersAction] Error:", error)
+    return {
+      success: false,
+      error: { code: "DB_ERROR", message: "Failed to fetch answers." },
     }
   }
 }
