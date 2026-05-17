@@ -6,7 +6,7 @@ import { db } from "@/lib/db/client"
 import { questions, responses, forms } from "@/lib/db/schema"
 import { submitResponseCore, submitBodySchema, hashIp } from "@/lib/submit-response-core"
 import { requireFormOwner } from "@/lib/auth"
-import { getFormAnalytics } from "@/lib/db/queries/responses"
+import { getFormAnalytics, buildResponsesFilter, type ResponseFilters } from "@/lib/db/queries/responses"
 import { randomBytes } from "crypto"
 import type { AnswerValue } from "@/lib/db/schema"
 import type { AnalyticsPeriod, FormAnalytics, ApiResponse } from "@/lib/types/form"
@@ -185,6 +185,43 @@ export async function deleteResponsesAction(
     return { success: true, data: { deletedCount } }
   } catch (error) {
     console.error("[deleteResponsesAction] Error:", error)
+    return {
+      success: false,
+      error: { code: "DB_ERROR", message: "Failed to delete responses." }
+    }
+  }
+}
+
+/**
+ * Deletes ALL responses for a form that match the given filters.
+ * Use for bulk operations like "delete all partial responses".
+ */
+export async function deleteResponsesByFilterAction(
+  formId: string,
+  filters: ResponseFilters,
+): Promise<ApiResponse<{ deletedCount: number }>> {
+  await requireFormOwner(formId)
+
+  try {
+    const where = buildResponsesFilter(formId, filters)
+
+    const deleted = await db
+      .delete(responses)
+      .where(where)
+      .returning({ id: responses.id })
+
+    const deletedCount = deleted.length
+
+    if (deletedCount > 0) {
+      await db
+        .update(forms)
+        .set({ responseCount: sql`GREATEST(${forms.responseCount} - ${deletedCount}, 0)` })
+        .where(eq(forms.id, formId))
+    }
+
+    return { success: true, data: { deletedCount } }
+  } catch (error) {
+    console.error("[deleteResponsesByFilterAction] Error:", error)
     return {
       success: false,
       error: { code: "DB_ERROR", message: "Failed to delete responses." }

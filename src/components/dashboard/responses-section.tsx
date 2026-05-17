@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   ArrowLeft, Eye, Users, TrendingUp, Clock,
   CheckCircle2, Circle, Copy, ExternalLink, Download,
@@ -31,8 +31,12 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { FormAnalytics, QuestionType } from "@/lib/types/form"
-import type { ResponseWithAnswers } from "@/lib/db/queries/responses"
-import { exportResponsesAction, deleteResponsesAction } from "@/app/actions/responses"
+import type { ResponseWithAnswers, ResponseFilters } from "@/lib/db/queries/responses"
+import {
+  exportResponsesAction,
+  deleteResponsesAction,
+  deleteResponsesByFilterAction,
+} from "@/app/actions/responses"
 import { ImportResponsesDialog } from "@/components/responses/import-responses-dialog"
 import { PublicShareDialog } from "./public-share-dialog"
 import { OnboardingBanner } from "@/components/shared/onboarding-banner"
@@ -60,6 +64,7 @@ interface ResponsesSectionProps {
   responses: ResponseWithAnswers[]
   analytics: FormAnalytics | null
   pagination?: PaginationMeta
+  filters: ResponseFilters
   shareToken?: string | null
   isAnalyticsPublic?: boolean | null
   userPlan?: string
@@ -479,55 +484,28 @@ function ResponsesTable({
   )
 }
 
-// ─── Response Filters ─────────────────────────────────────────────────────────
-
-type FilterPeriod = "all" | "today" | "7d" | "30d"
-type FilterStatus = "all" | "complete" | "partial"
-type FilterDevice = "all" | "desktop" | "mobile" | "tablet"
-
-interface ResponseFilters {
-  period: FilterPeriod
-  status: FilterStatus
-  device: FilterDevice
-  source: string
-  answerFilter?: { questionId: string; value: string } | null
-}
-
-const DEFAULT_FILTERS: ResponseFilters = { period: "all", status: "all", device: "all", source: "all", answerFilter: null }
-
-function getResponseSource(meta: { utmSource?: string | null; referrer?: string | null } | null | undefined): string {
-  if (!meta) return "Direto"
-  if (meta.utmSource) return meta.utmSource
-  if (meta.referrer) {
-    try {
-      return new URL(meta.referrer).hostname.replace(/^www\./, "")
-    } catch {
-      return meta.referrer.slice(0, 32)
-    }
-  }
-  return "Direto"
-}
+// ─── Response Filters (server-side via URL params) ───────────────────────────
+// Empty/undefined fields mean "no filter". See ResponseFilters in queries/responses.ts.
 
 function FilterBar({
   filters,
   onChange,
   sources,
-  filteredCount,
-  totalCount,
   crossFilters,
 }: {
   filters: ResponseFilters
-  onChange: (f: ResponseFilters) => void
+  onChange: (next: ResponseFilters) => void
   sources: string[]
-  filteredCount: number
-  totalCount: number
   crossFilters: { questionId: string; title: string; options: string[] }[]
 }) {
   const hasActive =
-    filters.period !== "all" || filters.status !== "all" || filters.device !== "all" || filters.source !== "all" || !!filters.answerFilter
+    !!filters.period || !!filters.status || !!filters.device || !!filters.source || !!filters.answerFilter
 
-  function set<K extends keyof ResponseFilters>(key: K, value: ResponseFilters[K]) {
-    onChange({ ...filters, [key]: value })
+  function set<K extends keyof ResponseFilters>(key: K, value: ResponseFilters[K] | undefined) {
+    const next = { ...filters }
+    if (value === undefined) delete next[key]
+    else next[key] = value as ResponseFilters[K]
+    onChange(next)
   }
 
   const sel =
@@ -536,25 +514,41 @@ function FilterBar({
   return (
     <div data-filter-bar className="flex flex-wrap items-center gap-2 mb-4 scroll-mt-24">
       <Filter className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-      <select className={sel} value={filters.period} onChange={(e) => set("period", e.target.value as FilterPeriod)}>
+      <select
+        className={sel}
+        value={filters.period ?? "all"}
+        onChange={(e) => set("period", e.target.value === "all" ? undefined : (e.target.value as ResponseFilters["period"]))}
+      >
         <option value="all">Todos os períodos</option>
         <option value="today">Hoje</option>
         <option value="7d">Últimos 7 dias</option>
         <option value="30d">Últimos 30 dias</option>
       </select>
-      <select className={sel} value={filters.status} onChange={(e) => set("status", e.target.value as FilterStatus)}>
+      <select
+        className={sel}
+        value={filters.status ?? "all"}
+        onChange={(e) => set("status", e.target.value === "all" ? undefined : (e.target.value as ResponseFilters["status"]))}
+      >
         <option value="all">Todos os status</option>
         <option value="complete">Completas</option>
         <option value="partial">Parciais</option>
       </select>
-      <select className={sel} value={filters.device} onChange={(e) => set("device", e.target.value as FilterDevice)}>
+      <select
+        className={sel}
+        value={filters.device ?? "all"}
+        onChange={(e) => set("device", e.target.value === "all" ? undefined : (e.target.value as ResponseFilters["device"]))}
+      >
         <option value="all">Todos os dispositivos</option>
         <option value="desktop">Desktop</option>
         <option value="mobile">Mobile</option>
         <option value="tablet">Tablet</option>
       </select>
       {sources.length > 1 && (
-        <select className={sel} value={filters.source} onChange={(e) => set("source", e.target.value)}>
+        <select
+          className={sel}
+          value={filters.source ?? "all"}
+          onChange={(e) => set("source", e.target.value === "all" ? undefined : e.target.value)}
+        >
           <option value="all">Todas as origens</option>
           {sources.map((s) => (
             <option key={s} value={s}>{s}</option>
@@ -566,7 +560,7 @@ function FilterBar({
           className={`${sel} max-w-[200px] truncate`}
           value={filters.answerFilter ? `${filters.answerFilter.questionId}::${filters.answerFilter.value}` : "all"}
           onChange={(e) => {
-            if (e.target.value === "all") set("answerFilter", null)
+            if (e.target.value === "all") set("answerFilter", undefined)
             else {
               const [q, v] = e.target.value.split("::")
               set("answerFilter", { questionId: q, value: v })
@@ -586,19 +580,12 @@ function FilterBar({
         </select>
       )}
       {hasActive && (
-        <>
-          <button
-            onClick={() => onChange(DEFAULT_FILTERS)}
-            className="flex items-center gap-1 h-8 rounded-lg border border-dashed px-2.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
-          >
-            <X className="h-3 w-3" />Limpar
-          </button>
-          {filteredCount !== totalCount && (
-            <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-              {filteredCount} de {totalCount}
-            </span>
-          )}
-        </>
+        <button
+          onClick={() => onChange({})}
+          className="flex items-center gap-1 h-8 rounded-lg border border-dashed px-2.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+        >
+          <X className="h-3 w-3" />Limpar
+        </button>
       )}
     </div>
   )
@@ -608,90 +595,70 @@ function FilterBar({
 
 export function ResponsesSection({
   formId, formTitle, formStatus, formSlug,
-  questions, responses, analytics, pagination,
+  questions, responses, analytics, pagination, filters,
   shareToken, isAnalyticsPublic, userPlan
 }: ResponsesSectionProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [tab, setTab] = useState<"responses" | "analytics">("responses")
   const [copied, setCopied] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
-  const [filters, setFilters] = useState<ResponseFilters>(DEFAULT_FILTERS)
   const [openResponseIndex, setOpenResponseIndex] = useState<number | null>(null)
-  
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteMode, setDeleteMode] = useState<"selected" | "filtered">("selected")
 
-  const sources = useMemo(() => {
-    const set = new Set<string>()
-    for (const r of responses) set.add(getResponseSource(r.metadata))
-    return Array.from(set).sort()
-  }, [responses])
-
-  const crossFilters = useMemo(() => {
-    const map = new Map<string, Set<string>>()
-    for (const r of responses) {
-      if (!r.answers) continue
-      for (const a of r.answers) {
-        if (!a.value) continue
-        const qid = a.questionId
-        let values: string[] = []
-        if (Array.isArray(a.value)) {
-          values = a.value.filter((v) => typeof v === "string") as string[]
-        } else if (typeof a.value === "string") {
-          values = [a.value]
-        }
-        if (values.length === 0) continue
-
-        const set = map.get(qid) || new Set<string>()
-        values.forEach((v) => set.add(stripOther(v)))
-        map.set(qid, set)
-      }
+  // ── Filter URL helpers ─────────────────────────────────────────────────────
+  function buildUrl(updates: Record<string, string | undefined>): string {
+    const next = new URLSearchParams(searchParams.toString())
+    for (const [k, v] of Object.entries(updates)) {
+      if (v === undefined || v === "") next.delete(k)
+      else next.set(k, v)
     }
+    const qs = next.toString()
+    return qs ? `/responses/${formId}?${qs}` : `/responses/${formId}`
+  }
 
-    return questions
-      .filter((q) => map.has(q.id) && map.get(q.id)!.size > 1)
-      .map((q) => ({
-        questionId: q.id,
-        title: q.title,
-        options: Array.from(map.get(q.id)!).sort(),
+  function applyFilters(next: ResponseFilters) {
+    router.push(
+      buildUrl({
+        period: next.period,
+        status: next.status,
+        device: next.device,
+        source: next.source,
+        answerQ: next.answerFilter?.questionId,
+        answerV: next.answerFilter?.value,
+        page: "1",
+      }),
+    )
+  }
+
+  const hasActiveFilters =
+    !!filters.period || !!filters.status || !!filters.device || !!filters.source || !!filters.answerFilter
+
+  // ── Source dropdown options (full universe, not just current page) ─────────
+  const sources = useMemo(
+    () => (analytics?.sourceBreakdown ?? []).map((s) => s.source).filter(Boolean).sort(),
+    [analytics],
+  )
+
+  // ── Cross-filter options (full universe via analytics) ─────────────────────
+  const crossFilters = useMemo(() => {
+    const stats = analytics?.questionStats ?? []
+    return stats
+      .filter((qs) => Array.isArray(qs.optionCounts) && qs.optionCounts.length > 1)
+      .map((qs) => ({
+        questionId: qs.questionId,
+        title: qs.questionTitle,
+        options: qs.optionCounts!.map((o) => o.option).filter(Boolean).sort(),
       }))
-  }, [responses, questions])
+      .filter((cf) => cf.options.length > 1)
+  }, [analytics])
 
-  const filteredResponses = useMemo(() => {
-    return responses.filter((r) => {
-      // Never show partial responses with zero answers (e.g. opened form and left immediately)
-      if (!r.completedAt && r.answers.length === 0) return false
-      if (filters.period !== "all") {
-        const now = new Date()
-        const cutoff = new Date()
-        if (filters.period === "today") cutoff.setHours(0, 0, 0, 0)
-        else if (filters.period === "7d") cutoff.setDate(now.getDate() - 7)
-        else if (filters.period === "30d") cutoff.setDate(now.getDate() - 30)
-        if (new Date(r.startedAt) < cutoff) return false
-      }
-      if (filters.status === "complete" && !r.completedAt) return false
-      if (filters.status === "partial" && r.completedAt) return false
-      if (filters.device !== "all" && r.metadata?.deviceType !== filters.device) return false
-      if (filters.source !== "all" && getResponseSource(r.metadata) !== filters.source) return false
-      
-      if (filters.answerFilter) {
-        const { questionId, value } = filters.answerFilter
-        const ans = r.answers?.find(a => a.questionId === questionId)?.value
-        if (!ans) return false
-        
-        let match = false
-        if (Array.isArray(ans)) {
-          match = ans.some((v) => stripOther(v) === value)
-        } else if (typeof ans === "string") {
-          match = stripOther(ans) === value
-        }
-        if (!match) return false
-      }
-
-      return true
-    })
-  }, [responses, filters])
+  // Server already applies all filters (including noise removal). Render as-is.
+  const visibleResponses = responses
 
   const publicUrl =
     typeof window !== "undefined"
@@ -713,18 +680,20 @@ export function ResponsesSection({
   }
 
   function handleToggleSelectAll() {
-    if (selectedIds.size === filteredResponses.length && filteredResponses.length > 0) {
+    if (selectedIds.size === visibleResponses.length && visibleResponses.length > 0) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(filteredResponses.map(r => r.id)))
+      setSelectedIds(new Set(visibleResponses.map(r => r.id)))
     }
   }
 
   async function handleDeleteResponses() {
-    if (selectedIds.size === 0) return
     setIsDeleting(true)
     try {
-      const res = await deleteResponsesAction(formId, Array.from(selectedIds))
+      const res =
+        deleteMode === "filtered"
+          ? await deleteResponsesByFilterAction(formId, filters)
+          : await deleteResponsesAction(formId, Array.from(selectedIds))
       if (res.success) {
         window.location.reload()
       } else {
@@ -738,7 +707,7 @@ export function ResponsesSection({
     }
   }
 
-  const isAllSelected = filteredResponses.length > 0 && selectedIds.size === filteredResponses.length
+  const isAllSelected = visibleResponses.length > 0 && selectedIds.size === visibleResponses.length
 
   async function handleExport() {
     setIsExporting(true)
@@ -836,14 +805,17 @@ export function ResponsesSection({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
-                disabled={filteredResponses.length === 0}
+                disabled={!pagination || pagination.total === 0}
                 onClick={() => {
-                  if (filteredResponses.length === 0) return
-                  setSelectedIds(new Set(filteredResponses.map(r => r.id)))
+                  if (!pagination || pagination.total === 0) return
+                  setDeleteMode("filtered")
                   setShowDeleteConfirm(true)
                 }}
               >
-                <Trash2 className="h-4 w-4" />Excluir respostas
+                <Trash2 className="h-4 w-4" />
+                {hasActiveFilters
+                  ? `Excluir ${pagination?.total ?? 0} respostas filtradas`
+                  : "Excluir todas as respostas"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -934,7 +906,7 @@ export function ResponsesSection({
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <TabsList className="mb-6 print-hide">
           <TabsTrigger value="responses">
-            Respostas ({filteredResponses.length !== responses.length ? `${filteredResponses.length}/${responses.length}` : responses.length})
+            Respostas ({pagination?.total ?? responses.length})
           </TabsTrigger>
           <TabsTrigger value="analytics">Visão Geral</TabsTrigger>
         </TabsList>
@@ -944,13 +916,11 @@ export function ResponsesSection({
         <>
           <FilterBar
             filters={filters}
-            onChange={setFilters}
+            onChange={applyFilters}
             sources={sources}
-            filteredCount={filteredResponses.length}
-            totalCount={responses.length}
             crossFilters={crossFilters}
           />
-          
+
           {selectedIds.size > 0 && (
             <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-center justify-between mb-4 animate-in slide-in-from-top-2">
               <span className="text-sm font-medium text-destructive">
@@ -960,7 +930,15 @@ export function ResponsesSection({
                 <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())} className="h-8">
                   Cancelar
                 </Button>
-                <Button variant="destructive" size="sm" className="h-8 gap-2" onClick={() => setShowDeleteConfirm(true)}>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8 gap-2"
+                  onClick={() => {
+                    setDeleteMode("selected")
+                    setShowDeleteConfirm(true)
+                  }}
+                >
                   <Trash2 className="h-3.5 w-3.5" /> Excluir
                 </Button>
               </div>
@@ -968,7 +946,7 @@ export function ResponsesSection({
           )}
 
           <ResponsesTable
-            responses={filteredResponses}
+            responses={visibleResponses}
             questions={questions}
             onOpen={setOpenResponseIndex}
             selectedIds={selectedIds}
@@ -986,7 +964,7 @@ export function ResponsesSection({
                   className="h-8 rounded-lg border bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
                   value={pagination.pageSize}
                   onChange={(e) =>
-                    router.push(`/responses/${formId}?page=1&pageSize=${e.target.value}`)
+                    router.push(buildUrl({ page: "1", pageSize: e.target.value }))
                   }
                   aria-label="Respostas por página"
                 >
@@ -998,9 +976,7 @@ export function ResponsesSection({
                   size="sm"
                   disabled={pagination.page <= 1}
                   onClick={() =>
-                    router.push(
-                      `/responses/${formId}?page=${pagination.page - 1}&pageSize=${pagination.pageSize}`,
-                    )
+                    router.push(buildUrl({ page: String(pagination.page - 1) }))
                   }
                 >
                   <ChevronLeft className="h-4 w-4 mr-1" />Anterior
@@ -1010,9 +986,7 @@ export function ResponsesSection({
                   size="sm"
                   disabled={pagination.page >= pagination.totalPages}
                   onClick={() =>
-                    router.push(
-                      `/responses/${formId}?page=${pagination.page + 1}&pageSize=${pagination.pageSize}`,
-                    )
+                    router.push(buildUrl({ page: String(pagination.page + 1) }))
                   }
                 >
                   Próxima<ChevronRight className="h-4 w-4 ml-1" />
@@ -1029,7 +1003,17 @@ export function ResponsesSection({
                   Excluir Respostas
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  Você está prestes a excluir <strong>{selectedIds.size}</strong> resposta(s). Esta ação é permanente e não poderá ser desfeita.
+                  {deleteMode === "filtered" ? (
+                    <>
+                      Você está prestes a excluir <strong>{pagination?.total ?? 0}</strong>{" "}
+                      {hasActiveFilters ? "respostas que correspondem aos filtros atuais" : "respostas (todas do formulário)"}.
+                      Esta ação é permanente e não poderá ser desfeita.
+                    </>
+                  ) : (
+                    <>
+                      Você está prestes a excluir <strong>{selectedIds.size}</strong> resposta(s). Esta ação é permanente e não poderá ser desfeita.
+                    </>
+                  )}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -1053,7 +1037,7 @@ export function ResponsesSection({
 
       {openResponseIndex !== null && (
         <ResponseDetailPanel
-          responses={filteredResponses}
+          responses={visibleResponses}
           questions={questions}
           index={openResponseIndex}
           userPlan={userPlan}

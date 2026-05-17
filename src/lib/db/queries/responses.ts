@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, sql, inArray, type SQL } from "drizzle-orm"
+import { eq, and, desc, asc, sql, inArray, isNull, isNotNull, type SQL } from "drizzle-orm"
 import { db } from "../client"
 import { forms, questions, responses, answers } from "../schema"
 import type { ResponseMetadata, AnswerValue } from "../schema"
@@ -17,6 +17,63 @@ export type ResponseWithAnswers = ResponseRow & { answers: AnswerRow[] }
 export interface SaveAnswerInput {
   questionId: string
   value: AnswerValue
+}
+
+export type FilterPeriod = "today" | "7d" | "30d" | "90d"
+export type FilterStatus = "complete" | "partial"
+export type FilterDevice = "desktop" | "mobile" | "tablet" | "unknown"
+
+export interface ResponseFilters {
+  period?: FilterPeriod
+  status?: FilterStatus
+  device?: FilterDevice
+  source?: string
+  answerFilter?: { questionId: string; value: string }
+}
+
+// ─── Filter helpers (shared between list, analytics, delete-by-filter) ───────
+
+const SOURCE_EXPR = sql<string>`coalesce(nullif(${responses.metadata}->>'utmSource', ''), nullif(${responses.metadata}->>'referrer', ''), 'Direto')`
+
+function answerExistsWhere(filter: { questionId: string; value: string }): SQL {
+  const jsonValue = JSON.stringify(filter.value)
+  const arrayValue = JSON.stringify([filter.value])
+  return sql`EXISTS (
+    SELECT 1 FROM ${answers} a
+    WHERE a.response_id = ${responses.id}
+      AND a.question_id = ${filter.questionId}
+      AND (
+        a.value::jsonb = ${jsonValue}::jsonb OR
+        a.value::jsonb @> ${arrayValue}::jsonb
+      )
+  )`
+}
+
+function periodWhereForListing(period: FilterPeriod): SQL {
+  if (period === "today") {
+    return sql`${responses.startedAt} >= date_trunc('day', now() at time zone 'America/Sao_Paulo') at time zone 'America/Sao_Paulo'`
+  }
+  const days = { "7d": 7, "30d": 30, "90d": 90 }[period]
+  return sql`${responses.startedAt} >= now() - make_interval(days => ${days})`
+}
+
+/**
+ * Builds the WHERE clause shared by listing, count, and bulk-delete-by-filter.
+ * Always anchored to `formId`. All other clauses are optional.
+ */
+export function buildResponsesFilter(formId: string, filters?: ResponseFilters): SQL {
+  const clauses: SQL[] = [eq(responses.formId, formId)]
+
+  if (filters?.period) clauses.push(periodWhereForListing(filters.period))
+  if (filters?.status === "complete") clauses.push(isNotNull(responses.completedAt))
+  if (filters?.status === "partial") clauses.push(isNull(responses.completedAt))
+  if (filters?.device) {
+    clauses.push(sql`coalesce(nullif(${responses.metadata}->>'deviceType', ''), 'unknown') = ${filters.device}`)
+  }
+  if (filters?.source) clauses.push(sql`${SOURCE_EXPR} = ${filters.source}`)
+  if (filters?.answerFilter) clauses.push(answerExistsWhere(filters.answerFilter))
+
+  return and(...clauses)!
 }
 
 // ─── Queries ─────────────────────────────────────────────────────────────────
@@ -159,19 +216,25 @@ export async function completeResponse(
 export async function getResponsesByForm(
   formId: string,
   page: number,
-  pageSize: number
+  pageSize: number,
+  filters?: ResponseFilters,
 ): Promise<PaginatedResponse<ResponseWithAnswers>> {
   try {
     const offset = (page - 1) * pageSize
+    // Listing-only: hide "noise" rows (started form, never answered anything)
+    const meaningfulRow = sql`(${responses.completedAt} IS NOT NULL OR EXISTS (
+      SELECT 1 FROM ${answers} a WHERE a.response_id = ${responses.id}
+    ))`
+    const where = and(buildResponsesFilter(formId, filters), meaningfulRow)!
 
     const [totalResult, rows] = await Promise.all([
       db
         .select({ total: sql<number>`count(*)::int` })
         .from(responses)
-        .where(eq(responses.formId, formId)),
+        .where(where),
 
       db.query.responses.findMany({
-        where: eq(responses.formId, formId),
+        where,
         orderBy: [desc(responses.startedAt)],
         limit: pageSize,
         offset,
@@ -257,20 +320,7 @@ export async function getFormAnalytics(
       : eq(responses.formId, formId)
       
     if (answerFilter) {
-      const { questionId, value } = answerFilter
-      const jsonValue = JSON.stringify(value)
-      const arrayValue = JSON.stringify([value])
-      
-      const filterSql = sql`EXISTS (
-        SELECT 1 FROM ${answers} a 
-        WHERE a.response_id = ${responses.id} 
-          AND a.question_id = ${questionId} 
-          AND (
-            a.value::jsonb = ${jsonValue}::jsonb OR
-            a.value::jsonb @> ${arrayValue}::jsonb
-          )
-      )`
-      formWhere = and(formWhere, filterSql)
+      formWhere = and(formWhere, answerExistsWhere(answerFilter))
     }
 
     // ── 1. Form-level counters ───────────────────────────────────────────────

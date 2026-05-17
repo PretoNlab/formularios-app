@@ -4,18 +4,62 @@ import { ensureUserExists } from "@/lib/db/queries/users"
 import { getFormById } from "@/lib/db/queries/forms"
 import { getResponsesByForm } from "@/lib/db/queries/responses"
 import { getFormAnalytics } from "@/lib/db/queries/responses"
+import type {
+  ResponseFilters,
+  FilterPeriod,
+  FilterStatus,
+  FilterDevice,
+} from "@/lib/db/queries/responses"
 import { ResponsesSection } from "@/components/dashboard/responses-section"
 import type { QuestionType } from "@/lib/types/form"
 
 const ALLOWED_PAGE_SIZES = [50, 100] as const
 const DEFAULT_PAGE_SIZE = 50
 
+const VALID_PERIODS: readonly FilterPeriod[] = ["today", "7d", "30d", "90d"]
+const VALID_STATUSES: readonly FilterStatus[] = ["complete", "partial"]
+const VALID_DEVICES: readonly FilterDevice[] = ["desktop", "mobile", "tablet", "unknown"]
+
+function parseFilters(sp: {
+  period?: string
+  status?: string
+  device?: string
+  source?: string
+  answerQ?: string
+  answerV?: string
+}): ResponseFilters {
+  const filters: ResponseFilters = {}
+  if (sp.period && (VALID_PERIODS as readonly string[]).includes(sp.period)) {
+    filters.period = sp.period as FilterPeriod
+  }
+  if (sp.status && (VALID_STATUSES as readonly string[]).includes(sp.status)) {
+    filters.status = sp.status as FilterStatus
+  }
+  if (sp.device && (VALID_DEVICES as readonly string[]).includes(sp.device)) {
+    filters.device = sp.device as FilterDevice
+  }
+  if (sp.source) filters.source = sp.source
+  if (sp.answerQ && sp.answerV) {
+    filters.answerFilter = { questionId: sp.answerQ, value: sp.answerV }
+  }
+  return filters
+}
+
 export default async function ResponsesPage({
   params,
   searchParams,
 }: {
   params: Promise<{ formId: string }>
-  searchParams: Promise<{ page?: string; pageSize?: string }>
+  searchParams: Promise<{
+    page?: string
+    pageSize?: string
+    period?: string
+    status?: string
+    device?: string
+    source?: string
+    answerQ?: string
+    answerV?: string
+  }>
 }) {
   const [{ formId }, sp] = await Promise.all([params, searchParams])
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1)
@@ -23,6 +67,7 @@ export default async function ResponsesPage({
   const pageSize = (ALLOWED_PAGE_SIZES as readonly number[]).includes(rawPageSize)
     ? rawPageSize
     : DEFAULT_PAGE_SIZE
+  const filters = parseFilters(sp)
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   const supabase = await createClient()
@@ -48,9 +93,9 @@ export default async function ResponsesPage({
   if (!dbForm) notFound()
   if (dbForm.createdById !== user.id) notFound()
 
-  // ── Responses + analytics (parallel) ─────────────────────────────────────
+  // ── Responses (filtered) + analytics (parallel) ───────────────────────────
   const [responsesResult, analyticsResult] = await Promise.all([
-    getResponsesByForm(formId, page, pageSize),
+    getResponsesByForm(formId, page, pageSize, filters),
     getFormAnalytics(formId),
   ])
 
@@ -72,6 +117,7 @@ export default async function ResponsesPage({
       responses={responsesResult.data ?? []}
       analytics={analyticsResult.data ?? null}
       pagination={responsesResult.pagination}
+      filters={filters}
       shareToken={dbForm.shareToken}
       isAnalyticsPublic={dbForm.isAnalyticsPublic}
       userPlan={user.plan}
