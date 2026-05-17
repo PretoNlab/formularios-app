@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   getQuestionAnswersAction,
   type QuestionAnswerRow,
@@ -108,7 +107,7 @@ export function QuestionAnswersDialog({
           </div>
         </div>
 
-        <ScrollArea className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
           <div className="px-6 py-4">
             {loading && (
               <div className="flex items-center justify-center py-12 text-muted-foreground">
@@ -152,7 +151,7 @@ export function QuestionAnswersDialog({
               </ul>
             )}
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   )
