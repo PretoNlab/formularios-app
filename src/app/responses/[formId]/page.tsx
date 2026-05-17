@@ -7,17 +7,22 @@ import { getFormAnalytics } from "@/lib/db/queries/responses"
 import { ResponsesSection } from "@/components/dashboard/responses-section"
 import type { QuestionType } from "@/lib/types/form"
 
-const PAGE_SIZE = 50
+const ALLOWED_PAGE_SIZES = [50, 100] as const
+const DEFAULT_PAGE_SIZE = 50
 
 export default async function ResponsesPage({
   params,
   searchParams,
 }: {
   params: Promise<{ formId: string }>
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<{ page?: string; pageSize?: string }>
 }) {
   const [{ formId }, sp] = await Promise.all([params, searchParams])
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1)
+  const rawPageSize = parseInt(sp.pageSize ?? "", 10)
+  const pageSize = (ALLOWED_PAGE_SIZES as readonly number[]).includes(rawPageSize)
+    ? rawPageSize
+    : DEFAULT_PAGE_SIZE
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   const supabase = await createClient()
@@ -45,7 +50,7 @@ export default async function ResponsesPage({
 
   // ── Responses + analytics (parallel) ─────────────────────────────────────
   const [responsesResult, analyticsResult] = await Promise.all([
-    getResponsesByForm(formId, page, PAGE_SIZE),
+    getResponsesByForm(formId, page, pageSize),
     getFormAnalytics(formId),
   ])
 

@@ -743,9 +743,7 @@ export function ResponsesSection({
   async function handleExport() {
     setIsExporting(true)
     try {
-      const ids =
-        filteredResponses.length !== responses.length ? filteredResponses.map((r) => r.id) : undefined
-      const csv = await exportResponsesAction(formId, ids)
+      const csv = await exportResponsesAction(formId)
       const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -978,17 +976,32 @@ export function ResponsesSection({
             onToggleSelectAll={handleToggleSelectAll}
             isAllSelected={isAllSelected}
           />
-          {pagination && pagination.totalPages > 1 && (
+          {pagination && (pagination.totalPages > 1 || pagination.total > 50) && (
             <div className="flex items-center justify-between mt-4 px-1">
               <p className="text-xs text-muted-foreground">
                 Página {pagination.page} de {pagination.totalPages} · {pagination.total} respostas
               </p>
               <div className="flex items-center gap-2">
+                <select
+                  className="h-8 rounded-lg border bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                  value={pagination.pageSize}
+                  onChange={(e) =>
+                    router.push(`/responses/${formId}?page=1&pageSize=${e.target.value}`)
+                  }
+                  aria-label="Respostas por página"
+                >
+                  <option value="50">50 por página</option>
+                  <option value="100">100 por página</option>
+                </select>
                 <Button
                   variant="outline"
                   size="sm"
                   disabled={pagination.page <= 1}
-                  onClick={() => router.push(`/responses/${formId}?page=${pagination.page - 1}`)}
+                  onClick={() =>
+                    router.push(
+                      `/responses/${formId}?page=${pagination.page - 1}&pageSize=${pagination.pageSize}`,
+                    )
+                  }
                 >
                   <ChevronLeft className="h-4 w-4 mr-1" />Anterior
                 </Button>
@@ -996,7 +1009,11 @@ export function ResponsesSection({
                   variant="outline"
                   size="sm"
                   disabled={pagination.page >= pagination.totalPages}
-                  onClick={() => router.push(`/responses/${formId}?page=${pagination.page + 1}`)}
+                  onClick={() =>
+                    router.push(
+                      `/responses/${formId}?page=${pagination.page + 1}&pageSize=${pagination.pageSize}`,
+                    )
+                  }
                 >
                   Próxima<ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
