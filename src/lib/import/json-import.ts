@@ -201,7 +201,15 @@ const layoutPropsSchema = z.object({
 })
 
 const downloadPropsSchema = z.object({
-  downloadUrl: z.string().min(1, "downloadUrl é obrigatório"),
+  downloadUrl: z
+    .string()
+    .min(1, "downloadUrl é obrigatório")
+    .refine(
+      (v) => v.startsWith("/") && !v.startsWith("//")
+        ? true
+        : /^https:\/\//i.test(v),
+      { message: "downloadUrl deve ser HTTPS ou caminho relativo." }
+    ),
   buttonText: z.string().optional(),
   downloadButtonSize: z.enum(["sm", "default", "lg"]).default("default"),
   downloadButtonAlign: z.enum(["left", "center", "right", "full"]).default("center"),

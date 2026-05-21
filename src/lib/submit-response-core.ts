@@ -124,6 +124,21 @@ export async function submitResponseCore(params: {
   if (!form) throw new Error("Formulário não encontrado.")
   if (form.status !== "published") throw new Error("Este formulário não está aceitando respostas.")
 
+  // 1b. If the client supplied a responseId (resumed partial session), verify
+  // that it belongs to this form and is still open. Without this check, an
+  // attacker can complete a partial session from form B while reporting form
+  // A's formId — corrupting form B's record and inflating form A's counters /
+  // burning form A owner's response quota.
+  if (responseId) {
+    const existing = await db.query.responses.findFirst({
+      where: eq(responses.id, responseId),
+      columns: { id: true, formId: true, completedAt: true },
+    })
+    if (!existing || existing.formId !== formId || existing.completedAt !== null) {
+      throw new Error("Sessão de resposta inválida.")
+    }
+  }
+
   const settings = form.settings as FormSettings
 
   // 2. Check owner response quota

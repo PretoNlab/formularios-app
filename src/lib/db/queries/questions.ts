@@ -1,4 +1,4 @@
-import { eq, and, asc, notInArray, sql } from "drizzle-orm"
+import { eq, and, asc, notInArray, inArray, sql } from "drizzle-orm"
 import { db } from "../client"
 import { questions } from "../schema"
 import type { ApiResponse } from "../../types/form"
@@ -64,6 +64,23 @@ export async function upsertQuestions(
       const incomingIds = questionList
         .map((q) => q.id)
         .filter((id): id is string => !!id)
+
+      // Defense in depth: if the caller supplied IDs, every one of them must
+      // either be new (no row exists) or already belong to this form. Without
+      // this check, an attacker who knows the UUID of a question in another
+      // tenant's form could overwrite it via ON CONFLICT (id) since `formId`
+      // is intentionally not in the SET clause.
+      if (incomingIds.length > 0) {
+        const existing = await tx
+          .select({ id: questions.id, formId: questions.formId })
+          .from(questions)
+          .where(inArray(questions.id, incomingIds))
+
+        const foreign = existing.find((row) => row.formId !== formId)
+        if (foreign) {
+          throw new Error("ID de pergunta pertence a outro formulário.")
+        }
+      }
 
       // Delete removed questions
       if (incomingIds.length > 0) {

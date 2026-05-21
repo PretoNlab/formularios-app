@@ -3,6 +3,7 @@ import { after } from "next/server"
 import { getFormBySlug, incrementViewCount } from "@/lib/db/queries/forms"
 import { FormRendererPage } from "@/components/renderer/form-renderer-page"
 import { mapDbForm } from "@/lib/utils/map-db-form"
+import { createClient } from "@/lib/supabase/server"
 import type { Form } from "@/lib/types/form"
 import type { Metadata, ResolvingMetadata } from "next"
 
@@ -18,7 +19,19 @@ export async function generateMetadata(
   const isPreview = sp.preview === "1"
   const { data: dbForm } = await getFormBySlug(slug)
 
-  if (!dbForm || (!isPreview && dbForm.status !== "published")) {
+  if (!dbForm) {
+    return { title: "Formulário não encontrado" }
+  }
+
+  // Preview mode is owner-only. For metadata we don't disclose the title to
+  // non-owners viewing a draft — fall through to the generic title instead.
+  if (isPreview && dbForm.status !== "published") {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || user.id !== dbForm.createdById) {
+      return { title: "Formulário não encontrado" }
+    }
+  } else if (dbForm.status !== "published") {
     return { title: "Formulário não encontrado" }
   }
 
@@ -70,8 +83,20 @@ export default async function PublicFormPage({
 
   const { data: dbForm } = await getFormBySlug(slug)
 
-  // 404 for missing forms; in preview mode allow drafts
-  if (!dbForm || (!isPreview && dbForm.status !== "published")) notFound()
+  if (!dbForm) notFound()
+
+  // Preview mode is owner-only: the in-builder Preview button is the legit
+  // caller. Without this check, anyone who knows or enumerates a slug can read
+  // drafts the author has not published.
+  if (isPreview) {
+    if (dbForm.status !== "published") {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || user.id !== dbForm.createdById) notFound()
+    }
+  } else if (dbForm.status !== "published") {
+    notFound()
+  }
 
   // Only count real visits
   if (!isPreview) after(() => incrementViewCount(slug))

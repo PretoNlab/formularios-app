@@ -2,12 +2,13 @@
 
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { isSafeNextPath } from "@/lib/utils/safe-url"
 
 export async function loginAction(formData: FormData) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
   const rawNext = (formData.get("next") as string) || "/dashboard"
-  const next = rawNext.startsWith("/") ? rawNext : "/dashboard"
+  const next = isSafeNextPath(rawNext) ? rawNext : "/dashboard"
 
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({ email, password })

@@ -248,6 +248,48 @@ describe("parseJsonImport — per-type validation", () => {
     expect(() => parseJsonImport(JSON.stringify(input))).toThrowError(/downloadUrl/)
   })
 
+  it("rejects download type with javascript: URL (XSS guard)", () => {
+    const input = {
+      title: "X",
+      questions: [{ type: "download", title: "Q", properties: { downloadUrl: "javascript:alert(1)" } }],
+    }
+    expect(() => parseJsonImport(JSON.stringify(input))).toThrowError(/HTTPS/)
+  })
+
+  it("rejects download type with protocol-relative URL", () => {
+    const input = {
+      title: "X",
+      questions: [{ type: "download", title: "Q", properties: { downloadUrl: "//evil.com/x" } }],
+    }
+    expect(() => parseJsonImport(JSON.stringify(input))).toThrowError(/HTTPS/)
+  })
+
+  it("rejects download type with plain http URL", () => {
+    const input = {
+      title: "X",
+      questions: [{ type: "download", title: "Q", properties: { downloadUrl: "http://example.com/x" } }],
+    }
+    expect(() => parseJsonImport(JSON.stringify(input))).toThrowError(/HTTPS/)
+  })
+
+  it("accepts download type with https URL", () => {
+    const input = {
+      title: "X",
+      questions: [{ type: "download", title: "Q", properties: { downloadUrl: "https://example.com/file.pdf" } }],
+    }
+    const result = parseJsonImport(JSON.stringify(input))
+    expect(result.questions[0].properties).toMatchObject({ downloadUrl: "https://example.com/file.pdf" })
+  })
+
+  it("accepts download type with same-origin path", () => {
+    const input = {
+      title: "X",
+      questions: [{ type: "download", title: "Q", properties: { downloadUrl: "/static/file.pdf" } }],
+    }
+    const result = parseJsonImport(JSON.stringify(input))
+    expect(result.questions[0].properties).toMatchObject({ downloadUrl: "/static/file.pdf" })
+  })
+
   it("normalizes matrixRows/matrixColumns from object array", () => {
     const input = {
       title: "X",

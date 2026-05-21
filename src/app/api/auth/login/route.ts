@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import { isSafeNextPath } from "@/lib/utils/safe-url"
 
 /**
  * POST /api/auth/login
@@ -49,12 +50,9 @@ export async function POST(request: NextRequest) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
-  // Validate next param — only allow same-origin relative paths (not //)
+  // Validate next param — only allow same-origin relative paths
   const rawNext = (formData.get("next") as string) || "/dashboard"
-  const next =
-    rawNext.startsWith("/") && !rawNext.startsWith("//")
-      ? rawNext
-      : "/dashboard"
+  const next = isSafeNextPath(rawNext) ? rawNext : "/dashboard"
 
   const cookieStore = await cookies()
 

@@ -11,19 +11,10 @@ import { RichText } from "@/components/ui/rich-text"
 import { FIELD_COMPONENTS } from "@/components/renderer/fields"
 import { FormStyles } from "@/components/renderer/form-styles"
 import { computeHiddenQuestions, resolveNextIndex } from "@/lib/logic-engine"
+import { isSafeUrl } from "@/lib/utils/safe-url"
 
 // Re-export FormStyles so existing imports keep working
 export { FormStyles } from "@/components/renderer/form-styles"
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function isSafeUrl(url: string | null | undefined): boolean {
-    if (!url) return false
-    if (url.startsWith("/")) return true
-    try {
-        return new URL(url).protocol === "https:"
-    } catch { return false }
-}
 
 // ─── Progress Bar ──────────────────────────────────────────────────────────────
 
