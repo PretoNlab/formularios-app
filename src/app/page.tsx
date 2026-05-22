@@ -789,6 +789,18 @@ function ComparisonTable() {
           </table>
         </div>
 
+        <div className="mt-8 rounded-2xl border bg-violet-600/5 border-violet-600/20 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <p className="font-bold text-base mb-1">Vindo do Google Forms?</p>
+            <p className="text-sm text-muted-foreground">Veja a comparação detalhada e migre seu formulário em 1 clique.</p>
+          </div>
+          <Link href="/vs/google-forms">
+            <Button variant="outline" className="rounded-full font-bold px-6 whitespace-nowrap">
+              Comparação completa com Google Forms <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+
       </div>
     </section>
   )
@@ -812,6 +824,7 @@ function Footer() {
           <Link href="/login" className="hover:text-foreground transition-colors">Entrar</Link>
           <Link href="/signup" className="hover:text-foreground transition-colors">Criar conta</Link>
           <Link href="#pricing" className="hover:text-foreground transition-colors">Preços</Link>
+          <Link href="/vs/google-forms" className="hover:text-foreground transition-colors">vs Google Forms</Link>
           <Link href="/terms" className="hover:text-foreground transition-colors">Termos</Link>
           <Link href="/privacy" className="hover:text-foreground transition-colors">Privacidade</Link>
         </div>
