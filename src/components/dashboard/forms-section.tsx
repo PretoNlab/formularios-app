@@ -47,7 +47,6 @@ import { PRESET_THEMES } from "@/config/themes"
 import { FORM_TEMPLATES, TEMPLATE_CATEGORIES, type FormTemplate } from "@/config/templates"
 import { CreateFormButton } from "./create-form-button"
 import { ImportFormDialog } from "./import-form-dialog"
-import { AiFormGeneratorDialog } from "./ai-form-generator-dialog"
 import { deleteFormAction, publishFormAction, createFormFromTemplateAction, duplicateFormAction, closeFormAction } from "@/app/actions/forms"
 import type { FormListItem } from "@/lib/db/queries/forms"
 import { ONBOARDING_KEYS, isThemeCustomized, hasEmailNotifications, readFlag, setFlag } from "@/lib/utils/onboarding"
@@ -438,7 +437,6 @@ export function FormsSection({ forms }: FormsSectionProps) {
                 />
               </div>
               <CreateFormButton variant="hero" />
-              <AiFormGeneratorDialog />
               <ImportFormDialog />
             </div>
           </>
@@ -793,7 +791,6 @@ function EmptyFormsState({ hasSearch, onSwitchToTemplates }: { hasSearch: boolea
 
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <CreateFormButton variant="hero" />
-          <AiFormGeneratorDialog />
           <ImportFormDialog />
           <Button variant="outline" className="rounded-full gap-1" onClick={onSwitchToTemplates}>
             Ver templates <ChevronRight className="h-4 w-4" />
