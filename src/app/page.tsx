@@ -3,19 +3,19 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import {
-  Sparkles, ArrowRight, Zap, BarChart3, Globe, MessageCircle,
-  CheckCircle2, Star, ChevronRight, MousePointer2, Shield, Layers,
-  Target, Download, ChevronDown, LayoutTemplate, Code2
+  Sparkles, ArrowRight, CheckCircle2, ChevronDown, ChevronRight,
+  MessageCircle, Brain, Palette, ShieldCheck, Upload, Layers,
+  FileText, BarChart3, Globe, Zap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
 export const metadata: Metadata = {
-  title: "formularios.ia — Formulários inteligentes para o Brasil",
-  description: "Crie formulários conversacionais, colete respostas e descubra insights com IA. Analytics avançado, lógica condicional, integração com WhatsApp e muito mais — feito para o Brasil.",
+  title: "formularios.ia — Formulários profissionais, do jeito brasileiro",
+  description: "Crie formulários com a sua marca, valide CPF, CNPJ e WhatsApp e descubra insights com IA. Em português, com dados no Brasil, LGPD por padrão — e grátis pra começar.",
   openGraph: {
-    title: "formularios.ia — Formulários inteligentes para o Brasil",
-    description: "Crie formulários conversacionais e descubra insights com IA.",
+    title: "formularios.ia — Formulários profissionais, do jeito brasileiro",
+    description: "Formulários com a sua marca, campos brasileiros e IA. Grátis pra começar, dados no Brasil.",
     url: "https://formularios.ia.br",
     siteName: "formularios.ia",
     locale: "pt_BR",
@@ -23,8 +23,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "formularios.ia — Formulários inteligentes para o Brasil",
-    description: "Formulários conversacionais com analytics e IA para o mercado brasileiro.",
+    title: "formularios.ia — Formulários profissionais, do jeito brasileiro",
+    description: "Formulários com a sua marca, WhatsApp e IA. Grátis pra começar.",
   },
 }
 
@@ -37,12 +37,13 @@ export default async function HomePage() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <Nav />
       <Hero />
-      <Features />
+      <ProofBar />
+      <Problem />
+      <Solution />
       <HowItWorks />
-      <FounderOffer />
-      <Testimonials />
+      <Templates />
+      <Migration />
       <Pricing />
-      <ComparisonTable />
       <FAQ />
       <FinalCTA />
       <Footer />
@@ -64,12 +65,10 @@ function Nav() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-          <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Recursos</Link>
-          <Link href="#how" className="text-muted-foreground hover:text-foreground transition-colors">Como funciona</Link>
+          <Link href="#recursos" className="text-muted-foreground hover:text-foreground transition-colors">Recursos</Link>
+          <Link href="#templates" className="text-muted-foreground hover:text-foreground transition-colors">Templates</Link>
           <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Preços</Link>
-          <Link href="#comparativo" className="text-muted-foreground hover:text-foreground transition-colors">Comparativo</Link>
-          <Link href="/settings/brand-kit" className="text-muted-foreground hover:text-foreground transition-colors">Brand Kit</Link>
-          <Link href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</Link>
+          <Link href="/vs/google-forms" className="text-muted-foreground hover:text-foreground transition-colors">vs Google Forms</Link>
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
@@ -78,8 +77,7 @@ function Nav() {
           </Link>
           <Link href="/signup">
             <Button size="sm" className="rounded-full px-4 sm:px-5 bg-foreground text-background hover:bg-foreground/90 font-bold">
-              <span className="sm:hidden">Assinar</span>
-              <span className="hidden sm:inline">Garantir minha vaga</span>
+              Criar grátis
             </Button>
           </Link>
         </div>
@@ -92,113 +90,62 @@ function Nav() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 -z-10 [background:radial-gradient(125%_125%_at_50%_10%,#fff_40%,#ede9fe_100%)]" />
-      <div className="absolute -top-40 left-1/2 -translate-x-1/2 -z-10 h-[600px] w-[600px] rounded-full bg-violet-100/60 blur-3xl" />
-
-      <div className="container flex flex-col items-center text-center pt-24 pb-20 gap-8">
-        <Badge variant="secondary" className="rounded-full px-4 py-1.5 text-sm gap-1.5 border-violet-600/10 text-violet-600 font-bold uppercase tracking-wider">
-          <Zap className="h-3.5 w-3.5 fill-violet-600" />
-          Plano Fundador Aberto
+    <section className="relative">
+      <div className="container flex flex-col items-center text-center pt-24 pb-16 gap-8">
+        <Badge variant="secondary" className="rounded-full px-4 py-1.5 text-sm gap-2 font-medium text-muted-foreground">
+          🇧🇷 Feito no Brasil · LGPD · Grátis pra começar
         </Badge>
 
-        <h1 className="max-w-4xl text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] font-headline">
-          Formulários que{" "}
-          <span className="text-violet-600">
-            convertem
-          </span>
-          .<br />Dados que{" "}
-          <span className="text-violet-600 italic">
-            inspiram
-          </span>
-          .
+        <h1 className="max-w-4xl text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.05] font-headline">
+          Formulários profissionais,<br />
+          <span className="text-violet-600">do jeito brasileiro.</span>
         </h1>
 
         <p className="max-w-2xl text-xl text-muted-foreground leading-relaxed">
-          Pague 1 vez e use por 12 meses. Crie formulários, publique, colete respostas e use a plataforma ao longo do ano sem cobrança recorrente.
+          Crie formulários com a sua marca, valide CPF, CNPJ e WhatsApp de verdade e descubra insights com IA. Em português, com seus dados no Brasil — e grátis pra começar.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <Link href="/signup?plan=founder">
-            <Button size="lg" className="rounded-full px-10 text-base h-14 gap-2 bg-foreground text-background hover:bg-foreground/90 font-bold shadow-xl shadow-foreground/10 transition-transform hover:scale-[1.02]">
-              Garantir minha vaga
+        <div className="flex flex-col items-center gap-3">
+          <Link href="/signup">
+            <Button size="lg" className="rounded-full px-10 text-base h-14 gap-2 bg-foreground text-background hover:bg-foreground/90 font-bold shadow-lg transition-transform hover:scale-[1.02]">
+              Criar formulário grátis
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
+          <p className="text-sm text-muted-foreground">
+            Sem cartão de crédito · Pronto em 2 minutos
+          </p>
         </div>
 
-        <p className="text-sm text-muted-foreground">
-          Lote Fundador disponível para apenas 50 usuários · Setup em 2 minutos
-        </p>
-
-        {/* Mock UI */}
-        <div className="relative w-full max-w-5xl mt-8">
-          <div className="rounded-[2.5rem] border bg-card shadow-2xl overflow-hidden ring-1 ring-border/50">
-            <div className="flex items-center gap-2 px-6 py-4 border-b bg-muted/30">
-              <div className="h-3 w-3 rounded-full bg-red-400" />
-              <div className="h-3 w-3 rounded-full bg-yellow-400" />
-              <div className="h-3 w-3 rounded-full bg-green-400" />
-              <div className="mx-auto text-xs text-muted-foreground font-mono">formularios.ia/f/pesquisa-nps</div>
+        {/* Product preview */}
+        <div className="relative w-full max-w-4xl mt-10">
+          <div className="rounded-3xl border bg-card shadow-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-3 border-b bg-muted/30">
+              <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
+              <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
+              <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
+              <div className="mx-auto text-xs text-muted-foreground font-mono">formularios.ia/f/pesquisa-de-clientes</div>
             </div>
-            <div className="grid grid-cols-12 min-h-[400px]">
-              {/* Sidebar preview */}
-              <div className="col-span-3 border-r bg-muted/10 p-6 space-y-2 hidden md:block">
-                {["Boas-vindas", "Nome", "E-mail", "NPS", "Detalhar", "Obrigado"].map((item, i) => (
-                  <div key={item} className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${i === 3 ? "bg-violet-600/10 text-violet-700 font-bold" : "text-muted-foreground opacity-60"}`}>
-                    <span className="w-5 text-center font-mono text-xs">{i + 1}</span>
-                    {item}
+            <div className="flex items-center justify-center p-10 md:p-16 bg-background">
+              <div className="w-full max-w-md space-y-8 text-left">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Pergunta 3 de 5</span>
+                  <div className="w-28 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className="w-[60%] h-full bg-violet-600" />
                   </div>
-                ))}
-              </div>
-              {/* Form preview */}
-              <div className="col-span-12 md:col-span-9 flex items-center justify-center p-8 md:p-16 text-foreground">
-                <div className="w-full max-w-md space-y-10">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest">Pergunta 4 de 5</span>
-                    <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
-                      <div className="w-[80%] h-full bg-violet-600" />
-                    </div>
-                  </div>
-                  <h3 className="text-3xl font-bold font-headline leading-tight">
-                    Qual a probabilidade de você recomendar nosso serviço a um amigo?
-                  </h3>
-                  <div className="grid grid-cols-6 sm:grid-cols-11 gap-2">
-                    {Array.from({ length: 11 }, (_, i) => (
-                      <div
-                        key={i}
-                        className={`aspect-square border flex items-center justify-center rounded-xl text-xs font-bold transition-all cursor-pointer ${i === 9 ? "bg-violet-600/10 border-violet-600 text-violet-600 ring-2 ring-violet-600/20" : "hover:bg-violet-600 hover:text-white border-border"}`}
-                      >
-                        {i}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Pouco provável</span>
-                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Muito provável</span>
-                  </div>
-                  <Button className="bg-violet-600 text-white px-12 py-6 rounded-full font-bold h-12 shadow-lg shadow-violet-600/20">
-                    OK
-                  </Button>
                 </div>
+                <h3 className="text-2xl md:text-3xl font-bold font-headline leading-tight">
+                  Qual o seu WhatsApp pra gente te enviar a proposta?
+                </h3>
+                <div className="rounded-2xl border-2 border-violet-600/30 bg-violet-50/50 px-5 py-4 flex items-center gap-3">
+                  <MessageCircle className="h-5 w-5 text-green-600 shrink-0" />
+                  <span className="text-lg font-medium text-foreground/70 tracking-wide">(11) 9 8765-43__</span>
+                  <span className="ml-auto text-[10px] font-bold text-violet-600 uppercase tracking-wider">máscara automática</span>
+                </div>
+                <Button className="bg-violet-600 hover:bg-violet-700 text-white px-10 rounded-full font-bold h-12 shadow-md">
+                  OK
+                </Button>
               </div>
-            </div>
-          </div>
-          {/* Floating cards */}
-          <div className="absolute -right-8 top-12 hidden lg:block translate-x-4">
-            <div className="rounded-2xl border bg-card shadow-xl px-6 py-4 text-sm w-56 backdrop-blur-sm bg-card/95">
-              <div className="flex items-center gap-2 text-green-600 font-bold mb-1">
-                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                127 respostas hoje
-              </div>
-              <div className="text-xs text-muted-foreground font-medium">Taxa de conclusão: 84%</div>
-            </div>
-          </div>
-          <div className="absolute -left-8 bottom-12 hidden lg:block -translate-x-4">
-            <div className="rounded-2xl border bg-card shadow-xl px-6 py-4 text-sm w-48 backdrop-blur-sm bg-card/95">
-              <div className="font-bold mb-1 uppercase text-[10px] text-muted-foreground tracking-widest">NPS Score</div>
-              <div className="text-4xl font-extrabold text-violet-600 font-headline">72</div>
-              <div className="text-xs text-green-600 font-bold mt-1">↑ 8 pts este mês</div>
             </div>
           </div>
         </div>
@@ -207,112 +154,188 @@ function Hero() {
   )
 }
 
+// ─── Proof Bar ────────────────────────────────────────────────────────────────
 
-// ─── Features ─────────────────────────────────────────────────────────────────
+function ProofBar() {
+  const items = [
+    { icon: Globe, label: "Dados hospedados no Brasil" },
+    { icon: ShieldCheck, label: "LGPD por padrão" },
+    { icon: MessageCircle, label: "Suporte em português" },
+    { icon: Zap, label: "24 tipos de campo" },
+  ]
+  return (
+    <section className="border-y bg-muted/30">
+      <div className="container py-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+        {items.map((item) => (
+          <div key={item.label} className="flex items-center justify-center gap-2.5 text-sm font-medium text-muted-foreground">
+            <item.icon className="h-4 w-4 text-violet-600 shrink-0" />
+            {item.label}
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
 
-const FEATURES = [
+// ─── Problem ──────────────────────────────────────────────────────────────────
+
+const PAINS = [
   {
-    icon: MousePointer2,
-    title: "24 tipos de campo",
-    description: "Texto, NPS, escala, múltipla escolha, upload de arquivo, assinatura e muito mais. Tudo que você precisa num só lugar.",
-    color: "text-violet-600",
-    bg: "bg-violet-50",
-    comingSoon: false,
+    title: "Cara de improviso.",
+    description: "Cabeçalho roxo do Google, fonte padrão, zero marca sua. Quem recebe percebe — e leva menos a sério.",
+    icon: Palette,
   },
   {
-    icon: MessageCircle,
-    title: "WhatsApp nativo",
-    description: "Envie notificações automáticas no WhatsApp quando alguém preencher seu formulário. Integração com Evolution API.",
-    color: "text-green-600",
-    bg: "bg-green-50",
-    comingSoon: true,
-  },
-  {
+    title: "Você não vê quem desistiu.",
+    description: "Alguém abriu, respondeu metade e fechou? O Google Forms não te conta. Você só vê quem terminou — e perde todo o resto.",
     icon: BarChart3,
-    title: "Analytics com IA",
-    description: "Descubra padrões nas respostas automaticamente. Dashboard de conversão, tempo médio e muito mais.",
-    color: "text-blue-600",
-    bg: "bg-blue-50",
   },
   {
-    icon: Zap,
-    title: "Lógica condicional",
-    description: "Mostre ou oculte perguntas com base nas respostas anteriores. Crie fluxos personalizados sem código.",
-    color: "text-orange-600",
-    bg: "bg-orange-50",
-  },
-  {
-    icon: Globe,
-    title: "Temas e customização",
-    description: "8 temas prontos, Brand Kit do workspace e personalização total de cores, fontes e logo para combinar com a sua marca.",
-    color: "text-pink-600",
-    bg: "bg-pink-50",
-  },
-  {
-    icon: Shield,
-    title: "LGPD compliant",
-    description: "Dados armazenados no Brasil, criptografia em trânsito e em repouso, conformidade com a LGPD.",
-    color: "text-slate-600",
-    bg: "bg-slate-50",
-  },
-  {
-    icon: Target,
-    title: "Captura de respostas parciais",
-    description: "Saiba onde seus respondentes abandonam, pergunta por pergunta. Perfeito para times de produto e growth.",
-    color: "text-red-600",
-    bg: "bg-red-50",
-  },
-  {
-    icon: Download,
-    title: "Lead magnet nativo",
-    description: "Entregue PDFs ou arquivos automaticamente ao final do form. Um diferencial real para captação de leads.",
-    color: "text-amber-600",
-    bg: "bg-amber-50",
-  },
-  {
-    icon: LayoutTemplate,
-    title: "Templates prontos",
-    description: "Mais de 10 modelos organizados por categoria — NPS, feedback, cadastro, RH, vendas e mais. Comece em segundos.",
-    color: "text-orange-600",
-    bg: "bg-orange-50",
-  },
-  {
-    icon: Code2,
-    title: "Incorpore no seu site",
-    description: "Gere o código iframe com um clique e cole em qualquer site, landing page ou portal. Sem configuração extra.",
-    color: "text-indigo-600",
-    bg: "bg-indigo-50",
+    title: "O Brasil não existe lá.",
+    description: "Sem CPF ou CNPJ validado, sem WhatsApp formatado, sem aviso de resposta no celular. Você cola gambiarra com planilha e extensão.",
+    icon: FileText,
   },
 ]
 
-function Features() {
+function Problem() {
   return (
-    <section id="features" className="py-24 container">
-      <div className="text-center mb-16">
-        <Badge variant="secondary" className="rounded-full mb-4">Recursos</Badge>
-        <h2 className="text-4xl font-bold tracking-tight mb-4">
-          Tudo que você precisa,<br />nada que você não precisa
+    <section className="py-24 container">
+      <div className="max-w-3xl mx-auto text-center mb-14">
+        <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight font-headline mb-4">
+          Seu Google Forms está te<br />custando respostas.
         </h2>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Construído para times de produto e marketing que valorizam dados de qualidade.
+        <p className="text-xl text-muted-foreground">
+          Ele é grátis e quebra um galho. Mas tem um preço escondido:
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {FEATURES.map((f) => (
-          <div key={f.title} className="relative rounded-2xl border bg-card p-6 hover:shadow-lg transition-shadow">
-            {f.comingSoon && (
-              <span className="absolute top-4 right-4 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                Em breve
-              </span>
-            )}
-            <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${f.bg} mb-4`}>
-              <f.icon className={`h-5 w-5 ${f.color}`} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        {PAINS.map((pain) => (
+          <div key={pain.title} className="rounded-2xl border bg-card p-8">
+            <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-muted mb-5">
+              <pain.icon className="h-5 w-5 text-muted-foreground" />
             </div>
-            <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">{f.description}</p>
+            <h3 className="font-bold text-lg mb-2">{pain.title}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">{pain.description}</p>
           </div>
         ))}
+      </div>
+    </section>
+  )
+}
+
+// ─── Solution ─────────────────────────────────────────────────────────────────
+
+function Solution() {
+  return (
+    <section id="recursos" className="py-24 bg-muted/30">
+      <div className="container">
+        <div className="max-w-3xl mx-auto text-center mb-20">
+          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight font-headline">
+            Troque em 1 clique.<br />Ganhe tudo isso.
+          </h2>
+        </div>
+
+        <div className="space-y-24 max-w-5xl mx-auto">
+          {/* Bloco A — Marca */}
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-4">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50">
+                <Palette className="h-5 w-5 text-pink-600" />
+              </div>
+              <h3 className="text-2xl md:text-3xl font-bold font-headline">Formulários com a sua cara.</h3>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Suba seu logo, defina suas cores e fontes uma vez no Brand Kit — todo formulário novo já nasce com a sua identidade. Formato conversacional, uma pergunta por vez, que prende a atenção até o fim.
+              </p>
+            </div>
+            <div className="rounded-2xl border bg-card shadow-sm p-8">
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-violet-600 flex items-center justify-center text-white text-xs font-bold">SM</div>
+                  <div>
+                    <div className="h-2.5 w-28 rounded-full bg-foreground/80" />
+                    <div className="h-2 w-20 rounded-full bg-muted mt-1.5" />
+                  </div>
+                </div>
+                <div className="rounded-xl bg-violet-50 border border-violet-100 p-5 space-y-3">
+                  <div className="h-2.5 w-3/4 rounded-full bg-violet-200" />
+                  <div className="h-2.5 w-1/2 rounded-full bg-violet-200" />
+                  <div className="flex gap-2 pt-1">
+                    <div className="h-8 w-20 rounded-full bg-violet-600" />
+                    <div className="h-8 w-20 rounded-full bg-white border border-violet-200" />
+                  </div>
+                </div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">Seu logo · Suas cores · Sua fonte</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bloco B — Brasil */}
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-4 md:order-2">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-green-50">
+                <MessageCircle className="h-5 w-5 text-green-600" />
+              </div>
+              <h3 className="text-2xl md:text-3xl font-bold font-headline">CPF, CNPJ e WhatsApp nativos.</h3>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Campos com máscara e validação de verdade — chega de "digite seu CPF" em campo de texto livre. Seus leads chegam com telefone formatado, prontos pra você chamar no WhatsApp.
+              </p>
+              <Badge variant="secondary" className="rounded-full text-xs">Notificação por WhatsApp: em breve</Badge>
+            </div>
+            <div className="rounded-2xl border bg-card shadow-sm p-8 md:order-1 space-y-4">
+              <div className="rounded-xl border px-4 py-3.5">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">CPF</p>
+                <p className="font-mono text-sm">123.456.789-__</p>
+              </div>
+              <div className="rounded-xl border px-4 py-3.5">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">CNPJ</p>
+                <p className="font-mono text-sm">12.345.678/0001-__</p>
+              </div>
+              <div className="rounded-xl border-2 border-green-200 bg-green-50/50 px-4 py-3.5">
+                <p className="text-[10px] font-bold text-green-700 uppercase tracking-widest mb-1">WhatsApp</p>
+                <p className="font-mono text-sm">(11) 9 8765-43__</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bloco C — Analytics */}
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-4">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+                <Brain className="h-5 w-5 text-blue-600" />
+              </div>
+              <h3 className="text-2xl md:text-3xl font-bold font-headline">Cada resposta conta. Até as incompletas.</h3>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Veja pergunta por pergunta onde as pessoas abandonam. Respostas parciais ficam salvas. E a IA lê centenas de respostas abertas por você e resume os temas em segundos.
+              </p>
+            </div>
+            <div className="rounded-2xl border bg-card shadow-sm p-8 space-y-3">
+              {[
+                { label: "1. Nome", pct: 100 },
+                { label: "2. E-mail", pct: 92 },
+                { label: "3. WhatsApp", pct: 87 },
+                { label: "4. Orçamento", pct: 61 },
+                { label: "5. Detalhes", pct: 58 },
+              ].map((row) => (
+                <div key={row.label} className="space-y-1">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span>{row.label}</span>
+                    <span className={row.pct < 70 ? "text-red-500 font-bold" : "text-muted-foreground"}>{row.pct}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${row.pct < 70 ? "bg-red-400" : "bg-violet-600"}`}
+                      style={{ width: `${row.pct}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center pt-2">
+                31% abandonam na pergunta de orçamento ↑
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   )
@@ -323,98 +346,39 @@ function Features() {
 const STEPS = [
   {
     number: "01",
-    title: "Crie seu formulário",
-    description: "Escolha entre mais de 10 templates prontos ou comece do zero. Arraste e solte os campos, configure a lógica e personalize o visual em minutos.",
+    title: "Crie ou importe.",
+    description: "Comece de um template, do zero, ou importe seu Google Forms em 1 clique.",
   },
   {
     number: "02",
-    title: "Compartilhe o link",
-    description: "Copie o link e envie por WhatsApp, e-mail, ou incorpore no seu site. Seu formulário funciona perfeitamente em qualquer dispositivo.",
+    title: "Deixe com a sua cara.",
+    description: "Aplique seu Brand Kit, ajuste o tema, ative a lógica condicional se precisar.",
   },
   {
     number: "03",
-    title: "Analise os dados",
-    description: "Acompanhe as respostas em tempo real. Exporte para CSV, conecte com seu CRM ou receba notificações automáticas.",
+    title: "Compartilhe e acompanhe.",
+    description: "Mande o link por WhatsApp, incorpore no site e veja as respostas chegarem em tempo real.",
   },
 ]
 
 function HowItWorks() {
   return (
-    <section id="how" className="py-24 bg-muted/30">
-      <div className="container">
-        <div className="text-center mb-16">
-          <Badge variant="secondary" className="rounded-full mb-4">Como funciona</Badge>
-          <h2 className="text-4xl font-bold tracking-tight mb-4">
-            De zero a dados em 3 passos
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-xl mx-auto">
-            Setup rápido, resultados imediatos.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-          <div className="hidden md:block absolute top-10 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-          {STEPS.map((step, i) => (
-            <div key={step.number} className="relative flex flex-col items-center text-center gap-4">
-              <div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-2xl bg-foreground text-background text-2xl font-bold shadow-lg">
-                {step.number}
-              </div>
-              <h3 className="text-xl font-semibold">{step.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">{step.description}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// ─── Testimonials ─────────────────────────────────────────────────────────────
-
-const TESTIMONIALS = [
-  {
-    name: "Ana Lima",
-    role: "Head de Produto · Fintech",
-    text: "Após trocar de plataforma, a taxa de conclusão dos nossos formulários subiu 23%. A lógica condicional é muito mais intuitiva e o suporte em português faz toda a diferença.",
-    stars: 5,
-  },
-  {
-    name: "Carlos Mendes",
-    role: "Growth · SaaS B2B",
-    text: "O Analytics com IA nos ajudou a descobrir que 40% dos leads abandonavam na pergunta de empresa. Corrigimos e a conversão dobrou.",
-    stars: 5,
-  },
-  {
-    name: "Fernanda Costa",
-    role: "CX Manager · E-commerce",
-    text: "A exportação de respostas em CSV salvou horas de trabalho manual toda semana. Agora minha equipe analisa os dados diretamente no Excel.",
-    stars: 5,
-  },
-]
-
-function Testimonials() {
-  return (
     <section className="py-24 container">
       <div className="text-center mb-16">
-        <Badge variant="secondary" className="rounded-full mb-4">Depoimentos</Badge>
-        <h2 className="text-4xl font-bold tracking-tight mb-4">
-          Quem usa, recomenda
+        <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight font-headline">
+          Do zero ao link em 3 passos.
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {TESTIMONIALS.map((t) => (
-          <div key={t.name} className="rounded-2xl border bg-card p-6 space-y-4">
-            <div className="flex gap-0.5">
-              {Array.from({ length: t.stars }).map((_, i) => (
-                <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              ))}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto relative">
+        <div className="hidden md:block absolute top-10 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+        {STEPS.map((step) => (
+          <div key={step.number} className="relative flex flex-col items-center text-center gap-4">
+            <div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-2xl bg-foreground text-background text-2xl font-bold shadow-lg">
+              {step.number}
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">"{t.text}"</p>
-            <div>
-              <p className="font-semibold text-sm">{t.name}</p>
-              <p className="text-xs text-muted-foreground">{t.role}</p>
-            </div>
+            <h3 className="text-xl font-semibold">{step.title}</h3>
+            <p className="text-muted-foreground leading-relaxed">{step.description}</p>
           </div>
         ))}
       </div>
@@ -422,114 +386,180 @@ function Testimonials() {
   )
 }
 
-// ─── Pricing ──────────────────────────────────────────────────────────────────
+// ─── Templates ────────────────────────────────────────────────────────────────
 
-const PLANS = [
-  {
-    name: "Gratuito",
-    price: "R$ 0",
-    period: "para sempre",
-    description: "Para experimentar a plataforma sem compromisso.",
-    features: [
-      "Até 3 formulários publicados",
-      "Rascunhos ilimitados",
-      "50 respostas para testar",
-      "24 tipos de campo",
-      "Analytics básico",
-      "Link público compartilhável",
-    ],
-    cta: "Começar grátis",
-    href: "/signup",
-    highlight: false,
-  },
-  {
-    name: "Lote Fundador",
-    price: "R$ 499",
-    period: "por 12 meses",
-    description: "Pagamento único via Pix. Sem renovação automática.",
-    features: [
-      "Até 10 formulários publicados",
-      "Rascunhos ilimitados",
-      "Até 2.500 respostas por ano",
-      "Lógica condicional",
-      "Temas e customização",
-      "Exportação CSV / JSON",
-      "Webhooks e integrações",
-      "Suporte por e-mail",
-    ],
-    cta: "Garantir minha vaga",
-    href: "/signup?plan=founder",
-    highlight: true,
-  },
+const TEMPLATE_HIGHLIGHTS = [
+  { title: "Captura de leads", emoji: "🎯" },
+  { title: "NPS — Net Promoter Score", emoji: "📊" },
+  { title: "Inscrição em evento", emoji: "🎟️" },
+  { title: "Solicitação de orçamento", emoji: "💰" },
+  { title: "Pesquisa de satisfação", emoji: "⭐" },
+  { title: "Feedback de produto", emoji: "💬" },
+  { title: "Pesquisa de mercado", emoji: "🔍" },
+  { title: "Formulário de contato", emoji: "✉️" },
 ]
+
+function Templates() {
+  return (
+    <section id="templates" className="py-24 bg-muted/30">
+      <div className="container">
+        <div className="text-center mb-14">
+          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight font-headline mb-4">
+            Comece com um template pronto.
+          </h2>
+          <p className="text-xl text-muted-foreground">
+            Feitos pra quem vive de captar leads, vender e ouvir a audiência.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+          {TEMPLATE_HIGHLIGHTS.map((t) => (
+            <Link
+              key={t.title}
+              href="/signup"
+              className="group rounded-2xl border bg-card p-6 text-center hover:border-violet-300 hover:shadow-md transition-all"
+            >
+              <span className="text-3xl block mb-3">{t.emoji}</span>
+              <span className="text-sm font-semibold group-hover:text-violet-600 transition-colors">{t.title}</span>
+            </Link>
+          ))}
+        </div>
+
+        <div className="text-center mt-10">
+          <Link href="/signup">
+            <Button variant="outline" className="rounded-full gap-1 font-semibold">
+              Ver todos os templates <ChevronRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─── Migration ────────────────────────────────────────────────────────────────
+
+function Migration() {
+  return (
+    <section className="py-16 container">
+      <div className="max-w-4xl mx-auto rounded-3xl border bg-violet-600/5 border-violet-600/20 p-8 md:p-12">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="space-y-3 text-center md:text-left">
+            <div className="inline-flex items-center gap-2 text-violet-600 font-bold text-sm uppercase tracking-wider">
+              <Upload className="h-4 w-4" />
+              Migração em 1 clique
+            </div>
+            <h2 className="text-2xl md:text-3xl font-extrabold font-headline">Vem do Google Forms?</h2>
+            <p className="text-muted-foreground max-w-md">
+              Cole o link do seu formulário e importe tudo em 30 segundos — perguntas, opções e ordem.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 shrink-0">
+            <Link href="/signup">
+              <Button className="rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold px-8 h-12 w-full">
+                Importar meu Google Forms
+              </Button>
+            </Link>
+            <Link href="/vs/google-forms" className="text-center text-sm font-medium text-violet-600 hover:underline">
+              Ver comparação completa →
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─── Pricing ──────────────────────────────────────────────────────────────────
 
 function Pricing() {
   return (
     <section id="pricing" className="py-24 bg-muted/30">
       <div className="container">
         <div className="text-center mb-16">
-          <Badge variant="secondary" className="rounded-full mb-4">Preços</Badge>
-          <h2 className="text-4xl font-bold tracking-tight mb-4">
-            Simples, transparente, justo
+          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight font-headline mb-4">
+            Comece grátis.<br />Evolua quando fizer sentido.
           </h2>
           <p className="text-xl text-muted-foreground">
-            Sem surpresas. Cancele quando quiser.
+            Sem assinatura mensal. Sem surpresa na fatura.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative rounded-2xl border p-8 flex flex-col gap-6 ${plan.highlight
-                ? "bg-foreground text-background border-foreground shadow-2xl md:scale-105"
-                : "bg-card"
-                }`}
-            >
-              {plan.highlight && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-violet-600 text-white rounded-full px-4">Mais popular</Badge>
-                </div>
-              )}
-
-              <div>
-                <p className={`text-sm font-medium mb-1 ${plan.highlight ? "text-background/60" : "text-muted-foreground"}`}>
-                  {plan.name}
-                </p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className={`text-sm ${plan.highlight ? "text-background/60" : "text-muted-foreground"}`}>
-                    /{plan.period}
-                  </span>
-                </div>
-                <p className={`text-sm mt-2 ${plan.highlight ? "text-background/70" : "text-muted-foreground"}`}>
-                  {plan.description}
-                </p>
+          {/* Grátis */}
+          <div className="rounded-2xl border bg-card p-8 flex flex-col gap-6">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Grátis</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-bold">R$ 0</span>
+                <span className="text-sm text-muted-foreground">/ pra sempre</span>
               </div>
-
-              <ul className="space-y-2.5 flex-1">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-sm">
-                    <CheckCircle2 className={`h-4 w-4 mt-0.5 shrink-0 ${plan.highlight ? "text-violet-400" : "text-green-500"}`} />
-                    <span className={plan.highlight ? "text-background/80" : ""}>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <Link href={plan.href}>
-                <Button
-                  className={`w-full rounded-full ${plan.highlight
-                    ? "bg-white text-foreground hover:bg-white/90"
-                    : ""
-                    }`}
-                  variant={plan.highlight ? "outline" : "default"}
-                >
-                  {plan.cta}
-                </Button>
-              </Link>
+              <p className="text-sm mt-2 text-muted-foreground">
+                Pra criar seus primeiros formulários e sentir a diferença.
+              </p>
             </div>
-          ))}
+            <ul className="space-y-2.5 flex-1 text-sm">
+              {[
+                "Até 3 formulários publicados",
+                "Rascunhos ilimitados",
+                "50 respostas pra testar",
+                "Todos os 24 tipos de campo (CPF e CNPJ incluídos)",
+                "Formato conversacional",
+              ].map((f) => (
+                <li key={f} className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0 text-green-500" />
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+            <Link href="/signup">
+              <Button className="w-full rounded-full font-semibold" variant="outline">
+                Criar conta grátis
+              </Button>
+            </Link>
+          </div>
+
+          {/* Lote Fundador */}
+          <div className="relative rounded-2xl border p-8 flex flex-col gap-6 bg-foreground text-background border-foreground shadow-2xl">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <Badge className="bg-violet-600 text-white rounded-full px-4">Só 50 vagas</Badge>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-background/60 mb-1">Lote Fundador</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-bold">R$ 499</span>
+                <span className="text-sm text-background/60">/ 12 meses</span>
+              </div>
+              <p className="text-sm mt-2 text-background/70">
+                Pagamento único via Pix. Pra quem já vive de formulário — depois vira assinatura normal, mais cara.
+              </p>
+            </div>
+            <ul className="space-y-2.5 flex-1 text-sm">
+              {[
+                "Até 10 formulários publicados",
+                "2.500 respostas por ano",
+                "Lógica condicional avançada",
+                "Análise com IA",
+                "Webhooks e integrações",
+                "Suporte por e-mail em português",
+              ].map((f) => (
+                <li key={f} className="flex items-start gap-2 text-background/80">
+                  <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0 text-violet-400" />
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+            <Link href="/signup?plan=founder">
+              <Button className="w-full rounded-full bg-white text-foreground hover:bg-white/90 font-bold">
+                Garantir vaga de fundador
+              </Button>
+            </Link>
+          </div>
         </div>
+
+        <p className="text-center text-sm text-muted-foreground mt-8">
+          Sem renovação automática. Exporte seus dados quando quiser.
+        </p>
       </div>
     </section>
   )
@@ -541,6 +571,10 @@ const FAQ_ITEMS = [
   {
     question: "O que é o formularios.ia?",
     answer: "É uma plataforma de criação de formulários conversacionais — exibe uma pergunta por vez, como uma conversa. Diferente de planilhas de campos, o formato aumenta a taxa de conclusão e a qualidade das respostas."
+  },
+  {
+    question: "Posso trazer meu formulário do Google Forms?",
+    answer: "Sim — cole a URL no importador e a estrutura inteira (perguntas, opções, ordem, obrigatoriedade) é recriada em segundos. Você também pode importar de CSV ou JSON."
   },
   {
     question: "Preciso instalar alguma coisa?",
@@ -580,13 +614,9 @@ function FAQ() {
   return (
     <section id="faq" className="py-24 container max-w-4xl mx-auto">
       <div className="text-center mb-16">
-        <Badge variant="secondary" className="rounded-full mb-4">Perguntas Frequentes</Badge>
-        <h2 className="text-4xl font-bold tracking-tight mb-4">
+        <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight font-headline mb-4">
           Ficou com alguma dúvida?
         </h2>
-        <p className="text-xl text-muted-foreground">
-          As respostas para as perguntas mais comuns sobre o formularios.ia.
-        </p>
       </div>
 
       <div className="space-y-4">
@@ -614,224 +644,99 @@ function FinalCTA() {
   return (
     <section className="py-24 container">
       <div className="relative rounded-3xl bg-foreground text-background overflow-hidden p-8 sm:p-12 md:p-20 text-center">
-        <div className="absolute inset-0 -z-10 [background:radial-gradient(ellipse_at_top,#4c1d95,transparent_60%)]" />
         <Layers className="h-12 w-12 mx-auto mb-6 text-violet-400" />
-        <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-          Comece a coletar dados<br />que realmente importam
+        <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6 font-headline">
+          Seu próximo formulário pode ser<br />o melhor que você já fez.
         </h2>
         <p className="text-xl text-background/70 mb-10 max-w-xl mx-auto">
-          Junte-se a centenas de times brasileiros que já usam o formularios.ia para tomar decisões melhores.
+          Grátis, em português, pronto em 2 minutos.
         </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/signup">
-            <Button size="lg" className="rounded-full px-10 h-12 text-base bg-white text-foreground hover:bg-white/90">
-              Criar conta grátis
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
+        <Link href="/signup">
+          <Button size="lg" className="rounded-full px-10 h-14 text-base bg-white text-foreground hover:bg-white/90 font-bold">
+            Criar formulário grátis
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </Link>
         <p className="text-sm text-background/40 mt-6">
-          Comece grátis · Sem cartão de crédito · Ao continuar, você concorda com nossos <Link href="/terms" className="underline hover:text-white">Termos</Link> e <Link href="/privacy" className="underline hover:text-white">Privacidade</Link>
+          Sem cartão · Seus dados são seus · Exporte quando quiser
         </p>
       </div>
     </section>
   )
 }
-
-// ─── Founder Offer ────────────────────────────────────────────────────────────
-
-function FounderOffer() {
-  return (
-    <section className="py-24 bg-foreground text-background overflow-hidden">
-      <div className="container">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-8">
-            <h2 className="text-4xl md:text-5xl font-extrabold font-headline leading-tight text-white">
-              Um modelo diferente da maioria das ferramentas
-            </h2>
-            <p className="text-xl text-background/70 leading-relaxed">
-              Chega de ser refém de assinaturas recorrentes para ter o básico funcionando.
-            </p>
-            <div className="bg-violet-600/20 border border-violet-600/30 p-8 rounded-3xl">
-              <p className="text-2xl font-bold font-headline leading-snug">
-                O grande diferencial: <span className="text-violet-400">você paga R$ 499 uma vez e usa por 12 meses.</span>
-              </p>
-            </div>
-          </div>
-          <div className="relative">
-            <div className="bg-background rounded-[2.5rem] p-6 sm:p-10 shadow-2xl text-foreground relative overflow-hidden">
-              <div className="absolute top-6 right-6 bg-violet-600 text-white text-[10px] font-extrabold px-4 py-1.5 rounded-full uppercase tracking-widest animate-pulse">
-                Lote Fundador
-              </div>
-              <div className="mb-8">
-                <p className="text-5xl font-extrabold font-headline text-violet-600">R$ 499</p>
-                <p className="text-muted-foreground font-medium">por 12 meses de acesso</p>
-              </div>
-              <ul className="space-y-4 mb-10">
-                {[
-                  "Até 10 formulários publicados",
-                  "Rascunhos ilimitados",
-                  "Até 2.500 respostas por ano",
-                  "Personalização básica de temas",
-                  "Exportação completa de respostas",
-                  "Suporte padrão por e-mail",
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-3 font-medium text-sm">
-                    <CheckCircle2 className="h-5 w-5 text-violet-600 shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/signup?plan=founder">
-                <Button className="w-full bg-foreground text-background py-7 rounded-full font-extrabold text-lg transition-transform hover:scale-[1.02]">
-                  Quero entrar no lote fundador
-                </Button>
-              </Link>
-              <p className="text-center mt-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Pagamento único via Pix
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// ─── Comparison Table ─────────────────────────────────────────────────────────
-
-function ComparisonTable() {
-  type FeatureRow =
-    | { type: "section"; label: string }
-    | { type: "row"; name: string; ia: string | boolean; respondi: string | boolean; typeform: string | boolean; highlight?: boolean }
-
-  const features: FeatureRow[] = [
-    { type: "section", label: "💰 Preço" },
-    { type: "row", name: "Modelo de cobrança", ia: "Pagamento único anual", respondi: "Assinatura mensal", typeform: "Assinatura mensal", highlight: true },
-    { type: "row", name: "Preço base", ia: "R$ 499/ano", respondi: "R$ 147/mês (R$ 1.764/ano)", typeform: "US$ 83/mês (~R$ 4.980/ano)", highlight: true },
-    { type: "row", name: "Economia anual vs concorrente", ia: "—", respondi: "Você economiza R$ 1.265/ano", typeform: "Você economiza R$ 4.481/ano", highlight: true },
-    { type: "row", name: "Sem surpresa de fatura no mês", ia: true, respondi: false, typeform: false },
-    { type: "row", name: "Preço em Reais (sem câmbio)", ia: true, respondi: true, typeform: false },
-
-    { type: "section", label: "⚡ Funcionalidades" },
-    { type: "row", name: "Formulários conversacionais", ia: true, respondi: true, typeform: true },
-    { type: "row", name: "Analytics de respostas", ia: true, respondi: true, typeform: true },
-    { type: "row", name: "Lógica condicional", ia: true, respondi: true, typeform: true },
-    { type: "row", name: "Brand Kit (cores, logo, fontes)", ia: true, respondi: false, typeform: "Pago extra" },
-    { type: "row", name: "Campos WhatsApp, CPF e CNPJ nativos", ia: true, respondi: false, typeform: false, highlight: true },
-    { type: "row", name: "Notificações de resposta por e-mail", ia: true, respondi: true, typeform: "Planos pagos" },
-    { type: "row", name: "Integração Google Sheets", ia: true, respondi: true, typeform: "Planos pagos" },
-    { type: "row", name: "Webhooks", ia: true, respondi: true, typeform: "Planos pagos" },
-    { type: "row", name: "Domínio personalizado", ia: "Em breve", respondi: true, typeform: "Planos pagos" },
-
-    { type: "section", label: "🇧🇷 Feito para o Brasil" },
-    { type: "row", name: "Interface e suporte em português", ia: true, respondi: false, typeform: false, highlight: true },
-    { type: "row", name: "Validação de CPF/CNPJ", ia: true, respondi: false, typeform: false, highlight: true },
-    { type: "row", name: "Campo WhatsApp com máscara", ia: true, respondi: false, typeform: false, highlight: true },
-    { type: "row", name: "Servidores com baixa latência no BR", ia: true, respondi: false, typeform: false },
-  ]
-
-  function Cell({ val }: { val: string | boolean }) {
-    if (val === true) return <span className="text-green-500 text-lg font-bold">✓</span>
-    if (val === false) return <span className="text-red-400 text-lg">✕</span>
-    return <span>{val}</span>
-  }
-
-  return (
-    <section id="comparativo" className="py-24 container">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-16 space-y-4">
-          <h2 className="text-4xl font-extrabold font-headline">Compare pelo que importa</h2>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Mais recursos, feito para o Brasil, por uma fração do preço. Sem mensalidade, sem surpresa.
-          </p>
-        </div>
-
-        <div className="overflow-x-auto rounded-3xl border bg-card/50">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="p-4 md:p-6 text-left text-xs font-bold text-muted-foreground uppercase tracking-widest min-w-[140px]">Recurso</th>
-                <th className="p-4 md:p-6 text-center bg-violet-600/5 min-w-[140px]">
-                  <span className="text-violet-600 font-extrabold font-headline text-sm md:text-base">formularios.ia</span>
-                  <div className="mt-1">
-                    <span className="inline-block bg-violet-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Melhor escolha</span>
-                  </div>
-                </th>
-                <th className="p-4 md:p-6 text-center text-muted-foreground font-bold min-w-[140px]">Concorrente 1</th>
-                <th className="p-4 md:p-6 text-center text-muted-foreground font-bold min-w-[140px]">Concorrente 2</th>
-              </tr>
-            </thead>
-            <tbody>
-              {features.map((f, i) => {
-                if (f.type === "section") {
-                  return (
-                    <tr key={`section-${i}`} className="border-b border-t bg-muted/30">
-                      <td colSpan={4} className="px-4 md:px-6 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        {f.label}
-                      </td>
-                    </tr>
-                  )
-                }
-                const isLast = i === features.length - 1
-                return (
-                  <tr key={f.name} className={`${!isLast ? "border-b" : ""} ${f.highlight ? "bg-violet-50/40 dark:bg-violet-950/10" : ""}`}>
-                    <td className="p-4 md:p-5 font-medium">{f.name}</td>
-                    <td className="p-4 md:p-5 text-center bg-violet-600/5 font-bold text-violet-600">
-                      <Cell val={f.ia} />
-                    </td>
-                    <td className="p-4 md:p-5 text-center text-muted-foreground"><Cell val={f.respondi} /></td>
-                    <td className="p-4 md:p-5 text-center text-muted-foreground"><Cell val={f.typeform} /></td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="mt-8 rounded-2xl border bg-violet-600/5 border-violet-600/20 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <p className="font-bold text-base mb-1">Vindo do Google Forms?</p>
-            <p className="text-sm text-muted-foreground">Veja a comparação detalhada e migre seu formulário em 1 clique.</p>
-          </div>
-          <Link href="/vs/google-forms">
-            <Button variant="outline" className="rounded-full font-bold px-6 whitespace-nowrap">
-              Comparação completa com Google Forms <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
-
-      </div>
-    </section>
-  )
-}
-
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
 
+const FOOTER_COLUMNS = [
+  {
+    title: "Produto",
+    links: [
+      { label: "Recursos", href: "#recursos" },
+      { label: "Preços", href: "#pricing" },
+      { label: "Criar conta", href: "/signup" },
+      { label: "Entrar", href: "/login" },
+    ],
+  },
+  {
+    title: "Compare",
+    links: [
+      { label: "vs Google Forms", href: "/vs/google-forms" },
+    ],
+  },
+  {
+    title: "Recursos",
+    links: [
+      { label: "Templates", href: "#templates" },
+      { label: "Central de ajuda", href: "/help" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { label: "Termos", href: "/terms" },
+      { label: "Privacidade", href: "/privacy" },
+    ],
+  },
+]
+
 function Footer() {
   return (
-    <footer className="border-t py-12">
-      <div className="container flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-2">
-          <div className="flex bg-foreground text-background items-center justify-center p-1 rounded-sm">
-            <Sparkles className="h-4 w-4" />
+    <footer className="border-t py-16">
+      <div className="container">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex bg-foreground text-background items-center justify-center p-1 rounded-sm">
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <span className="font-bold text-sm">formularios.ia</span>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Formulários profissionais, do jeito brasileiro.
+            </p>
           </div>
-          <span className="font-bold text-sm">formularios.ia</span>
+
+          {FOOTER_COLUMNS.map((col) => (
+            <div key={col.title}>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">{col.title}</p>
+              <ul className="space-y-2.5">
+                {col.links.map((link) => (
+                  <li key={link.label}>
+                    <Link href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
-          <Link href="/login" className="hover:text-foreground transition-colors">Entrar</Link>
-          <Link href="/signup" className="hover:text-foreground transition-colors">Criar conta</Link>
-          <Link href="#pricing" className="hover:text-foreground transition-colors">Preços</Link>
-          <Link href="/vs/google-forms" className="hover:text-foreground transition-colors">vs Google Forms</Link>
-          <Link href="/terms" className="hover:text-foreground transition-colors">Termos</Link>
-          <Link href="/privacy" className="hover:text-foreground transition-colors">Privacidade</Link>
+        <div className="border-t mt-12 pt-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} formularios.ia
+          </p>
         </div>
-
-        <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} formularios.ia
-        </p>
       </div>
     </footer>
   )
