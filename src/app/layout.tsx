@@ -8,14 +8,14 @@ const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakart
 
 export const metadata: Metadata = {
     metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://formularios.ia.br'),
-    title: 'formularios.ia — Formulários Inteligentes',
-    description: 'Crie formulários conversacionais incríveis em segundos. Ferramenta no-code definitiva para pesquisa e engajamento.',
+    title: 'formularios.ia — Formulários profissionais, do jeito brasileiro',
+    description: 'Crie formulários com a sua marca, valide CPF, CNPJ e WhatsApp de verdade e descubra insights com IA. Em português, com dados no Brasil — e grátis pra começar.',
     alternates: {
         canonical: '/',
     },
     openGraph: {
-        title: 'formularios.ia — Formulários Inteligentes',
-        description: 'Crie formulários conversacionais incríveis em segundos. Potencialize suas pesquisas e leads com a nossa IA.',
+        title: 'formularios.ia — Formulários profissionais, do jeito brasileiro',
+        description: 'Formulários com a sua marca, campos brasileiros e IA. Grátis pra começar, dados no Brasil.',
         type: 'website',
         siteName: 'formularios.ia',
         images: [
@@ -23,14 +23,14 @@ export const metadata: Metadata = {
                 url: '/opengraph-image.png',
                 width: 1200,
                 height: 630,
-                alt: 'formularios.ia',
+                alt: 'formularios.ia — Formulários profissionais, do jeito brasileiro',
             },
         ],
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'formularios.ia — Formulários Inteligentes',
-        description: 'Crie formulários conversacionais incríveis em segundos.',
+        title: 'formularios.ia — Formulários profissionais, do jeito brasileiro',
+        description: 'Formulários com a sua marca, WhatsApp e IA. Grátis pra começar.',
         images: ['/twitter-image.png'],
     },
 };

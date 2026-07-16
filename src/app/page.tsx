@@ -45,6 +45,7 @@ export default async function HomePage() {
       <Migration />
       <Pricing />
       <FAQ />
+      <FounderNote />
       <FinalCTA />
       <Footer />
     </div>
@@ -638,6 +639,32 @@ function FAQ() {
   )
 }
 
+// ─── Founder Note ─────────────────────────────────────────────────────────────
+
+function FounderNote() {
+  return (
+    <section className="py-16 container">
+      <div className="max-w-2xl mx-auto rounded-3xl border bg-card p-8 md:p-12">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="h-12 w-12 shrink-0 rounded-full bg-foreground text-background flex items-center justify-center font-bold">
+            DM
+          </div>
+          <div>
+            <p className="font-bold leading-tight">Diego Machado</p>
+            <p className="text-sm text-muted-foreground">Fundador do formularios.ia</p>
+          </div>
+        </div>
+        <p className="text-lg leading-relaxed text-foreground/90">
+          Eu vivia trocando de ferramenta de formulário. O Google Forms fazia o trabalho, mas parecia amador — sem a minha marca, sem WhatsApp, sem eu saber onde as pessoas desistiam. O Typeform resolvia o visual, mas cobrava em dólar e não falava a língua de quem eu atendia.
+        </p>
+        <p className="text-lg leading-relaxed text-foreground/90 mt-4">
+          Criei o formularios.ia pra ser a ferramenta que eu mesmo queria usar: bonita, em português, com WhatsApp de verdade — e grátis pra começar.
+        </p>
+      </div>
+    </section>
+  )
+}
+
 // ─── Final CTA ────────────────────────────────────────────────────────────────
 
 function FinalCTA() {
@@ -703,6 +730,12 @@ function Footer() {
   return (
     <footer className="border-t py-16">
       <div className="container">
+        <div className="max-w-2xl mx-auto text-center mb-16">
+          <p className="text-2xl md:text-3xl font-bold font-headline tracking-tight leading-snug">
+            Google Forms é grátis.<br />A impressão que ele passa, não.
+          </p>
+        </div>
+
         <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-3">
