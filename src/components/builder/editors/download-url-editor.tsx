@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useBuilderStore } from "@/stores/builder-store"
 import type { Question } from "@/lib/types/form"
+import { formatFileSize } from "@/lib/utils/file-meta"
 
 export function DownloadUrlEditor({ question }: { question: Question }) {
   const updateQuestion = useBuilderStore((s) => s.updateQuestion)
@@ -38,7 +39,7 @@ export function DownloadUrlEditor({ question }: { question: Question }) {
 
       const { url } = await res.json()
       updateQuestion(question.id, {
-        properties: { ...question.properties, downloadUrl: url },
+        properties: { ...question.properties, downloadUrl: url, fileName: file.name, fileSize: file.size },
       })
     } catch (err: any) {
       alert(err.message || "Erro ao fazer upload do arquivo.")
@@ -66,13 +67,21 @@ export function DownloadUrlEditor({ question }: { question: Question }) {
       <Input
         value={question.properties.downloadUrl ?? ""}
         onChange={(e) =>
-          updateQuestion(question.id, { properties: { ...question.properties, downloadUrl: e.target.value || undefined } })
+          updateQuestion(question.id, {
+            properties: { ...question.properties, downloadUrl: e.target.value || undefined, fileName: undefined, fileSize: undefined },
+          })
         }
         placeholder="https://... ou faça upload"
         className="text-sm h-9"
         type="url"
         disabled={isUploading}
       />
+      {question.properties.fileName && (
+        <p className="text-[11px] text-muted-foreground">
+          {question.properties.fileName}
+          {question.properties.fileSize ? ` · ${formatFileSize(question.properties.fileSize)}` : ""}
+        </p>
+      )}
       <input
         type="file"
         ref={fileInputRef}

@@ -391,6 +391,44 @@ const FF_CSS = `
   color: var(--ff-muted); font-size: 1rem;
 }
 
+/* ── File download card ── */
+.ff-file-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1.5px solid color-mix(in srgb, var(--ff-muted) 25%, transparent);
+  border-radius: calc(var(--ff-radius) * 0.85);
+  background: color-mix(in srgb, var(--ff-muted) 4%, transparent);
+  text-decoration: none;
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+.ff-file-card:hover { border-color: var(--ff-accent); }
+.ff-file-card--disabled { opacity: 0.6; cursor: not-allowed; }
+.ff-file-icon {
+  width: 42px; height: 42px; flex-shrink: 0;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 10px; font-weight: 800; letter-spacing: 0.3px;
+}
+.ff-file-meta { flex: 1; min-width: 0; text-align: left; }
+.ff-file-name {
+  font-size: 0.95rem; font-weight: 600; color: var(--ff-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ff-file-sub { font-size: 0.78rem; color: var(--ff-muted); margin-top: 2px; }
+.ff-file-dl-btn {
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--ff-accent) 10%, transparent);
+  color: var(--ff-accent);
+  border: none;
+}
+.ff-file-dl-btn svg { width: 19px; height: 19px; }
+
 /* ── Signature ── */
 .ff-signature { display: flex; flex-direction: column; gap: 8px; }
 .ff-signature-canvas {

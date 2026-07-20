@@ -73,6 +73,8 @@ export interface QuestionProperties {
   downloadUrl?: string
   downloadButtonSize?: "sm" | "default" | "lg"
   downloadButtonAlign?: "left" | "center" | "right" | "full"
+  fileName?: string
+  fileSize?: number
 
   // Matrix
   matrixRows?: string[]
