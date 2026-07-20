@@ -2,7 +2,7 @@
 
 import type { FieldProps } from "./field-props"
 import { isSafeUrl } from "@/lib/utils/safe-url"
-import { getFileKind, getFileNameFromUrl, formatFileSize } from "@/lib/utils/file-meta"
+import { getFileKind, getFileNameFromUrl, formatFileSize, normalizeDownloadUrl } from "@/lib/utils/file-meta"
 
 const WRAP_ALIGN = {
     left: "justify-start",
@@ -25,7 +25,7 @@ const downloadIcon = (
 
 export function DownloadField({ question, onChange }: FieldProps) {
     const rawUrl = question.properties.downloadUrl
-    const url = isSafeUrl(rawUrl) ? rawUrl! : null
+    const url = isSafeUrl(rawUrl) ? normalizeDownloadUrl(rawUrl!) : null
     const size = question.properties.downloadButtonSize ?? "default"
     const align = question.properties.downloadButtonAlign ?? "center"
 

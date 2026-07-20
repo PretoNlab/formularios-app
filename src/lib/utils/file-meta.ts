@@ -51,6 +51,33 @@ export function getFileNameFromUrl(url: string): string | null {
   }
 }
 
+/**
+ * Rewrites known "preview" share links (Google Drive, Dropbox) into their
+ * direct-download form. Share links like `drive.google.com/file/d/ID/view`
+ * open the provider's viewer instead of downloading the file — this makes
+ * the file-card behave as the user expects (click → file downloads).
+ */
+export function normalizeDownloadUrl(url: string): string {
+  try {
+    const parsed = new URL(url)
+
+    if (parsed.hostname === "drive.google.com") {
+      const match = /\/file\/d\/([^/]+)/.exec(parsed.pathname)
+      const id = match?.[1] ?? parsed.searchParams.get("id")
+      if (id) return `https://drive.google.com/uc?export=download&id=${id}`
+    }
+
+    if (parsed.hostname === "www.dropbox.com" || parsed.hostname === "dropbox.com") {
+      parsed.searchParams.set("dl", "1")
+      return parsed.toString()
+    }
+
+    return url
+  } catch {
+    return url
+  }
+}
+
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
