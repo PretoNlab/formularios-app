@@ -30,7 +30,7 @@ export function DownloadField({ question, onChange }: FieldProps) {
     const align = question.properties.downloadButtonAlign ?? "center"
 
     const fallbackName = question.properties.buttonText ?? "Arquivo para download"
-    const fileName = question.properties.fileName ?? (rawUrl ? getFileNameFromUrl(rawUrl) : fallbackName)
+    const fileName = question.properties.fileName ?? (rawUrl ? getFileNameFromUrl(rawUrl) : null) ?? fallbackName
     const fileSize = question.properties.fileSize
     const kind = getFileKind(fileName || rawUrl || "")
 

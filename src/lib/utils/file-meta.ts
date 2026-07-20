@@ -35,13 +35,19 @@ export function getFileKind(nameOrUrl: string): { label: string; color: string }
   return EXT_KIND[extractExtension(nameOrUrl)] ?? DEFAULT_KIND
 }
 
-export function getFileNameFromUrl(url: string): string {
+const NON_FILENAME_SEGMENTS = new Set(["view", "preview", "edit", "download", "d", "file", "share", "s"])
+
+export function getFileNameFromUrl(url: string): string | null {
   try {
     const path = new URL(url, "https://placeholder.invalid").pathname
     const last = path.split("/").filter(Boolean).pop()
-    return last ? decodeURIComponent(last) : url
+    if (!last) return null
+    const decoded = decodeURIComponent(last)
+    // Drive/Dropbox-style share links end in a keyword, not a real filename (e.g. .../file/d/ID/view)
+    if (!decoded.includes(".") || NON_FILENAME_SEGMENTS.has(decoded.toLowerCase())) return null
+    return decoded
   } catch {
-    return url
+    return null
   }
 }
 

@@ -404,7 +404,12 @@ const FF_CSS = `
   transition: border-color 0.2s;
   cursor: pointer;
 }
-.ff-file-card:hover { border-color: var(--ff-accent); }
+.ff-file-card:hover,
+.ff-file-card:focus-visible {
+  border-color: var(--ff-accent);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ff-accent) 20%, transparent);
+}
 .ff-file-card--disabled { opacity: 0.6; cursor: not-allowed; }
 .ff-file-icon {
   width: 42px; height: 42px; flex-shrink: 0;
