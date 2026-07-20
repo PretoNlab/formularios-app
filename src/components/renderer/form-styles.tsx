@@ -395,22 +395,30 @@ const FF_CSS = `
 .ff-file-card {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
   padding: 16px 18px;
   border: 1.5px solid color-mix(in srgb, var(--ff-muted) 25%, transparent);
   border-radius: calc(var(--ff-radius) * 0.85);
   background: color-mix(in srgb, var(--ff-muted) 4%, transparent);
-  text-decoration: none;
   transition: border-color 0.2s;
-  cursor: pointer;
 }
 .ff-file-card:hover,
-.ff-file-card:focus-visible {
+.ff-file-card:focus-within {
   border-color: var(--ff-accent);
-  outline: none;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ff-accent) 20%, transparent);
 }
 .ff-file-card--disabled { opacity: 0.6; cursor: not-allowed; }
+.ff-file-link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  outline: none;
+}
 .ff-file-icon {
   width: 42px; height: 42px; flex-shrink: 0;
   border-radius: 9px;
@@ -431,7 +439,11 @@ const FF_CSS = `
   background: color-mix(in srgb, var(--ff-accent) 10%, transparent);
   color: var(--ff-accent);
   border: none;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
 }
+.ff-file-dl-btn:hover { background: color-mix(in srgb, var(--ff-accent) 18%, transparent); }
 .ff-file-dl-btn svg { width: 19px; height: 19px; }
 
 /* ── Signature ── */

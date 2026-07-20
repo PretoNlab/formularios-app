@@ -25,7 +25,8 @@ const downloadIcon = (
 
 export function DownloadField({ question, onChange }: FieldProps) {
     const rawUrl = question.properties.downloadUrl
-    const url = isSafeUrl(rawUrl) ? normalizeDownloadUrl(rawUrl!) : null
+    const previewUrl = isSafeUrl(rawUrl) ? rawUrl! : null
+    const downloadUrl = previewUrl ? normalizeDownloadUrl(previewUrl) : null
     const size = question.properties.downloadButtonSize ?? "default"
     const align = question.properties.downloadButtonAlign ?? "center"
 
@@ -37,7 +38,7 @@ export function DownloadField({ question, onChange }: FieldProps) {
     const wrapClass = `flex ${WRAP_ALIGN[align]} mt-2 mb-4`
     const cardClass = `ff-file-card ${align === "full" ? "w-full" : CARD_MAX_WIDTH[size] + " w-full"}`
 
-    if (!url) {
+    if (!previewUrl) {
         return (
             <div className={wrapClass}>
                 <div className={`${cardClass} ff-file-card--disabled`}>
@@ -56,22 +57,32 @@ export function DownloadField({ question, onChange }: FieldProps) {
 
     return (
         <div className={wrapClass}>
-            <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => onChange(true)}
-                className={cardClass}
-            >
-                <div className="ff-file-icon" style={{ background: kind.color }}>{kind.label}</div>
-                <div className="ff-file-meta">
-                    <div className="ff-file-name">{fileName}</div>
-                    <div className="ff-file-sub">{fileSize ? `${formatFileSize(fileSize)} · ` : ""}Toque para baixar</div>
-                </div>
-                <div className="ff-file-dl-btn" aria-hidden>
+            <div className={cardClass}>
+                <a
+                    href={previewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => onChange(true)}
+                    className="ff-file-link"
+                >
+                    <div className="ff-file-icon" style={{ background: kind.color }}>{kind.label}</div>
+                    <div className="ff-file-meta">
+                        <div className="ff-file-name">{fileName}</div>
+                        <div className="ff-file-sub">{fileSize ? `${formatFileSize(fileSize)} · ` : ""}Toque para visualizar</div>
+                    </div>
+                </a>
+                <a
+                    href={downloadUrl!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    onClick={() => onChange(true)}
+                    aria-label="Baixar arquivo"
+                    className="ff-file-dl-btn"
+                >
                     {downloadIcon}
-                </div>
-            </a>
+                </a>
+            </div>
         </div>
     )
 }
