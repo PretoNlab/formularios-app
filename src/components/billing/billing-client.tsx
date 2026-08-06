@@ -1,17 +1,11 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
-import { useRouter } from "next/navigation"
 import { FOUNDER_PLAN, TOPUP_PACKS } from "@/lib/credits"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import {
-  CheckCircle2, Loader2, ShoppingCart, Gift, Star, X,
+  CheckCircle2, Gift, Star, ShoppingCart,
   CalendarDays, BarChart3, FileText, Zap, AlertTriangle,
 } from "lucide-react"
 
@@ -33,8 +27,6 @@ interface BillingClientProps {
   formQuota: number
   publishedFormsCount: number
   transactions: Transaction[]
-  checkoutIntent?: string
-  returnStatus?: string
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -66,29 +58,6 @@ function txIcon(type: string) {
   return <BarChart3 className="h-4 w-4 text-red-400" />
 }
 
-function formatCpf(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 11)
-  if (digits.length <= 3) return digits
-  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`
-  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`
-  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
-}
-
-function isValidCpf(cpf: string): boolean {
-  const digits = cpf.replace(/\D/g, "")
-  if (digits.length !== 11 || /^(\d)\1+$/.test(digits)) return false
-  let sum = 0
-  for (let i = 0; i < 9; i++) sum += Number(digits[i]) * (10 - i)
-  let check = 11 - (sum % 11)
-  if (check >= 10) check = 0
-  if (Number(digits[9]) !== check) return false
-  sum = 0
-  for (let i = 0; i < 10; i++) sum += Number(digits[i]) * (11 - i)
-  check = 11 - (sum % 11)
-  if (check >= 10) check = 0
-  return Number(digits[10]) === check
-}
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function BillingClient({
@@ -99,189 +68,17 @@ export function BillingClient({
   formQuota,
   publishedFormsCount,
   transactions,
-  checkoutIntent,
-  returnStatus,
 }: BillingClientProps) {
-  const router = useRouter()
-  const [purchasing, setPurchasing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [pollingStatus, setPollingStatus] = useState<"idle" | "polling" | "confirmed" | "timeout">(
-    returnStatus === "success" ? "polling" : "idle"
-  )
-  const [showCanceled, setShowCanceled] = useState(returnStatus === "canceled")
-  const [cpfModal, setCpfModal] = useState<{ packId: string } | null>(null)
-  const [cpf, setCpf] = useState("")
-  const [cpfError, setCpfError] = useState<string | null>(null)
-
   const isFounder = plan === "founder"
   const planActive = isFounder && (!planExpiresAt || new Date(planExpiresAt) > new Date())
   const planExpired = isFounder && planExpiresAt && new Date(planExpiresAt) <= new Date()
-
-  // Auto-trigger checkout from signup flow
-  const autoTriggered = useRef(false)
-  useEffect(() => {
-    if (checkoutIntent === "founder" && (!isFounder || planExpired) && !autoTriggered.current) {
-      autoTriggered.current = true
-      setCpfModal({ packId: FOUNDER_PLAN.id })
-      window.history.replaceState({}, "", "/billing")
-    }
-  }, [checkoutIntent, isFounder, planExpired])
-
-  // Poll for payment confirmation on return from AbacatePay
-  const pollPayment = useCallback(async () => {
-    const orderId = sessionStorage.getItem("pendingOrderId")
-    if (!orderId) {
-      // No orderId — maybe already confirmed, show confirmed state
-      if (returnStatus === "success") setPollingStatus("confirmed")
-      return
-    }
-
-    setPollingStatus("polling")
-    window.history.replaceState({}, "", "/billing")
-
-    const maxAttempts = 30 // 60 seconds
-    let attempts = 0
-
-    const interval = setInterval(async () => {
-      attempts++
-      try {
-        const res = await fetch(`/api/credits/order/${orderId}`)
-        if (!res.ok) return
-        const data = await res.json() as { status: string }
-        if (data.status === "paid") {
-          clearInterval(interval)
-          sessionStorage.removeItem("pendingOrderId")
-          setPollingStatus("confirmed")
-          router.refresh()
-        }
-      } catch { /* ignore */ }
-
-      if (attempts >= maxAttempts) {
-        clearInterval(interval)
-        sessionStorage.removeItem("pendingOrderId")
-        setPollingStatus("timeout")
-      }
-    }, 2000)
-
-    return () => clearInterval(interval)
-  }, [returnStatus, router])
-
-  useEffect(() => {
-    if (returnStatus === "success") {
-      pollPayment()
-    } else if (returnStatus) {
-      window.history.replaceState({}, "", "/billing")
-    }
-  }, [returnStatus, pollPayment])
 
   const days = planExpiresAt ? daysRemaining(planExpiresAt) : 0
   const responsePercent = responseQuota > 0 ? Math.min(100, Math.round((responseUsed / responseQuota) * 100)) : 0
   const formPercent = formQuota > 0 ? Math.min(100, Math.round((publishedFormsCount / formQuota) * 100)) : 0
 
-  function openCpfModal(packId: string) {
-    setCpf("")
-    setCpfError(null)
-    setCpfModal({ packId })
-  }
-
-  async function handleConfirmPurchase() {
-    if (!cpfModal) return
-    const digits = cpf.replace(/\D/g, "")
-    if (!isValidCpf(digits)) {
-      setCpfError("CPF inválido. Verifique e tente novamente.")
-      return
-    }
-
-    setCpfError(null)
-    setPurchasing(true)
-    setError(null)
-
-    try {
-      const res = await fetch("/api/credits/purchase", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ packId: cpfModal.packId, taxId: digits }),
-      })
-      const data = await res.json() as { orderId?: string; url?: string; error?: string }
-      if (!res.ok || data.error) {
-        setError(data.error ?? "Erro ao gerar cobrança.")
-        setPurchasing(false)
-        setCpfModal(null)
-        return
-      }
-
-      if (data.orderId) {
-        sessionStorage.setItem("pendingOrderId", data.orderId)
-      }
-      if (data.url) {
-        window.location.href = data.url
-      }
-    } catch {
-      setError("Erro de rede. Tente novamente.")
-      setPurchasing(false)
-      setCpfModal(null)
-    }
-  }
-
   return (
     <div className="container mx-auto max-w-3xl py-10 px-4 space-y-8">
-
-      {/* Payment status banners */}
-      {pollingStatus === "polling" && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20 p-4 flex items-center gap-3">
-          <Loader2 className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 animate-spin" />
-          <div className="flex-1 text-sm text-blue-700 dark:text-blue-300">
-            <span className="font-semibold">Verificando pagamento...</span> aguarde enquanto confirmamos.
-          </div>
-        </div>
-      )}
-
-      {pollingStatus === "confirmed" && (
-        <div className="rounded-xl border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20 p-4 flex items-center gap-3">
-          <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0" />
-          <div className="flex-1 text-sm text-green-700 dark:text-green-300">
-            <span className="font-semibold">Pagamento confirmado!</span> Seu plano foi atualizado.
-          </div>
-          <button onClick={() => setPollingStatus("idle")} className="text-green-600 dark:text-green-400 hover:opacity-70">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-
-      {pollingStatus === "timeout" && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 p-4 flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
-          <div className="flex-1 text-sm text-amber-700 dark:text-amber-300">
-            O pagamento pode levar alguns minutos para ser processado. Recarregue a página em instantes.
-          </div>
-          <button onClick={() => { setPollingStatus("idle"); router.refresh() }} className="text-amber-600 dark:text-amber-400 hover:opacity-70 text-sm font-medium underline">
-            Recarregar
-          </button>
-        </div>
-      )}
-
-      {showCanceled && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 p-4 flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
-          <div className="flex-1 text-sm text-amber-700 dark:text-amber-300">
-            Pagamento cancelado. Você pode tentar novamente quando quiser.
-          </div>
-          <button onClick={() => setShowCanceled(false)} className="text-amber-600 dark:text-amber-400 hover:opacity-70">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-
-      {/* Error banner */}
-      {error && (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-          <div className="flex-1 text-sm text-destructive">{error}</div>
-          <button onClick={() => setError(null)} className="text-destructive hover:opacity-70">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
 
       {/* Header */}
       <div>
@@ -329,7 +126,7 @@ export function BillingClient({
         )}
       </div>
 
-      {/* CTA: free or expired → show founder plan */}
+      {/* CTA: free or expired → show founder plan (compra temporariamente indisponível) */}
       {(!isFounder || planExpired) && (
         <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-6 space-y-5">
           <div className="flex items-start gap-3">
@@ -341,7 +138,7 @@ export function BillingClient({
               <p className="text-sm text-muted-foreground">Sem renovação mensal. Sem surpresas. Sem obrigação de upgrade logo de início.</p>
             </div>
             <div className="ml-auto text-right shrink-0">
-              <p className="text-2xl font-bold">R$499</p>
+              <p className="text-2xl font-bold">R${FOUNDER_PLAN.priceReais}</p>
               <p className="text-xs text-muted-foreground">por 12 meses</p>
             </div>
           </div>
@@ -362,32 +159,27 @@ export function BillingClient({
             ))}
           </div>
 
-          <Button
-            className="w-full"
-            size="lg"
-            disabled={purchasing}
-            onClick={() => openCpfModal(FOUNDER_PLAN.id)}
-          >
-            {purchasing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Star className="h-4 w-4 mr-2" />}
-            {purchasing ? "Redirecionando…" : "Quero entrar no Lote Fundador"}
-          </Button>
+          <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 p-4 flex items-start gap-3">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-700 dark:text-amber-300">
+              Compra temporariamente indisponível. Entre em contato pelo suporte se quiser entrar no Lote Fundador.
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Top-ups: only for active founder plan */}
+      {/* Top-ups: only for active founder plan (compra temporariamente indisponível) */}
       {planActive && (
         <div className="space-y-4">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Recargas</h2>
-            <p className="text-sm text-muted-foreground mt-1">Você começa com uma franquia anual e só compra mais capacidade quando fizer sentido.</p>
+            <p className="text-sm text-muted-foreground mt-1">Você começa com uma franquia anual. Recargas avulsas estão temporariamente indisponíveis.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {TOPUP_PACKS.map((pack) => (
-              <button
+              <div
                 key={pack.id}
-                disabled={purchasing}
-                onClick={() => openCpfModal(pack.id)}
-                className="rounded-2xl border bg-card p-5 text-left transition-all hover:shadow-md hover:border-primary/50 group disabled:opacity-50 disabled:pointer-events-none"
+                className="rounded-2xl border bg-card p-5 text-left opacity-60"
               >
                 <div className="flex items-center gap-2 mb-3">
                   <Zap className="h-4 w-4 text-muted-foreground" />
@@ -397,10 +189,7 @@ export function BillingClient({
                 </div>
                 <p className="text-xl font-bold">{pack.name}</p>
                 <p className="text-lg font-bold text-primary mt-2">R${pack.priceReais}</p>
-                <div className="mt-3 w-full rounded-lg border border-primary/20 bg-primary/5 py-2 text-center text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                  Pagar via PIX
-                </div>
-              </button>
+              </div>
             ))}
           </div>
           <p className="text-xs text-muted-foreground flex items-center gap-1.5">
@@ -416,7 +205,7 @@ export function BillingClient({
           <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <div className="text-sm text-amber-700 dark:text-amber-300">
             <span className="font-semibold">Seu plano expira em {days} dia{days !== 1 ? "s" : ""}.</span>{" "}
-            Adquira o Lote Fundador novamente para continuar recebendo respostas.
+            Renove o Lote Fundador para continuar recebendo respostas.
           </div>
         </div>
       )}
@@ -438,39 +227,6 @@ export function BillingClient({
           </div>
         </div>
       )}
-
-      {/* CPF Modal */}
-      <Dialog open={!!cpfModal} onOpenChange={(v) => { if (!v) setCpfModal(null) }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Informar CPF</DialogTitle>
-            <DialogDescription>Precisamos do seu CPF para emitir a cobrança via PIX.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 pt-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="cpf-input">CPF</Label>
-              <Input
-                id="cpf-input"
-                placeholder="000.000.000-00"
-                value={cpf}
-                onChange={(e) => { setCpf(formatCpf(e.target.value)); setCpfError(null) }}
-                onKeyDown={(e) => { if (e.key === "Enter") handleConfirmPurchase() }}
-                maxLength={14}
-                inputMode="numeric"
-              />
-              {cpfError && <p className="text-xs text-destructive">{cpfError}</p>}
-            </div>
-            <Button
-              className="w-full"
-              disabled={purchasing || cpf.replace(/\D/g, "").length < 11}
-              onClick={handleConfirmPurchase}
-            >
-              {purchasing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-              {purchasing ? "Redirecionando…" : "Continuar para pagamento"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

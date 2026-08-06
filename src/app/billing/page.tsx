@@ -8,9 +8,7 @@ import { BillingClient } from "@/components/billing/billing-client"
 
 export const metadata = { title: "Plano — formularios.ia" }
 
-export default async function BillingPage({ searchParams }: { searchParams: Promise<{ checkout?: string; success?: string; canceled?: string }> }) {
-  const { checkout, success: successParam, canceled } = await searchParams
-  const returnStatus = successParam === "true" ? "success" : canceled === "true" ? "canceled" : undefined
+export default async function BillingPage() {
   const supabase = await createClient()
   const { data: { user: authUser } } = await supabase.auth.getUser()
   if (!authUser) redirect("/login")
@@ -38,8 +36,6 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
 
   return (
     <BillingClient
-      checkoutIntent={checkout}
-      returnStatus={returnStatus}
       plan={user.plan}
       planExpiresAt={user.planExpiresAt?.toISOString() ?? null}
       responseQuota={user.responseQuota}

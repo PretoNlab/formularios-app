@@ -181,21 +181,6 @@ export const integrations = pgTable("integrations", {
 
 // ─── Credits ───
 
-export const creditOrders = pgTable("credit_orders", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
-  packId: text("pack_id").notNull(),
-  credits: integer("credits").notNull(),
-  amountCents: integer("amount_cents").notNull(),
-  status: text("status").default("pending").notNull(), // pending | paid | expired
-  abacatepayId: text("abacatepay_id"),
-  pixCode: text("pix_code"),
-  pixQrBase64: text("pix_qr_base64"),
-  expiresAt: timestamp("expires_at"),
-  paidAt: timestamp("paid_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-})
-
 export const creditTransactions = pgTable("credit_transactions", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
@@ -210,12 +195,7 @@ export const creditTransactions = pgTable("credit_transactions", {
 export const usersRelations = relations(users, ({ many }) => ({
   workspaces: many(workspaces),
   forms: many(forms),
-  creditOrders: many(creditOrders),
   creditTransactions: many(creditTransactions),
-}))
-
-export const creditOrdersRelations = relations(creditOrders, ({ one }) => ({
-  user: one(users, { fields: [creditOrders.userId], references: [users.id] }),
 }))
 
 export const creditTransactionsRelations = relations(creditTransactions, ({ one }) => ({

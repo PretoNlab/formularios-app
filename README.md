@@ -17,7 +17,7 @@ Form builder SaaS para o mercado brasileiro — alternativa ao Typeform/Tally co
 - **Import** — Google Forms (export do Google), JSON e CSV de respostas.
 - **Integrações** — webhooks, Google Sheets (OAuth), notificação por e-mail (Resend).
 - **Analytics** — completion rate, tempo médio, drop-off por pergunta, séries temporais.
-- **Monetização PIX** — planos via AbacatePay, créditos consumíveis pra features de IA, Lote Fundador vitalício.
+- **Planos e créditos** — quotas de plano + créditos consumíveis pra features de IA, Lote Fundador vitalício.
 - **LGPD** — IPs hashados, consentimento, anonimização configurável.
 
 ---
@@ -39,7 +39,6 @@ Form builder SaaS para o mercado brasileiro — alternativa ao Typeform/Tally co
 | Drag & Drop | @dnd-kit |
 | E-mail | Resend |
 | IA | Google Gemini (`@google/generative-ai`) |
-| Pagamentos | AbacatePay (PIX) |
 | Google Sheets | `googleapis` |
 | Monitoramento | Sentry |
 | Testes | Vitest + Testing Library + jsdom |
@@ -54,7 +53,6 @@ Form builder SaaS para o mercado brasileiro — alternativa ao Typeform/Tally co
 - Conta no [Supabase](https://supabase.com)
 - Conta no [Resend](https://resend.com) (e-mails transacionais)
 - Conta no [Google Cloud Console](https://console.cloud.google.com) (OAuth + Sheets + Gemini)
-- Conta no [AbacatePay](https://abacatepay.com) (opcional — só pra testar pagamento PIX)
 - Conta no [Sentry](https://sentry.io) (opcional — monitoramento)
 
 ---
@@ -133,8 +131,6 @@ Todas estão documentadas em [`.env.example`](.env.example).
 | `GOOGLE_CLIENT_SECRET` | ⬜ | OAuth do Google Sheets |
 | `GOOGLE_REDIRECT_URI` | ⬜ | Callback do OAuth Google Sheets |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | ⬜ | Gemini (geração + análise de respostas) |
-| `ABACATEPAY_API_KEY` | ⬜ | API key do AbacatePay (PIX) |
-| `ABACATEPAY_WEBHOOK_PUBLIC_KEY` | ⬜ | Chave pública pra validar webhook AbacatePay |
 | `NEXT_PUBLIC_SENTRY_DSN` | ⬜ | DSN do Sentry (browser + server) |
 | `SENTRY_ORG` / `SENTRY_PROJECT` / `SENTRY_AUTH_TOKEN` | ⬜ | Upload de source maps em CI |
 
@@ -158,13 +154,6 @@ Para Google OAuth → Authentication → Providers → Google:
 
 Bucket `form-responses` (público, INSERT anônimo + SELECT público) precisa existir pra o campo `file_upload` funcionar. Setup SQL em [`supabase/storage-setup.sql`](./supabase/storage-setup.sql).
 
-### AbacatePay — webhook
-
-Configure no painel do AbacatePay apontando pra:
-```
-https://seudominio.com.br/api/webhooks/abacatepay
-```
-
 ---
 
 ## Estrutura do projeto
@@ -176,10 +165,8 @@ src/
 │   ├── actions/                  # Server Actions (forms, ai, import, integrations…)
 │   ├── api/                      # Route Handlers
 │   │   ├── auth/google-sheets/   # OAuth Sheets
-│   │   ├── credits/              # Pedido + confirmação de compra
 │   │   ├── responses/            # start / progress / submit
-│   │   ├── upload/               # Uploads (response, completion, theme)
-│   │   └── webhooks/abacatepay/  # PIX
+│   │   └── upload/               # Uploads (response, completion, theme)
 │   ├── analytics/[formId]/       # Dashboard de analytics
 │   ├── billing/                  # Planos e recargas
 │   ├── builder/[formId]/         # Editor
@@ -210,7 +197,6 @@ src/
 │   ├── import/                   # Google Forms / JSON / CSV
 │   ├── types/                    # Form, Question, QuestionType, etc.
 │   ├── utils/                    # slug, map-db-form, onboarding
-│   ├── abacatepay.ts             # Cliente AbacatePay
 │   ├── credits.ts                # Lógica de créditos / quotas
 │   ├── email.ts                  # Resend
 │   ├── google-sheets.ts          # Cliente Google Sheets

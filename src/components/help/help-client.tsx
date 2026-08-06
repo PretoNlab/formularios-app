@@ -539,7 +539,7 @@ export function HelpClient() {
           {/* ── 10. Planos e cobrança ──────────────────────────────────── */}
           <Section id="planos" title="Planos e cobrança">
             <p className="text-muted-foreground mb-6">
-              Comece grátis e faça upgrade quando precisar de mais. Todos os pagamentos são feitos via Pix usando AbacatePay.
+              Comece grátis e faça upgrade quando precisar de mais.
             </p>
 
             <h3 className="font-semibold text-lg mb-4">Plano gratuito</h3>
@@ -590,17 +590,9 @@ export function HelpClient() {
               </table>
             </div>
 
-            <h3 className="font-semibold text-lg mb-4">Pagamento via Pix</h3>
-            <Step number={1} title='Escolha o plano ou recarga em "Cobrança"' />
-            <Step number={2} title="Informe seu CPF para emissão da cobrança">
-              É exigido pelas regras do AbacatePay (intermediador) — não armazenamos o CPF no nosso banco.
-            </Step>
-            <Step number={3} title="Pague o Pix no app do seu banco">
-              Você é redirecionado para a página de pagamento do AbacatePay.
-            </Step>
-            <Step number={4} title="Volte para o site — o saldo é creditado em segundos">
-              O sistema fica verificando o status em tempo real. Quando o pagamento confirma, sua página é atualizada automaticamente.
-            </Step>
+            <p className="text-sm text-muted-foreground mb-4">
+              A compra do Lote Fundador e das recargas está temporariamente indisponível. Entre em contato pelo suporte se quiser garantir uma vaga.
+            </p>
 
             <h3 className="font-semibold text-lg mt-8 mb-4">Expiração do plano</h3>
             <p className="text-sm text-muted-foreground mb-4">
@@ -674,14 +666,6 @@ export function HelpClient() {
                 {
                   q: "Como funciona a integração com Google Sheets se o token expirar?",
                   a: "O sistema atualiza o token de acesso automaticamente usando o refresh token armazenado. Você não precisa reconectar periodicamente — a integração se mantém ativa indefinidamente enquanto você não revogar o acesso no painel do Google.",
-                },
-                {
-                  q: "Por que vocês pedem meu CPF na hora de pagar?",
-                  a: "O CPF é uma exigência do AbacatePay (intermediador financeiro responsável por processar o Pix) para emitir a cobrança. Ele não é armazenado no nosso banco de dados — é enviado direto ao AbacatePay no momento da compra.",
-                },
-                {
-                  q: "Quanto tempo demora para o plano ser liberado depois do pagamento?",
-                  a: "Geralmente alguns segundos. Após você pagar o Pix no app do banco, o AbacatePay nos avisa e seu plano/recarga é creditado automaticamente. A página de Cobrança fica verificando em tempo real e atualiza sozinha quando confirma.",
                 },
                 {
                   q: "O que acontece se meu Lote Fundador expirar?",

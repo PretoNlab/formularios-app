@@ -135,17 +135,23 @@ Cada tipo de pergunta tem um schema diferente de propriedades. Cada resposta tem
 
 Trade-off: queries em JSON são mais lentas, mas para o volume atual é irrelevante.
 
+### Por que o formulário público é client-side (não SSR)?
+
+Formulários públicos são interativos (transições animadas, keyboard nav pergunta-a-pergunta, lógica condicional). Render é Client Component com fetch inicial via Server Component wrapper. UX fluida tipo Typeform. SEO não é prioridade para formulários — landing page e templates sim.
+
+### Por que o núcleo de submit é função pura isolada?
+
+A submissão de resposta acontece via dois entrypoints: Route Handler `/api/responses/submit` (renderer público) e Server Action (preview/teste). Validação, sanitização, IP-hashing e dispatch de integrações precisam ser **idênticos** entre os dois.
+
+`src/lib/submit-response-core.ts` é função pura testada com Vitest. Os entrypoints só fazem parsing/auth e delegam. Mesma garantia vale para `src/lib/logic-engine.ts` (lógica condicional).
+
+### Por que quotas e créditos são eixos paralelos?
+
+Plano controla quotas duras (`formQuota`, `responseQuota` — limite de acesso). Créditos (`creditBalance`) são moeda paralela para features pay-per-use (IA, exports premium). Isso permite que o Lote Fundador dê plano vitalício + créditos iniciais sem confundir os dois eixos.
+
 ---
 
-## Como adicionar um novo tipo de pergunta
-
-1. **Registrar o tipo** em `src/lib/types/form.ts` → array `QUESTION_TYPES` e type `QuestionType`
-2. **Criar o schema Zod** das properties em `src/lib/types/form.ts` → `questionPropertiesSchema`
-3. **Criar o componente de campo** em `src/components/renderer/fields/[tipo].tsx` (implementa `FieldProps`)
-4. **Registrar no renderer** em `src/components/renderer/form-renderer.tsx` → objeto `RENDERERS` (mapa `QuestionType → ComponentType`)
-5. **Adicionar ícone e valor padrão** em `builder-client.tsx` → `TYPE_ICONS` e `createQuestion()`
-6. **Criar configurações do campo** no painel direito do builder (propriedades específicas do tipo)
-7. **Adicionar ao analytics** em `src/lib/db/queries/responses.ts` se tiver visualização especial
+> Para o passo-a-passo de "como adicionar um tipo de pergunta novo", ver [PADROES.md](PADROES.md).
 
 ---
 
@@ -220,5 +226,3 @@ Decisões ativas de performance no codebase:
 | `preload()` do `react-dom` | `components/renderer/form-renderer.tsx` | Emite `<link rel="preload">` para Google Fonts antes da hidratação, eliminando FOUT |
 | Deps primitivas em `goNext`/`goBack` | `components/renderer/form-renderer.tsx` | Evita recriar callbacks de navegação quando apenas `animating` ou `direction` mudam |
 | Cleanup de timers de animação | `components/renderer/form-renderer.tsx` | Previne `setState` em componente desmontado durante transição de pergunta |
-
-Limite: 5 submissões por IP por formulário por hora.

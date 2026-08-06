@@ -8,16 +8,20 @@ Guia do schema, migrations e operações comuns com Drizzle ORM + Supabase.
 
 ```
 users
-  └─< workspaceMembers >─┐
-  └─< forms              │
-                         │
-workspaces ─────────────>┘
+  ├─< workspaces (owner)
+  ├─< workspace_members
+  └─< credit_transactions
+
+workspaces
+  ├─< workspace_members
   └─< forms
-        └─< questions
-        └─< responses
+        ├─< questions
+        ├─< responses
         │     └─< answers
         └─< integrations
 ```
+
+Total: **9 tabelas**.
 
 ---
 
@@ -32,7 +36,13 @@ workspaces ─────────────>┘
 | `email` | text unique | E-mail do usuário |
 | `name` | text | Nome de exibição |
 | `avatarUrl` | text | URL do avatar |
-| `plan` | enum | `free` \| `pro` \| `business` |
+| `plan` | enum | `free` \| `pro` \| `business` \| `founder` |
+| `creditBalance` | integer | Saldo de créditos (default 0) |
+| `responseQuota` | integer | Limite de respostas no período (default 50) |
+| `responseUsed` | integer | Respostas usadas no período (default 0) |
+| `formQuota` | integer | Limite de formulários (default 3) |
+| `planStartedAt` | timestamp | Início do plano atual |
+| `planExpiresAt` | timestamp | Expiração (null = vitalício) |
 | `createdAt` | timestamp | — |
 | `updatedAt` | timestamp | — |
 
@@ -44,21 +54,37 @@ workspaces ─────────────>┘
 | `ownerId` | UUID FK → users | Cascade delete |
 | `name` | text | Nome do workspace |
 | `slug` | text unique | Identificador URL-friendly |
+| `brandKit` | JSONB | Cores/logo padrão aplicáveis a novos forms |
+
+### workspace_members
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | UUID PK | — |
+| `workspaceId` | UUID FK → workspaces | Cascade delete |
+| `userId` | UUID FK → users | Cascade delete |
+| `role` | text | `owner` \| `admin` \| `member` (default `member`) |
+| `createdAt` | timestamp | — |
+
+Unique: `(workspaceId, userId)`.
 
 ### forms
 
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
 | `id` | UUID PK | — |
-| `workspaceId` | UUID FK → workspaces | — |
+| `workspaceId` | UUID FK → workspaces | Cascade delete |
 | `createdById` | UUID FK → users | — |
-| `title` | text | Título do formulário |
+| `title` | text | Título (default "Formulário sem título") |
+| `description` | text | Descrição (opcional) |
 | `slug` | text unique | URL: `/f/[slug]` |
 | `status` | enum | `draft` \| `published` \| `closed` |
-| `theme` | JSONB | `FormThemeConfig` (cores + fonte) |
-| `settings` | JSONB | `FormSettings` (redirect, notificações) |
+| `theme` | JSONB | `FormThemeConfig` (cores + fonte + border-radius) |
+| `settings` | JSONB | `FormSettings` (redirect, notificações, auto-responder, download) |
 | `responseCount` | integer | Contador desnormalizado |
 | `viewCount` | integer | Visualizações |
+| `shareToken` | text unique | Token para analytics público |
+| `isAnalyticsPublic` | boolean | Habilita acesso público ao analytics |
 | `publishedAt` | timestamp | Quando foi publicado |
 
 ### questions
@@ -109,25 +135,31 @@ workspaces ─────────────>┘
 | `value` | JSONB | Valor da resposta (tipo varia) |
 | `answeredAt` | timestamp | — |
 
-**Tipos do `value` por tipo de pergunta:**
-- `short_text`, `long_text`, `email`, `date`, `url`: `"string"`
-- `number`, `rating`, `scale`, `nps`: `42`
-- `yes_no`: `true` ou `false`
-- `multiple_choice`, `dropdown`: `"opção selecionada"`
-- `checkbox`: `["opção 1", "opção 2"]`
-- `file_upload`: `{ "fileUrl": "https://...", "fileName": "doc.pdf" }`
+**Tipos do `value` por tipo de pergunta:** ver [TIPOS-DE-PERGUNTA.md](TIPOS-DE-PERGUNTA.md#formato-do-value-em-answersvalue-jsonb).
+
+Unique: `(responseId, questionId)` — uma resposta por pergunta por sessão.
 
 ### integrations
 
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
 | `id` | UUID PK | — |
-| `formId` | UUID FK → forms | — |
-| `type` | text | `webhook` \| `email` \| `google_sheets` \| `n8n` \| `zapier` |
+| `formId` | UUID FK → forms | Cascade delete |
+| `type` | text | `webhook` \| `email` \| `google_sheets` \| `whatsapp` \| `n8n` \| `zapier` |
 | `name` | text | Nome amigável |
-| `enabled` | boolean | Se está ativa |
+| `enabled` | boolean | Se está ativa (default `true`) |
 | `config` | JSONB | URL do webhook, e-mail destinatário, etc. |
 | `lastTriggeredAt` | timestamp | — |
+
+### credit_transactions
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | UUID PK | — |
+| `userId` | UUID FK → users | Cascade delete |
+| `amount` | integer | Positivo = crédito, negativo = débito |
+| `type` | text | `welcome` \| `purchase` \| `usage` |
+| `metadata` | JSONB | Detalhes do consumo/crédito (motivo, referências) |
 
 ---
 
@@ -209,7 +241,12 @@ O projeto usa `SUPABASE_SERVICE_ROLE_KEY` nas Server Actions para bypassar RLS. 
 
 ### Storage
 
-Não configurado por padrão. O tipo `file_upload` pode ser integrado ao Supabase Storage — adicionar bucket `form-uploads` com policy pública de leitura.
+Buckets em uso (setup SQL em `/supabase/storage-setup.sql`):
+
+- `form-responses` — uploads do campo `file_upload` (INSERT anônimo + SELECT público).
+- Buckets adicionais (logos do tema, downloads do criador) configurados conforme uso.
+
+> **Pendência produção:** bucket `form-responses` precisa ser criado manualmente no Supabase de prod.
 
 ---
 

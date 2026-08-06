@@ -171,8 +171,8 @@ export default function SignupPage() {
       options: {
         data: { full_name: name },
         emailRedirectTo: `${getAppUrl()}/auth/callback?next=${encodeURIComponent(
-          window.location.search.includes("plan=founder") 
-            ? "/billing?checkout=founder" 
+          window.location.search.includes("plan=founder")
+            ? "/billing"
             : "/dashboard?welcome=true"
         )}`,
       },
