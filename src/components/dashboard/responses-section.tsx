@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
   ArrowLeft, Eye, Users, TrendingUp, Clock,
-  CheckCircle2, Circle, Copy, ExternalLink, Download,
+  CheckCircle2, Circle, Copy, ExternalLink, Download, PlayCircle, MessageSquare,
   Smartphone, Filter, X, ChevronLeft, ChevronRight, Monitor, Tablet, Printer, Share2,
   Sparkles, Zap, Trash2, AlertCircle, Loader2, MoreHorizontal, FileDown, FileUp, Link2,
 } from "lucide-react"
@@ -740,6 +740,9 @@ export function ResponsesSection({
   const completionRate = totalResponses > 0 ? completedCount / totalResponses : 0
   const avgTime = counters?.averageCompletionTime ?? 0
 
+  const meaningfulTotal = pagination?.total ?? responses.length
+  const partialCount = Math.max(0, meaningfulTotal - completedCount)
+
   return (
     <div className="container py-8 max-w-6xl">
 
@@ -839,19 +842,35 @@ export function ResponsesSection({
 
       {/* ── Stats ────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
-        <StatCard icon={Eye} label="Visualizações"
+        <StatCard
+          icon={Eye}
+          label="Visualizações"
           value={totalViews.toLocaleString("pt-BR")}
-          sub="visitas únicas" />
-        <StatCard icon={Users} label="Respostas"
+          sub="visitas únicas"
+          tooltip="Número total de acessos à página do formulário."
+        />
+        <StatCard
+          icon={PlayCircle}
+          label="Iniciados"
           value={totalResponses.toLocaleString("pt-BR")}
-          sub={`${completedCount.toLocaleString("pt-BR")} completas`} />
-        <StatCard icon={TrendingUp} label="Taxa de conclusão"
+          sub="sessões abertas"
+          tooltip="Total de pessoas que abriram o link e iniciaram a resposta."
+        />
+        <StatCard
+          icon={MessageSquare}
+          label="Respostas salvas"
+          value={meaningfulTotal.toLocaleString("pt-BR")}
+          sub={`${completedCount} completas · ${partialCount} parciais`}
+          tooltip="Respostas que possuem dados preenchidos e aparecem na tabela abaixo."
+          accent
+        />
+        <StatCard
+          icon={TrendingUp}
+          label="Taxa de conclusão"
           value={pct(completionRate)}
-          sub={`${totalResponses.toLocaleString("pt-BR")} iniciadas`}
-          accent />
-        <StatCard icon={Clock} label="Tempo médio"
-          value={avgTime > 0 ? formatDuration(avgTime) : "—"}
-          sub="para concluir" />
+          sub={`${completedCount.toLocaleString("pt-BR")} de ${totalResponses.toLocaleString("pt-BR")} concluídas`}
+          tooltip="Porcentagem dos acessos iniciados que foram finalizados até a tela de agradecimento."
+        />
       </div>
 
       {/* Completion progress bar */}
@@ -863,7 +882,7 @@ export function ResponsesSection({
           />
         </div>
         <p className="text-[11px] text-muted-foreground mt-1.5 tabular-nums">
-          {Math.round(completionRate * 100)}% de conclusão — {completedCount.toLocaleString("pt-BR")} de {totalResponses.toLocaleString("pt-BR")} respostas completas
+          {Math.round(completionRate * 100)}% de conclusão — {completedCount.toLocaleString("pt-BR")} completas e {partialCount.toLocaleString("pt-BR")} parciais ({meaningfulTotal.toLocaleString("pt-BR")} com dados) de {totalResponses.toLocaleString("pt-BR")} iniciadas
         </p>
       </div>
 
