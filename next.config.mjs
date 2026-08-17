@@ -8,8 +8,8 @@ import { withSentryConfig } from "@sentry/nextjs"
 // - `unsafe-eval` is intentionally excluded; Next.js production builds don't need it.
 // - `next/font/google` downloads fonts at build time and serves them from /_next/static/,
 //   so fonts.gstatic.com is NOT needed at runtime.
-// - `frame-ancestors` is intentionally omitted here to avoid conflicting with the
-//   per-route X-Frame-Options headers below (which handle DENY vs SAMEORIGIN for /f/*).
+// - `frame-ancestors` is omitted from general routes; public forms (/f/*) set `frame-ancestors 'self' *`
+//   and `X-Frame-Options: ALLOWALL` to allow cross-origin iframe embedding.
 const CSP = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' https://www.clarity.ms https://*.clarity.ms",
@@ -27,6 +27,12 @@ const CSP = [
     "base-uri 'self'",
     // Google OAuth posts back to its own domain on the auth flow
     "form-action 'self' https://accounts.google.com",
+].join("; ")
+
+// Content-Security-Policy for public forms (/f/*) permitting embedding in external iframes
+const PUBLIC_FORM_CSP = [
+    CSP,
+    "frame-ancestors 'self' *",
 ].join("; ")
 
 /** @type {import('next').NextConfig} */
@@ -72,13 +78,20 @@ const nextConfig = {
                 ],
             },
             {
-                // Public forms can be embedded from the same origin
-                // (used by the share dialog iframe and for site embedding)
+                // Public forms can be embedded in iframes on any external site/webapp
                 source: "/f/:path*",
                 headers: [
                     {
                         key: "X-Frame-Options",
-                        value: "SAMEORIGIN",
+                        value: "ALLOWALL",
+                    },
+                    {
+                        key: "Content-Security-Policy",
+                        value: PUBLIC_FORM_CSP,
+                    },
+                    {
+                        key: "Cross-Origin-Resource-Policy",
+                        value: "cross-origin",
                     },
                 ],
             },
