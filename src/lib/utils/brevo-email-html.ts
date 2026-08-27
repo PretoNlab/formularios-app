@@ -1,5 +1,30 @@
 import type { Question } from "@/lib/types/form"
 
+export type EmailPlatformKey =
+  | "brevo"
+  | "mailchimp"
+  | "activecampaign"
+  | "rdstation"
+  | "convertkit"
+  | "hubspot"
+  | "generic"
+
+export interface EmailPlatformInfo {
+  name: string
+  tag: string
+  utmSource: string
+}
+
+export const EMAIL_PLATFORMS: Record<EmailPlatformKey, EmailPlatformInfo> = {
+  brevo: { name: "Brevo (Sendinblue)", tag: "{{ contact.EMAIL }}", utmSource: "brevo" },
+  mailchimp: { name: "Mailchimp", tag: "*|EMAIL|*", utmSource: "mailchimp" },
+  activecampaign: { name: "ActiveCampaign", tag: "%EMAIL%", utmSource: "activecampaign" },
+  rdstation: { name: "RD Station", tag: "{{ contact.email }}", utmSource: "rdstation" },
+  convertkit: { name: "ConvertKit / Kit", tag: "{{ subscriber.email_address }}", utmSource: "convertkit" },
+  hubspot: { name: "HubSpot", tag: "{{ contact.email }}", utmSource: "hubspot" },
+  generic: { name: "Outro / Genérico", tag: "[EMAIL]", utmSource: "email" },
+}
+
 export type BrevoFormInput = {
   title: string
   description?: string | null
@@ -16,6 +41,7 @@ export interface BrevoHtmlOptions {
   mode: "card" | "question"
   questionId?: string
   includeEmailTag?: boolean
+  platform?: EmailPlatformKey
   buttonText?: string
   primaryColor?: string
 }
@@ -33,7 +59,7 @@ function escapeHtml(str: string): string {
 }
 
 /**
- * Generates email-client compatible inline-styled HTML snippet for Brevo (Sendinblue) campaigns.
+ * Generates email-client compatible inline-styled HTML snippet for email campaigns.
  */
 export function generateBrevoEmailHtml(form: BrevoFormInput, options: BrevoHtmlOptions): string {
   const {
@@ -41,14 +67,17 @@ export function generateBrevoEmailHtml(form: BrevoFormInput, options: BrevoHtmlO
     mode,
     questionId,
     includeEmailTag = true,
+    platform = "brevo",
     buttonText = "Responder Formulário",
     primaryColor = form.theme?.colors?.accent || "#3b82f6",
   } = options
 
-  // Append tracking & optional Brevo email tag
+  const platformInfo = EMAIL_PLATFORMS[platform] ?? EMAIL_PLATFORMS.brevo
+
+  // Append tracking & optional contact email tag
   function buildUrl(queryParams?: Record<string, string>): string {
     const url = new URL(shareUrl)
-    url.searchParams.set("utm_source", "brevo")
+    url.searchParams.set("utm_source", platformInfo.utmSource)
     url.searchParams.set("utm_medium", "email")
 
     if (queryParams) {
@@ -59,8 +88,8 @@ export function generateBrevoEmailHtml(form: BrevoFormInput, options: BrevoHtmlO
 
     let urlString = url.toString()
     if (includeEmailTag) {
-      // Append Brevo contact email tag without escaping double curlies
-      urlString += (urlString.includes("?") ? "&" : "?") + "email={{ contact.EMAIL }}"
+      // Append email tag without escaping special placeholders
+      urlString += (urlString.includes("?") ? "&" : "?") + `email=${platformInfo.tag}`
     }
     return urlString
   }
@@ -79,12 +108,13 @@ export function generateBrevoEmailHtml(form: BrevoFormInput, options: BrevoHtmlO
         logoUrl,
         primaryColor,
         formTitle: title,
+        platformName: platformInfo.name,
       })
     }
   }
 
   // Fallback / Card Mode
-  return `<!-- Inicio Bloco Formularios.ia para Brevo -->
+  return `<!-- Inicio Bloco Formularios.ia para ${escapeHtml(platformInfo.name)} -->
 <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
   ${
     logoUrl
@@ -121,13 +151,13 @@ export function generateBrevoEmailHtml(form: BrevoFormInput, options: BrevoHtmlO
     </td>
   </tr>
 </table>
-<!-- Fim Bloco Formularios.ia para Brevo -->`
+<!-- Fim Bloco Formularios.ia para ${escapeHtml(platformInfo.name)} -->`
 }
 
 function generateInteractiveQuestionHtml(
   question: Question,
   buildUrl: (params?: Record<string, string>) => string,
-  ctx: { title: string; logoUrl?: string; primaryColor: string; formTitle: string }
+  ctx: { title: string; logoUrl?: string; primaryColor: string; formTitle: string; platformName: string }
 ): string {
   const qTitle = escapeHtml(question.title || "Sua opinião é importante")
   const qDesc = question.description ? escapeHtml(question.description) : ""
@@ -224,7 +254,7 @@ function generateInteractiveQuestionHtml(
     </a>`
   }
 
-  return `<!-- Inicio Bloco Pergunta Interativa para Brevo -->
+  return `<!-- Inicio Bloco Pergunta Interativa para ${escapeHtml(ctx.platformName)} -->
 <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
   ${
     ctx.logoUrl
@@ -253,5 +283,5 @@ function generateInteractiveQuestionHtml(
     </td>
   </tr>
 </table>
-<!-- Fim Bloco Pergunta Interativa para Brevo -->`
+<!-- Fim Bloco Pergunta Interativa para ${escapeHtml(ctx.platformName)} -->`
 }

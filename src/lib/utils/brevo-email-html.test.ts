@@ -66,28 +66,39 @@ describe("generateBrevoEmailHtml", () => {
       shareUrl: "https://formularios.ia/f/pesquisa-satisfacao",
       mode: "card",
       includeEmailTag: true,
+      platform: "brevo",
     })
 
-    expect(html).toContain("<!-- Inicio Bloco Formularios.ia para Brevo -->")
+    expect(html).toContain("<!-- Inicio Bloco Formularios.ia para Brevo (Sendinblue) -->")
     expect(html).toContain("Pesquisa de Satisfação")
     expect(html).toContain("https://example.com/logo.png")
     expect(html).toContain("utm_source=brevo")
     expect(html).toContain("email={{ contact.EMAIL }}")
   })
 
-  it("should generate interactive NPS question HTML with buttons", () => {
+  it("should generate Mailchimp email tag when Mailchimp platform is selected", () => {
+    const html = generateBrevoEmailHtml(mockForm, {
+      shareUrl: "https://formularios.ia/f/pesquisa-satisfacao",
+      mode: "card",
+      includeEmailTag: true,
+      platform: "mailchimp",
+    })
+
+    expect(html).toContain("utm_source=mailchimp")
+    expect(html).toContain("email=*|EMAIL|*")
+  })
+
+  it("should generate ActiveCampaign email tag when ActiveCampaign is selected", () => {
     const html = generateBrevoEmailHtml(mockForm, {
       shareUrl: "https://formularios.ia/f/pesquisa-satisfacao",
       mode: "question",
       questionId: "q_nps",
       includeEmailTag: true,
+      platform: "activecampaign",
     })
 
-    expect(html).toContain("De 0 a 10, qual a chance de recomendar?")
-    expect(html).toContain("q_q_nps=10")
-    expect(html).toContain("Zero")
-    expect(html).toContain("Certa")
-    expect(html).toContain("email={{ contact.EMAIL }}")
+    expect(html).toContain("utm_source=activecampaign")
+    expect(html).toContain("email=%EMAIL%")
   })
 
   it("should generate interactive rating question HTML with stars", () => {
@@ -101,6 +112,6 @@ describe("generateBrevoEmailHtml", () => {
     expect(html).toContain("Como avalia o atendimento?")
     expect(html).toContain("★ 5")
     expect(html).toContain("q_q_rating=5")
-    expect(html).not.toContain("email={{ contact.EMAIL }}")
+    expect(html).not.toContain("email=")
   })
 })

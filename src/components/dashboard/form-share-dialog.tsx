@@ -36,7 +36,11 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import type { Form, Question } from "@/lib/types/form"
 import type { FormListItem } from "@/lib/db/queries/forms"
-import { generateBrevoEmailHtml } from "@/lib/utils/brevo-email-html"
+import {
+  generateBrevoEmailHtml,
+  EMAIL_PLATFORMS,
+  type EmailPlatformKey,
+} from "@/lib/utils/brevo-email-html"
 
 interface FormShareDialogProps {
   form: Form | (FormListItem & { questions?: Question[] })
@@ -49,7 +53,8 @@ export function FormShareDialog({ form, open, onOpenChange }: FormShareDialogPro
   const [copiedEmbed, setCopiedEmbed] = useState(false)
   const [copiedBrevo, setCopiedBrevo] = useState(false)
 
-  // Options for Brevo Embed
+  // Options for Email Marketing Embed
+  const [emailPlatform, setEmailPlatform] = useState<EmailPlatformKey>("brevo")
   const [brevoMode, setBrevoMode] = useState<"card" | "question">("card")
   const [selectedQuestionId, setSelectedQuestionId] = useState<string>("")
   const [includeEmailTag, setIncludeEmailTag] = useState(true)
@@ -80,17 +85,18 @@ export function FormShareDialog({ form, open, onOpenChange }: FormShareDialogPro
   // Select first eligible question by default if available
   const currentQuestionId = selectedQuestionId || eligibleQuestions[0]?.id || ""
 
-  // Generate Brevo HTML
+  // Generate Email HTML
   const brevoHtml = useMemo(() => {
     return generateBrevoEmailHtml(form, {
       shareUrl: shareLink,
       mode: brevoMode,
       questionId: currentQuestionId,
       includeEmailTag,
+      platform: emailPlatform,
       buttonText,
       primaryColor: form.theme?.colors?.accent || "#3b82f6",
     })
-  }, [form, shareLink, brevoMode, currentQuestionId, includeEmailTag, buttonText])
+  }, [form, shareLink, brevoMode, currentQuestionId, includeEmailTag, emailPlatform, buttonText])
 
   const embedCode = `<iframe src="${shareLink}" width="100%" height="${iframeHeight}" frameborder="0" style="border:0;border-radius:8px"></iframe>`
 
@@ -256,18 +262,38 @@ export function FormShareDialog({ form, open, onOpenChange }: FormShareDialogPro
                 </Button>
               </TabsContent>
 
-              {/* ── ABA 3: EMAIL / BREVO ─────────────────────────────────── */}
+              {/* ── ABA 3: EMAIL MARKETING ─────────────────────────────────── */}
               <TabsContent value="brevo" className="space-y-5 mt-0 flex-1">
                 <div className="rounded-lg bg-blue-50 dark:bg-blue-950/40 p-3 border border-blue-100 dark:border-blue-900/50 space-y-1">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     <span className="text-xs font-bold text-blue-900 dark:text-blue-200">
-                      HTML Otimizado para E-mails do Brevo
+                      HTML para {EMAIL_PLATFORMS[emailPlatform].name}
                     </span>
                   </div>
                   <p className="text-[11px] text-blue-700 dark:text-blue-300">
                     Insira uma chamada ou pesquisa interativa direto nas suas campanhas de e-mail marketing.
                   </p>
+                </div>
+
+                {/* Seletor de Plataforma */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Sua ferramenta de E-mail Marketing</Label>
+                  <Select
+                    value={emailPlatform}
+                    onValueChange={(v: EmailPlatformKey) => setEmailPlatform(v)}
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Selecione a plataforma" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(EMAIL_PLATFORMS).map(([key, info]) => (
+                        <SelectItem key={key} value={key}>
+                          {info.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Formato do HTML */}
@@ -325,49 +351,49 @@ export function FormShareDialog({ form, open, onOpenChange }: FormShareDialogPro
                   </div>
                 )}
 
-                {/* Switch Tag Brevo Email */}
+                {/* Switch Tag Email */}
                 <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
                   <div className="space-y-0.5">
-                    <Label className="text-xs font-medium cursor-pointer" htmlFor="tag-brevo">
+                    <Label className="text-xs font-medium cursor-pointer" htmlFor="tag-email">
                       Identificar e-mail do destinatário
                     </Label>
                     <p className="text-[10px] text-muted-foreground">
-                      Anexa <code className="text-primary font-mono">{`?email={{ contact.EMAIL }}`}</code> ao link
+                      Anexa <code className="text-primary font-mono">{`?email=${EMAIL_PLATFORMS[emailPlatform].tag}`}</code> ao link
                     </p>
                   </div>
                   <Switch
-                    id="tag-brevo"
+                    id="tag-email"
                     checked={includeEmailTag}
                     onCheckedChange={setIncludeEmailTag}
                   />
                 </div>
 
-                {/* Botão Copiar HTML Brevo */}
+                {/* Botão Copiar HTML */}
                 <Button
                   className="w-full h-10 font-medium gap-2 bg-blue-600 hover:bg-blue-700 text-white"
                   onClick={handleCopyBrevo}
                 >
                   {copiedBrevo ? (
                     <>
-                      <CheckCircle2 className="h-4 w-4" /> Código HTML para Brevo copiado!
+                      <CheckCircle2 className="h-4 w-4" /> Código HTML copiado!
                     </>
                   ) : (
                     <>
-                      <Copy className="h-4 w-4" /> Copiar Código HTML para o Brevo
+                      <Copy className="h-4 w-4" /> Copiar Código HTML para {EMAIL_PLATFORMS[emailPlatform].name}
                     </>
                   )}
                 </Button>
 
-                {/* Instruções de uso no Brevo */}
+                {/* Instruções de uso */}
                 <div className="rounded-lg bg-muted/40 p-3 text-[11px] text-muted-foreground space-y-1.5">
                   <div className="flex items-center gap-1 font-semibold text-foreground">
                     <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                    Como colar no Brevo:
+                    Como usar no {EMAIL_PLATFORMS[emailPlatform].name}:
                   </div>
                   <ol className="list-decimal list-inside space-y-1 pl-1">
-                    <li>No editor do Brevo, adicione um bloco de <strong>Código HTML</strong>.</li>
+                    <li>No editor do {EMAIL_PLATFORMS[emailPlatform].name}, adicione um bloco de <strong>Código HTML / Custom HTML</strong>.</li>
                     <li>Cole o código HTML copiado acima.</li>
-                    <li>Salve e envie sua campanha com o formulário embutido!</li>
+                    <li>Envie sua campanha com o formulário embutido!</li>
                   </ol>
                 </div>
               </TabsContent>
