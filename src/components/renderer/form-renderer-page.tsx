@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { FormRenderer } from "@/components/renderer/form-renderer"
 import type { Form } from "@/lib/types/form"
@@ -130,12 +130,66 @@ export function FormRendererPage({ form, isPreview }: FormRendererPageProps) {
     }
   }
 
+  // Helper to parse prefilled initial state from URL parameters (e.g. from Brevo emails)
+  const initialState = useMemo(() => {
+    const initialAnswers: Record<string, AnswerValue> = {}
+    const questions = [...form.questions].sort((a, b) => a.order - b.order)
+    let firstPrefilledIndex = -1
+
+    questions.forEach((q, idx) => {
+      const paramVal =
+        searchParams.get(`q_${q.id}`) ??
+        searchParams.get(`prefill_${q.id}`) ??
+        searchParams.get(q.id)
+
+      if (paramVal !== null && paramVal !== undefined && paramVal !== "") {
+        if (firstPrefilledIndex === -1) {
+          firstPrefilledIndex = idx
+        }
+        if (
+          q.type === "nps" ||
+          q.type === "rating" ||
+          q.type === "scale" ||
+          q.type === "number" ||
+          q.type === "opinion_scale"
+        ) {
+          const num = Number(paramVal)
+          initialAnswers[q.id] = isNaN(num) ? paramVal : num
+        } else {
+          initialAnswers[q.id] = paramVal
+        }
+      }
+    })
+
+    if (Object.keys(initialAnswers).length === 0) {
+      return undefined
+    }
+
+    let startIndex = 0
+    if (firstPrefilledIndex !== -1) {
+      const welcomeIdx = questions.findIndex((q) => q.type === "welcome")
+      if (firstPrefilledIndex === 0 || (welcomeIdx === 0 && firstPrefilledIndex === 1)) {
+        startIndex = firstPrefilledIndex + 1
+        if (startIndex >= questions.length) {
+          startIndex = questions.length - 1
+        }
+      }
+    }
+
+    return {
+      answers: initialAnswers,
+      currentQuestionIndex: startIndex,
+    }
+  }, [form.questions, searchParams])
+
   return (
     <FormRenderer
       form={form}
       onSubmit={handleSubmit}
       onProgress={handleProgress}
+      initialState={initialState}
       pendingSync={offlineQueued}
     />
   )
 }
+

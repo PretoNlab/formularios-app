@@ -37,6 +37,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { FormRenderer } from "@/components/renderer/form-renderer"
+import { FormShareDialog } from "@/components/dashboard/form-share-dialog"
 
 import { useBuilderStore } from "@/stores/builder-store"
 import { useShallow } from "zustand/react/shallow"
@@ -769,94 +770,11 @@ export function BuilderClient({
       <BuilderTour />
 
       {/* ── SHARE DIALOG ────────────────────────────────────────────── */}
-      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-muted/10 border-muted">
-          <div className="flex flex-col md:flex-row h-[80vh] max-h-[600px]">
-            {/* Esquerda: Preview */}
-            <div className="flex-1 bg-background relative hidden md:block border-r">
-              <div className="absolute top-4 left-4 z-10">
-                <Badge variant="secondary" className="bg-background/80 backdrop-blur-md shadow-sm border text-[10px] font-medium px-2.5 py-1">
-                  <Eye className="mr-1.5 h-3 w-3 text-muted-foreground" /> Pré-visualização
-                </Badge>
-              </div>
-              <div className="absolute top-4 right-4 z-10">
-                 <Link href={`${shareLink}?preview=1&v=${previewKey}`} target="_blank" className="flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur-md shadow-sm border text-muted-foreground hover:text-foreground transition-colors">
-                   <Globe className="h-3.5 w-3.5" />
-                 </Link>
-              </div>
-              <iframe
-                src={`${shareLink}?preview=1&v=${previewKey}`}
-                className="w-full h-full border-0 rounded-l-lg"
-                title="Pré-visualização do formulário"
-              />
-            </div>
-
-            {/* Direita: Opções */}
-            <div className="w-full md:w-[380px] bg-card p-8 flex flex-col shrink-0">
-              <DialogHeader className="mb-8 text-left space-y-3">
-                <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-2">
-                  <PartyPopper className="h-6 w-6 text-green-600 dark:text-green-400" />
-                </div>
-                <DialogTitle className="text-2xl font-bold tracking-tight">Publicado!</DialogTitle>
-                <DialogDescription className="text-sm">
-                  Seu formulário agora está no ar e pronto para receber respostas.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-6 flex-1">
-                <div className="space-y-3">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Link de compartilhamento</label>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      readOnly
-                      value={shareLink}
-                      className="text-sm h-10 bg-muted/50 font-medium"
-                    />
-                  </div>
-                  <Button
-                    className="w-full h-10 font-medium"
-                    variant={copied ? "secondary" : "default"}
-                    onClick={handleCopyLink}
-                  >
-                    {copied ? (
-                      <><CheckCircle2 className="mr-2 h-4 w-4 text-green-500" /> Link copiado!</>
-                    ) : (
-                      <><Copy className="mr-2 h-4 w-4" /> Copiar link</>
-                    )}
-                  </Button>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-3">
-                  <Button variant="outline" className="w-full h-10" asChild>
-                    <a href={`${shareLink}?v=${previewKey}`} target="_blank" rel="noopener noreferrer">
-                      <Globe className="mr-2 h-4 w-4" />
-                      Abrir formulário em nova aba
-                    </a>
-                  </Button>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-3">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Incorporar no seu site</label>
-                  <pre className="w-full rounded-lg bg-muted p-3 text-[11px] font-mono text-muted-foreground leading-relaxed overflow-auto whitespace-pre-wrap break-all">
-{`<iframe src="${shareLink}" width="100%" height="600" frameborder="0" style="border:0;border-radius:8px"></iframe>`}
-                  </pre>
-                  <Button variant="outline" className="w-full h-10" onClick={handleCopyEmbed}>
-                    {copiedEmbed ? (
-                      <><CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />Copiado!</>
-                    ) : (
-                      <><Copy className="mr-2 h-4 w-4" />Copiar código de embed</>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <FormShareDialog
+        form={form}
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+      />
     </div>
   )
 }

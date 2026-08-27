@@ -113,9 +113,15 @@ function Hero() {
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
-          <p className="text-sm text-muted-foreground">
-            Sem cartão de crédito · Pronto em 2 minutos
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground font-medium">
+            <span>Sem cartão de crédito</span>
+            <span>·</span>
+            <span>Pronto em 2 minutos</span>
+            <span>·</span>
+            <span className="text-violet-600 font-semibold flex items-center gap-1">
+              <ShieldCheck className="h-3.5 w-3.5" /> LGPD por padrão
+            </span>
+          </div>
         </div>
 
         {/* Product preview */}
@@ -555,11 +561,15 @@ function Pricing() {
                 Garantir vaga de fundador
               </Button>
             </Link>
+            <p className="text-[11px] text-center text-background/70 font-medium flex items-center justify-center gap-1">
+              <ShieldCheck className="h-3.5 w-3.5 text-violet-400 shrink-0" />
+              Garantia incondicional de 7 dias · Reembolso via Pix
+            </p>
           </div>
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-8">
-          Sem renovação automática. Exporte seus dados quando quiser.
+          Sem renovação automática · Teste por 7 dias sem risco · Exporte seus dados quando quiser.
         </p>
       </div>
     </section>

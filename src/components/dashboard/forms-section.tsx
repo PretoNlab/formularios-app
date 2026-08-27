@@ -7,8 +7,9 @@ import {
   Search, BarChart3, Users, Zap, Link2,
   Trash2, Globe, FileText, Clock, ChevronRight,
   PlusCircle, Sparkles, MessageCircle, Check, X, Rocket,
-  Copy, Eye, PauseCircle, MoreHorizontal,
+  Copy, Eye, PauseCircle, MoreHorizontal, Share2, Mail,
 } from "lucide-react"
+import { FormShareDialog } from "./form-share-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -555,6 +556,7 @@ function FormCard({ form, onDelete, onPublish, onDuplicate, onClose }: { form: F
   const themeId = (form.theme as { id?: string } | null)?.id ?? "midnight"
   const themeConfig = PRESET_THEMES.find((t) => t.id === themeId) ?? PRESET_THEMES[0]
   const [linkCopied, setLinkCopied] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
 
   function handleCopyLink(e: React.MouseEvent) {
     e.preventDefault()
@@ -651,6 +653,9 @@ function FormCard({ form, onDelete, onPublish, onDuplicate, onClose }: { form: F
                     <PauseCircle className="h-4 w-4" /> Encerrar coleta
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setShowShareModal(true); }} className="gap-2">
+                  <Share2 className="h-4 w-4" /> Compartilhar / Brevo
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate(); }} className="gap-2">
                   <Copy className="h-4 w-4" /> Duplicar
                 </DropdownMenuItem>
@@ -685,6 +690,7 @@ function FormCard({ form, onDelete, onPublish, onDuplicate, onClose }: { form: F
       <Link href={`/builder/${form.id}`} className="absolute inset-0 z-10">
         <span className="sr-only">Editar {form.title}</span>
       </Link>
+      <FormShareDialog form={form} open={showShareModal} onOpenChange={setShowShareModal} />
     </div>
   )
 }
