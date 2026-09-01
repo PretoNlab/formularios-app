@@ -8,9 +8,11 @@ import { QuestionAnswersDialog } from "../question-answers-dialog"
 export function TextViz({
   stat,
   formId,
+  shareToken,
 }: {
   stat: QuestionAnalytics
   formId: string
+  shareToken?: string | null
 }) {
   const [open, setOpen] = useState(false)
   const samples = stat.textSamples ?? []
@@ -51,6 +53,7 @@ export function TextViz({
         questionId={stat.questionId}
         questionTitle={stat.questionTitle}
         totalAnswers={stat.totalAnswers}
+        shareToken={shareToken}
       />
     </div>
   )

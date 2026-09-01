@@ -51,6 +51,7 @@ export default async function PublicReportPage({
           formId={dbForm.id}
           initialAnalytics={analyticsResult.data ?? null}
           questions={questions}
+          shareToken={token}
         />
       </main>
     </div>

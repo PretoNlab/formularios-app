@@ -112,16 +112,32 @@ export async function exportResponsesAction(formId: string, ids?: string[]): Pro
   return lines.join("\n")
 }
 
+async function verifyFormOwnerOrPublicToken(formId: string, shareToken?: string | null) {
+  if (shareToken) {
+    const publicForm = await db.query.forms.findFirst({
+      where: and(
+        eq(forms.id, formId),
+        eq(forms.shareToken, shareToken),
+        eq(forms.isAnalyticsPublic, true)
+      ),
+      columns: { id: true },
+    })
+    if (publicForm) return
+  }
+  await requireFormOwner(formId)
+}
+
 /**
  * Recomputes analytics for a form within a period window. Called from the client
- * when the user changes the period selector on the Analytics tab.
+ * when the user changes the period selector on the Analytics tab or public report.
  */
 export async function getAnalyticsForPeriodAction(
   formId: string,
   period: AnalyticsPeriod,
-  answerFilter?: { questionId: string; value: string } | null
+  answerFilter?: { questionId: string; value: string } | null,
+  shareToken?: string | null,
 ): Promise<ApiResponse<FormAnalytics>> {
-  await requireFormOwner(formId)
+  await verifyFormOwnerOrPublicToken(formId, shareToken)
   return getFormAnalytics(formId, period, answerFilter)
 }
 
@@ -208,8 +224,9 @@ export interface QuestionAnswerRow {
 export async function getQuestionAnswersAction(
   formId: string,
   questionId: string,
+  shareToken?: string | null,
 ): Promise<ApiResponse<QuestionAnswerRow[]>> {
-  await requireFormOwner(formId)
+  await verifyFormOwnerOrPublicToken(formId, shareToken)
 
   try {
     const rows = await db

@@ -39,6 +39,7 @@ export function QuestionAnswersDialog({
   questionId,
   questionTitle,
   totalAnswers,
+  shareToken,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -46,6 +47,7 @@ export function QuestionAnswersDialog({
   questionId: string
   questionTitle: string
   totalAnswers: number
+  shareToken?: string | null
 }) {
   const [rows, setRows] = useState<QuestionAnswerRow[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -57,14 +59,14 @@ export function QuestionAnswersDialog({
     let cancelled = false
     setLoading(true)
     setError(null)
-    getQuestionAnswersAction(formId, questionId).then((res) => {
+    getQuestionAnswersAction(formId, questionId, shareToken).then((res) => {
       if (cancelled) return
       if (res.success) setRows(res.data ?? [])
       else setError(res.error?.message ?? "Erro ao carregar respostas.")
       setLoading(false)
     })
     return () => { cancelled = true }
-  }, [open, formId, questionId])
+  }, [open, formId, questionId, shareToken])
 
   // Reset query when opening
   useEffect(() => {

@@ -30,12 +30,14 @@ export function AnalyticsView({
   initialPeriod = "30d",
   questions,
   answerFilter,
+  shareToken,
 }: {
   formId: string
   initialAnalytics: FormAnalytics | null
   initialPeriod?: AnalyticsPeriod
   questions: QuestionSummary[]
   answerFilter?: { questionId: string; value: string } | null
+  shareToken?: string | null
 }) {
   const [period, setPeriod] = useState<AnalyticsPeriod>(initialPeriod)
   const [analytics, setAnalytics] = useState<FormAnalytics | null>(initialAnalytics)
@@ -45,17 +47,17 @@ export function AnalyticsView({
   function handlePeriodChange(next: AnalyticsPeriod) {
     setPeriod(next)
     startTransition(async () => {
-      const res = await getAnalyticsForPeriodAction(formId, next, answerFilter)
+      const res = await getAnalyticsForPeriodAction(formId, next, answerFilter, shareToken)
       if (res.success && res.data) setAnalytics(res.data)
     })
   }
 
   useEffect(() => {
     startTransition(async () => {
-      const res = await getAnalyticsForPeriodAction(formId, period, answerFilter)
+      const res = await getAnalyticsForPeriodAction(formId, period, answerFilter, shareToken)
       if (res.success && res.data) setAnalytics(res.data)
     })
-  }, [answerFilter, formId, period])
+  }, [answerFilter, formId, period, shareToken])
 
   if (!analytics) {
     return (
@@ -88,11 +90,7 @@ export function AnalyticsView({
       <div className={isPending ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
         {viewMode === "overview" && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <InsightCards analytics={analytics} questions={questions} />
-            
-            <div className="mt-6">
-              <AutoInsights analytics={analytics} />
-            </div>
+            <AutoInsights analytics={analytics} questions={questions} />
 
             <div className="grid lg:grid-cols-2 gap-6 mt-6">
               <div className="rounded-2xl border border-border/40 bg-card shadow-sm p-6 flex flex-col">
@@ -208,6 +206,7 @@ export function AnalyticsView({
               questionStats={analytics.questionStats}
               questions={questions}
               dropoffByQuestion={analytics.dropoffByQuestion}
+              shareToken={shareToken}
             />
           </div>
         )}

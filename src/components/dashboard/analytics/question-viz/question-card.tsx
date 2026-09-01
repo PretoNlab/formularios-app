@@ -19,7 +19,7 @@ const CRITICALITY_BADGE = {
   ok: { label: "OK", cls: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
 }
 
-function VizSwitch({ stat, formId }: { stat: QuestionAnalytics; formId: string }) {
+function VizSwitch({ stat, formId, shareToken }: { stat: QuestionAnalytics; formId: string; shareToken?: string | null }) {
   if (stat.questionType === "signature") return <SignatureViz stat={stat} />
   if (stat.questionType === "matrix") return <MatrixViz stat={stat} />
   if (stat.questionType === "ranking") return <RankingViz stat={stat} />
@@ -28,16 +28,17 @@ function VizSwitch({ stat, formId }: { stat: QuestionAnalytics; formId: string }
   if ((stat.questionType === "scale" || stat.questionType === "opinion_scale") && stat.distribution && stat.average !== undefined) return <ScaleViz stat={stat} />
   if (stat.distribution && stat.average !== undefined) return <NumericViz stat={stat} />
   if (stat.optionCounts && stat.optionCounts.length > 0) return <ChoiceViz stat={stat} />
-  return <TextViz stat={stat} formId={formId} />
+  return <TextViz stat={stat} formId={formId} shareToken={shareToken} />
 }
 
-export function QuestionCard({ formId, period, stat, order, criticality, dropoffRate }: {
+export function QuestionCard({ formId, period, stat, order, criticality, dropoffRate, shareToken }: {
   formId: string
   period: AnalyticsPeriod
   stat: QuestionAnalytics
   order: number | string
   criticality?: "high" | "medium" | "ok"
   dropoffRate?: number
+  shareToken?: string | null
 }) {
   const isTextType = ["short_text", "long_text", "email", "url", "number", "phone", "whatsapp"].includes(stat.questionType)
   const badge = criticality ? CRITICALITY_BADGE[criticality] : null
@@ -71,7 +72,7 @@ export function QuestionCard({ formId, period, stat, order, criticality, dropoff
         </div>
       </div>
 
-      <VizSwitch stat={stat} formId={formId} />
+      <VizSwitch stat={stat} formId={formId} shareToken={shareToken} />
 
       {isTextType && (
         <AiInsightsSection 
