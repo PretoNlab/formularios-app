@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { isSafeUrl } from "@/lib/utils/safe-url"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { FormAnalytics, QuestionType } from "@/lib/types/form"
@@ -156,7 +157,7 @@ function AnswerDisplay({ value, type }: { value: unknown; type?: string }) {
     return (
       <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
         📎{" "}
-        {file.fileUrl ? (
+        {file.fileUrl && isSafeUrl(file.fileUrl) ? (
           <a href={file.fileUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
             {file.fileName}
           </a>

@@ -183,6 +183,29 @@ describe("answerValueSchema", () => {
     expect(answerValueSchema.safeParse({ row1: "col1", row2: "col2" }).success).toBe(true)
   })
 
+  // Stored-XSS guard: fileUrl is rendered as <a href> in the owner's dashboard,
+  // and the submit endpoint is public — so non-HTTPS schemes must be rejected.
+  it("rejects file upload with javascript: / data: / http: fileUrl", () => {
+    for (const fileUrl of [
+      "javascript:alert(document.cookie)",
+      "JavaScript:alert(1)",
+      "data:text/html,<script>alert(1)</script>",
+      "http://example.com/x.pdf",
+      "//evil.com/x.pdf",
+      "not a url",
+      "",
+    ]) {
+      expect(answerValueSchema.safeParse({ fileUrl, fileName: "x.pdf" }).success, fileUrl).toBe(false)
+    }
+  })
+
+  it("does not let a malicious fileUrl slip through the matrix (record) branch", () => {
+    // Both keys are strings, so without a guard the record branch of the union
+    // would accept this and bypass the stricter file schema.
+    const smuggled = { fileUrl: "javascript:alert(1)", fileName: "x.pdf" }
+    expect(answerValueSchema.safeParse(smuggled).success).toBe(false)
+  })
+
   it("rejects mixed-type arrays", () => {
     expect(answerValueSchema.safeParse(["a", 1]).success).toBe(false)
   })

@@ -109,18 +109,29 @@ export function extractSpreadsheetId(urlOrId: string): string {
   return match ? match[1] : urlOrId.trim()
 }
 
+/**
+ * Google Sheets treats a cell starting with `=`, `+`, `-`, `@`, tab or CR as a
+ * formula when appended with `USER_ENTERED`. Respondent answers are untrusted,
+ * so neutralize them exactly like the CSV export does (leading apostrophe),
+ * otherwise an anonymous respondent can plant a formula that runs — and can
+ * exfiltrate other rows — when the form owner opens the spreadsheet.
+ */
+export function neutralizeSheetFormula(str: string): string {
+  return /^[=+\-@\t\r]/.test(str) ? "'" + str : str
+}
+
 function formatValue(value: unknown): string {
   if (value === null || value === undefined) return ""
-  if (typeof value === "boolean") return value ? "Sim" : "Não"
-  if (Array.isArray(value)) return (value as unknown[]).join("; ")
-  if (typeof value === 'object' && value !== null && !Array.isArray(value) && !('fileName' in (value as object))) {
-    return Object.entries(value as Record<string, unknown>).map(([k, v]) => `${k}: ${v}`).join('; ')
-  }
-  if (typeof value === "object" && "fileName" in (value as object)) {
+  let str: string
+  if (typeof value === "boolean") str = value ? "Sim" : "Não"
+  else if (Array.isArray(value)) str = (value as unknown[]).join("; ")
+  else if (typeof value === "object" && "fileName" in (value as object)) {
     const v = value as { fileName: string; fileUrl?: string }
-    return v.fileUrl ?? v.fileName
-  }
-  return String(value)
+    str = v.fileUrl ?? v.fileName
+  } else if (typeof value === "object") {
+    str = Object.entries(value as Record<string, unknown>).map(([k, v]) => `${k}: ${v}`).join("; ")
+  } else str = String(value)
+  return neutralizeSheetFormula(str)
 }
 
 export async function appendGoogleSheetsRow({

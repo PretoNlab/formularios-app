@@ -17,13 +17,37 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 // ─── Validation schemas (exported so callers can reuse) ───────────────────────
 
+/**
+ * A file answer's `fileUrl` is rendered as an `<a href>` in the owner's
+ * dashboard. The public submit endpoint is unauthenticated, so an attacker
+ * could send `javascript:` / `data:` here directly (bypassing the real upload
+ * route) to get stored XSS against the form owner. Only absolute HTTPS URLs
+ * are accepted — that is the only shape the upload route ever produces.
+ */
+export function isSafeFileUrl(url: string): boolean {
+  try {
+    return new URL(url).protocol === "https:"
+  } catch {
+    return false
+  }
+}
+
+const fileAnswerSchema = z.object({
+  fileUrl: z.string().refine(isSafeFileUrl, "URL de arquivo inválida."),
+  fileName: z.string(),
+})
+
 export const answerValueSchema = z.union([
   z.string(),
   z.number(),
   z.boolean(),
   z.array(z.string()),
-  z.object({ fileUrl: z.string(), fileName: z.string() }),
-  z.record(z.string(), z.string()),
+  fileAnswerSchema,
+  // Matrix answers. Must not be allowed to smuggle a `fileUrl` key, or the
+  // stricter file schema above would be bypassed by falling through the union.
+  z
+    .record(z.string(), z.string())
+    .refine((r) => !("fileUrl" in r), "URL de arquivo inválida."),
   z.null(),
 ])
 

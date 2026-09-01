@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { ensureUserExists } from "@/lib/db/queries/users"
+import { isSafeNextPath } from "@/lib/utils/safe-url"
 
 /**
  * Handles the Supabase Auth callback after OAuth or magic link sign-in.
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
   const rawNext = searchParams.get("next") ?? "/dashboard"
-  const next = rawNext.startsWith("/") ? rawNext : "/dashboard"
+  const next = isSafeNextPath(rawNext) ? rawNext : "/dashboard"
 
   if (code) {
     const cookieStore = await cookies()
