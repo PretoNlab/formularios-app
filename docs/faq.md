@@ -151,7 +151,7 @@ Não há limite definido. Você pode ter múltiplos webhooks e uma integração 
 Os créditos são usados para recursos de IA da plataforma (análise de respostas com IA, insights automáticos). A criação de formulários e coleta de respostas não consume créditos.
 
 **Os créditos de boas-vindas expiram?**
-Não. Os 50 créditos de boas-vindas não têm prazo de validade.
+Não. Os créditos garantidos e os créditos extras do onboarding não têm prazo de validade.
 
 **Como compro mais créditos?**
 Acesse **Configurações → Cobrança**. O pagamento é via PIX com QR code gerado automaticamente.

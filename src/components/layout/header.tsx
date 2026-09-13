@@ -7,6 +7,7 @@ import { getUserByAuthId } from "@/lib/db/queries/users"
 import { LogoutButton } from "./logout-button"
 import { CreateFormButton } from "@/components/dashboard/create-form-button"
 import { MainNav } from "./main-nav"
+import { CreditsBadge } from "./credits-badge"
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return "?"
@@ -25,6 +26,7 @@ export async function Header() {
   let displayName = "Usuário"
   let avatarUrl: string | null = null
   let plan: string = "free"
+  let initialCredits = 0
 
   if (authUser) {
     const { data: dbUser } = await getUserByAuthId(authUser.id)
@@ -32,6 +34,7 @@ export async function Header() {
       displayName = dbUser.name ?? authUser.email ?? "Usuário"
       avatarUrl = dbUser.avatarUrl
       plan = dbUser.plan
+      initialCredits = dbUser.creditBalance ?? 0
     } else {
       displayName =
         (authUser.user_metadata?.full_name as string | undefined) ??
@@ -57,9 +60,11 @@ export async function Header() {
         </div>
 
         {/* Right section: Profile & Actions */}
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           {authUser ? (
             <>
+              <CreditsBadge initialCredits={initialCredits} />
+
               <div className="hidden sm:flex items-center gap-3 rounded-full border bg-background px-1.5 py-1.5 shadow-sm pr-4">
                 <Avatar className="h-8 w-8 border">
                   {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}

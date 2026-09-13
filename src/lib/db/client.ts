@@ -10,7 +10,7 @@ if (!process.env.DATABASE_URL) {
 }
 
 // For Supabase Edge/Transaction Pooler, prepared statements aren't supported
-const queryClient = postgres(process.env.DATABASE_URL, { prepare: false })
+const queryClient = postgres(process.env.DATABASE_URL, { prepare: false, connect_timeout: 10 })
 
 export const db = drizzle(queryClient, { schema })
 export type Database = typeof db

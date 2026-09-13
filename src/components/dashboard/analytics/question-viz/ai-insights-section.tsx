@@ -65,7 +65,7 @@ export function AiInsightsSection({
           disabled={loading}
         >
           {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-          {loading ? "Processando respostas..." : "Gerar Insights com IA"}
+          {loading ? "Processando respostas..." : "Gerar Insights com IA (3 créditos)"}
         </Button>
         {error && <p className="text-[10px] text-red-500 mt-2">{error}</p>}
       </div>
@@ -83,7 +83,7 @@ export function AiInsightsSection({
       </div>
 
       <p className="text-sm text-muted-foreground leading-relaxed italic">
-        "{insights.summary}"
+        &quot;{insights.summary}&quot;
       </p>
 
       <div className="space-y-3">

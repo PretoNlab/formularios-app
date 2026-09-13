@@ -1,3 +1,29 @@
+export const STANDARD_WELCOME_CREDITS = 20
+export const EARLY_ADOPTER_WELCOME_CREDITS = 50
+export const EARLY_ADOPTER_LIMIT = 50
+export const SIGNUP_ONBOARDING_BONUS = 20
+
+export const AI_CREDIT_COSTS = {
+  CREATE_FORM: 5,
+  REFINE_FORM: 2,
+  SEMANTIC_INSIGHTS: 3,
+} as const
+
+export function getInitialCreditGrant(existingUserCount: number, completedSignupOnboarding: boolean) {
+  const isEarlyAdopter = existingUserCount < EARLY_ADOPTER_LIMIT
+  const welcomeCredits = isEarlyAdopter
+    ? EARLY_ADOPTER_WELCOME_CREDITS
+    : STANDARD_WELCOME_CREDITS
+  const onboardingCredits = completedSignupOnboarding ? SIGNUP_ONBOARDING_BONUS : 0
+
+  return {
+    isEarlyAdopter,
+    welcomeCredits,
+    onboardingCredits,
+    totalCredits: welcomeCredits + onboardingCredits,
+  }
+}
+
 export const FOUNDER_PLAN = {
   id: "founder",
   name: "Lote Fundador",

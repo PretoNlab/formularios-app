@@ -133,7 +133,7 @@ export default function LoginPage() {
         </Link>
         <div className="space-y-6">
           <blockquote className="text-4xl font-bold leading-tight">
-            "Formulários que convertem.<br />Dados que inspiram."
+            &quot;Formulários que convertem.<br />Dados que inspiram.&quot;
           </blockquote>
           <p className="text-background/60 text-lg">
             Crie formulários inteligentes e descubra insights que importam.

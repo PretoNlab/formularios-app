@@ -248,7 +248,7 @@ function TldrSection() {
             <ul className="space-y-3 text-sm text-foreground">
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />Coleta leads, faz NPS, recebe inscrições ou faz pesquisas que importam.</li>
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />Quer um formulário com a sua marca, não com cabeçalho azul do Google.</li>
-              <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />Precisa de lógica condicional de verdade (não só "ir para seção X").</li>
+              <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />Precisa de lógica condicional de verdade (não só &quot;ir para seção X&quot;).</li>
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />Quer notificação no WhatsApp quando alguém responde.</li>
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />Trabalha com público brasileiro e precisa de CPF/CNPJ válidos.</li>
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />Quer entender por que as pessoas abandonam o formulário.</li>
@@ -366,7 +366,7 @@ function ComparisonTable() {
         </div>
 
         <p className="text-xs text-muted-foreground text-center mt-6 max-w-2xl mx-auto">
-          Comparação baseada em recursos públicos do Google Forms em {new Date().getFullYear()}. Algumas features citadas como "pagas" se referem ao Google Workspace.
+          Comparação baseada em recursos públicos do Google Forms em {new Date().getFullYear()}. Algumas features citadas como &quot;pagas&quot; se referem ao Google Workspace.
         </p>
       </div>
     </section>

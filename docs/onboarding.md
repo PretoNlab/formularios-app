@@ -39,13 +39,13 @@ Signup ──► Auth callback ──► Dashboard ──► Builder ──► P
 |-----------|
 | Detecta se é primeiro acesso (`isNewUser`) |
 | Cria usuário + workspace + membership em transação atômica |
-| Concede 50 créditos de boas-vindas (`type: "welcome"`) |
+| Para os 50 primeiros, concede 50 garantidos + 20 do onboarding; depois, 20 + 20 |
 | Redireciona para `/dashboard?welcome=true` se novo usuário |
 | Envia email de boas-vindas via Resend |
 
 **Arquivos de suporte:**
 - `src/lib/db/queries/users.ts` — `ensureUserExists()`
-- `src/lib/credits.ts` — `WELCOME_CREDITS = 50`
+- `src/lib/credits.ts` — constantes e regra da oferta inicial
 - `src/lib/email.ts` — template do email de boas-vindas
 
 ---
@@ -60,7 +60,7 @@ Signup ──► Auth callback ──► Dashboard ──► Builder ──► P
 | O que faz |
 |-----------|
 | Dispara quando `?welcome=true` está na URL OU primeira visita (localStorage) |
-| Mostra mensagem de boas-vindas com os 50 créditos |
+| Mostra o saldo de boas-vindas concedido à conta |
 | Destaca 3 diferenciais: Formulários Conversacionais, Analytics com IA, Métricas em tempo real |
 | CTAs: "Criar formulário" / "Explorar depois" |
 | Auto-descarta e grava flag no localStorage |

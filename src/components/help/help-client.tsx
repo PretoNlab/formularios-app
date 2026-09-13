@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { ChevronDown, ChevronUp } from "lucide-react"
+import { ChevronDown, ChevronUp, AlertTriangle } from "lucide-react"
 
 // ─── Sidebar sections ─────────────────────────────────────────────────────────
 
@@ -281,7 +281,7 @@ export function HelpClient() {
               <li><span className="font-medium text-foreground">Editar:</span> Clique em qualquer pergunta para selecioná-la e editar no painel direito.</li>
               <li><span className="font-medium text-foreground">Deletar:</span> Selecione a pergunta e clique no ícone de lixeira no painel direito.</li>
               <li><span className="font-medium text-foreground">Undo / Redo:</span> Use os botões na barra superior ou <kbd className="border rounded px-1 text-xs">Ctrl Z</kbd> / <kbd className="border rounded px-1 text-xs">Ctrl Y</kbd>.</li>
-              <li><span className="font-medium text-foreground">Preview:</span> Clique em "Preview" para ver como o formulário aparece para os respondentes em tempo real.</li>
+              <li><span className="font-medium text-foreground">Preview:</span> Clique em &quot;Preview&quot; para ver como o formulário aparece para os respondentes em tempo real.</li>
               <li><span className="font-medium text-foreground">Auto-save:</span> Todas as alterações são salvas automaticamente em 2 segundos. Um indicador aparece na barra quando há mudanças pendentes.</li>
             </ul>
 
@@ -345,7 +345,7 @@ export function HelpClient() {
               Você pode combinar várias condições em uma mesma regra usando <strong>E</strong> (todas precisam ser verdadeiras) ou <strong>OU</strong> (basta uma ser verdadeira).
             </p>
 
-            <Tip>Exemplo prático: Se a pergunta "Como você nos conheceu?" for igual a "Indicação" → pule para "Quem te indicou?". Caso contrário, o formulário segue o fluxo normal.</Tip>
+            <Tip>Exemplo prático: Se a pergunta &quot;Como você nos conheceu?&quot; for igual a &quot;Indicação&quot; → pule para &quot;Quem te indicou?&quot;. Caso contrário, o formulário segue o fluxo normal.</Tip>
           </Section>
 
           {/* ── 5. Temas ───────────────────────────────────────────────── */}
@@ -458,13 +458,13 @@ export function HelpClient() {
 
             <h3 className="font-semibold text-lg mb-4">Embed (incorporar no seu site)</h3>
             <p className="text-sm text-muted-foreground mb-3">
-              Para incorporar o formulário em qualquer site ou landing page, clique em <strong>Compartilhar</strong> no Builder e depois em <strong>"Incorporar no seu site"</strong>. O código iframe já estará gerado — basta clicar em Copiar e colar no HTML do seu site.
+              Para incorporar o formulário em qualquer site ou landing page, clique em <strong>Compartilhar</strong> no Builder e depois em <strong>&quot;Incorporar no seu site&quot;</strong>. O código iframe já estará gerado — basta clicar em Copiar e colar no HTML do seu site.
             </p>
             <div className="rounded-md bg-muted px-4 py-3 text-xs font-mono break-all mb-4">
               {`<iframe src="https://formularios.ia.br/f/seu-slug" width="100%" height="600" frameborder="0" style="border:0;border-radius:8px"></iframe>`}
             </div>
             <p className="text-sm text-muted-foreground">
-              Ajuste o atributo <code className="text-xs bg-muted px-1 py-0.5 rounded">height</code> conforme o tamanho do seu formulário (ex: <code className="text-xs bg-muted px-1 py-0.5 rounded">height="800"</code> para formulários mais longos).
+              Ajuste o atributo <code className="text-xs bg-muted px-1 py-0.5 rounded">height</code> conforme o tamanho do seu formulário (ex: <code className="text-xs bg-muted px-1 py-0.5 rounded">height=&quot;800&quot;</code> para formulários mais longos).
             </p>
 
             <Tip>Formulários públicos (<code className="text-xs bg-muted/80 px-1 py-0.5 rounded">/f/*</code>) podem ser embedados normalmente em qualquer site. Apenas páginas autenticadas do painel têm proteção contra iframe.</Tip>
@@ -550,7 +550,7 @@ export function HelpClient() {
             <h3 className="font-semibold text-lg mb-4">Lote Fundador — R$ 499/ano</h3>
             <div className="rounded-lg border p-5 mb-6 bg-muted/20">
               <p className="text-sm text-muted-foreground mb-3">
-                Acesso completo por <strong>12 meses</strong>, com pagamento único via Pix:
+                Acesso completo por <strong>12 meses</strong>:
               </p>
               <ul className="text-sm space-y-2 mb-4">
                 <li className="flex gap-2"><span className="text-foreground">✓</span> Até <strong>10 formulários publicados</strong> simultaneamente</li>
@@ -559,16 +559,19 @@ export function HelpClient() {
                 <li className="flex gap-2"><span className="text-foreground">✓</span> Brand Kit, temas customizados, lógica condicional sem limites</li>
                 <li className="flex gap-2"><span className="text-foreground">✓</span> Acesso vitalício às melhorias do período fundador</li>
               </ul>
-              <p className="text-[11px] text-muted-foreground">
-                Para contratar, vá em <strong>Cobrança</strong> no menu principal e clique em "Assinar Lote Fundador". O pagamento é processado via Pix e seu plano é liberado automaticamente após a confirmação.
-              </p>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 p-4 flex items-start gap-3">
+                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="text-sm text-amber-700 dark:text-amber-300">
+                  Compra temporariamente indisponível. Entre em contato pelo suporte se quiser garantir uma vaga.
+                </div>
+              </div>
             </div>
 
             <h3 className="font-semibold text-lg mb-4">Recargas avulsas</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Já é Fundador e está chegando perto do limite? Compre recargas pontuais sem renovar o plano todo:
+              Recargas pontuais para quem é Fundador e está chegando perto do limite, sem precisar renovar o plano todo:
             </p>
-            <div className="rounded-lg border overflow-hidden mb-6">
+            <div className="rounded-lg border overflow-hidden mb-4 opacity-60">
               <table className="w-full text-sm">
                 <tbody>
                   <tr className="bg-background">
@@ -589,9 +592,8 @@ export function HelpClient() {
                 </tbody>
               </table>
             </div>
-
-            <p className="text-sm text-muted-foreground mb-4">
-              A compra do Lote Fundador e das recargas está temporariamente indisponível. Entre em contato pelo suporte se quiser garantir uma vaga.
+            <p className="text-sm text-muted-foreground mb-6">
+              Recargas avulsas também estão temporariamente indisponíveis. Entre em contato pelo suporte se precisar de mais respostas ou formulários.
             </p>
 
             <h3 className="font-semibold text-lg mt-8 mb-4">Expiração do plano</h3>
@@ -604,7 +606,7 @@ export function HelpClient() {
               <li>Você não consegue publicar novos formulários até renovar</li>
               <li>Todas as respostas existentes ficam intactas e acessíveis</li>
             </ul>
-            <Tip>Renovar o Lote Fundador estende o período por mais 12 meses a partir da data de pagamento.</Tip>
+            <Tip>Quando a compra do Lote Fundador voltar a ficar disponível, renovar estende o período por mais 12 meses a partir da data de pagamento.</Tip>
           </Section>
 
           {/* ── 11. FAQ ────────────────────────────────────────────────── */}
@@ -669,7 +671,7 @@ export function HelpClient() {
                 },
                 {
                   q: "O que acontece se meu Lote Fundador expirar?",
-                  a: "Os formulários publicados param de aceitar novas respostas e você não consegue publicar novos formulários. Todas as respostas já coletadas continuam acessíveis normalmente. Para reativar, basta renovar o Lote Fundador na página de Cobrança.",
+                  a: "Os formulários publicados param de aceitar novas respostas e você não consegue publicar novos formulários. Todas as respostas já coletadas continuam acessíveis normalmente. A renovação do Lote Fundador está temporariamente indisponível — entre em contato pelo suporte para reativar.",
                 },
                 {
                   q: "Como funciona a opção 'Outro' nas perguntas de seleção?",

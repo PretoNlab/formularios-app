@@ -5,14 +5,14 @@ import { withSentryConfig } from "@sentry/nextjs"
 // Notes:
 // - `unsafe-inline` for scripts is required by Next.js App Router (inline hydration chunks).
 //   A nonce-based approach via middleware can remove it later if stricter control is needed.
-// - `unsafe-eval` is intentionally excluded; Next.js production builds don't need it.
+// - `unsafe-eval` is allowed only in development for Next.js hot reload.
 // - `next/font/google` downloads fonts at build time and serves them from /_next/static/,
 //   so fonts.gstatic.com is NOT needed at runtime.
 // - `frame-ancestors` is omitted from general routes; public forms (/f/*) set `frame-ancestors 'self' *`
 //   and `X-Frame-Options: ALLOWALL` to allow cross-origin iframe embedding.
 const CSP = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://www.clarity.ms https://*.clarity.ms",
+    `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""} https://www.clarity.ms https://*.clarity.ms`,
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self' data:",
     // Supabase storage (uploaded files/images), Google avatars, Clarity pixel

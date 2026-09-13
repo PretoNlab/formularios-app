@@ -52,7 +52,7 @@ export function OptionsEditor({ question }: { question: Question }) {
 
       {["multiple_choice", "checkbox"].includes(question.type) && (
         <div className="flex items-center justify-between rounded-md border px-3 py-2">
-          <label className="text-sm cursor-pointer" htmlFor={`allowOther-${question.id}`}>Opção "Outro"</label>
+          <label className="text-sm cursor-pointer" htmlFor={`allowOther-${question.id}`}>Opção &quot;Outro&quot;</label>
           <Switch
             id={`allowOther-${question.id}`}
             checked={question.properties.allowOther ?? false}

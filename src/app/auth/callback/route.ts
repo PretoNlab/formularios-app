@@ -51,12 +51,15 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error && data.user) {
-      // Provision user + workspace in our DB on first login
-      const { data: dbUser } = await ensureUserExists({
-        id: data.user.id,
-        email: data.user.email!,
-        user_metadata: data.user.user_metadata,
-      })
+      // Interactive signup is provisioned after its validated cookie/metadata draft is recovered.
+      // This keeps email and OAuth eligible for the same onboarding bonus.
+      const dbUser = next === "/onboarding/complete"
+        ? undefined
+        : (await ensureUserExists({
+            id: data.user.id,
+            email: data.user.email!,
+            user_metadata: data.user.user_metadata,
+          })).data
 
       // Build redirect and attach session cookies to it
       let finalNext = next

@@ -119,7 +119,7 @@ Todas estão documentadas em [`.env.example`](.env.example).
 
 | Variável | Obrigatório | Descrição |
 |----------|:-:|-----------|
-| `DATABASE_URL` | ✅ | PostgreSQL (Supabase, **conexão direta** porta 5432) |
+| `DATABASE_URL` | ✅ | PostgreSQL (Supabase: conexão direta ou Session pooler, porta 5432) |
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ | URL do projeto Supabase |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Chave anon do Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Chave service role (server-only) |
@@ -136,9 +136,11 @@ Todas estão documentadas em [`.env.example`](.env.example).
 
 ### Supabase — atenção na URL do banco
 
-Use **conexão direta** (não pooler):
-- ✅ `db.[PROJECT-REF].supabase.co:5432`
-- ❌ `aws-0-[region].pooler.supabase.com:6543`
+Copie a URL em **Supabase → Connect**:
+- Conexão direta: `db.[PROJECT-REF].supabase.co:5432` — depende de IPv6.
+- Em redes sem IPv6, selecione **Session pooler**, porta **5432**. Copie o host e usuário exatos mostrados pelo projeto, sem adivinhar a região.
+
+O cliente usa `prepare: false` e limita a tentativa de conexão a 10 segundos. Guarde a URL completa somente em `.env.local`; não compartilhe a senha.
 
 ### Supabase Auth — configuração necessária
 

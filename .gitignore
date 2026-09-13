@@ -38,4 +38,7 @@ next-env.d.ts
 
 # claude
 .claude/
+
+# local test scripts
+test-db.ts
 docs/security-audit/venv/

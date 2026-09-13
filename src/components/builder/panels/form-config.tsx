@@ -234,7 +234,7 @@ export function FormConfigPanel({ form, formId, onTitleChange, onDescriptionChan
         <div className="flex items-center justify-between gap-4 min-w-0">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Numerar perguntas</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Ex: "1 →"</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Ex: &quot;1 →&quot;</p>
           </div>
           <Switch
             className="shrink-0"

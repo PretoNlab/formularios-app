@@ -401,7 +401,7 @@ Adiciona uma linha para cada nova resposta em uma planilha do Google.
 
 ### Créditos de boas-vindas
 
-Todo usuário recebe **50 créditos** ao criar a conta, para experimentar os recursos de IA da plataforma.
+Os **50 primeiros usuários** recebem 50 créditos garantidos e podem ganhar mais 20 ao concluir o onboarding, totalizando 70. Depois da oferta, novas contas recebem 20 créditos garantidos e podem ganhar os mesmos 20 extras.
 
 ### Pacotes de créditos
 

@@ -51,82 +51,8 @@ import { ImportFormDialog } from "./import-form-dialog"
 import { deleteFormAction, publishFormAction, createFormFromTemplateAction, duplicateFormAction, closeFormAction } from "@/app/actions/forms"
 import type { FormListItem } from "@/lib/db/queries/forms"
 import { ONBOARDING_KEYS, isThemeCustomized, hasEmailNotifications, readFlag, setFlag } from "@/lib/utils/onboarding"
-
-// ─── Welcome Modal ────────────────────────────────────────────────────────────
-
-function WelcomeModal() {
-  const [open, setOpen] = useState(false)
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
-
-  useEffect(() => {
-    // Show if there is a 'welcome' param (reliable across accounts in same browser)
-    // OR if it's the very first time on this browser
-    if (searchParams.get("welcome") === "true" || !localStorage.getItem("formularios_onboarded_v2")) {
-      setOpen(true)
-    }
-  }, [searchParams])
-
-  function dismiss() {
-    localStorage.setItem("formularios_onboarded_v2", "1")
-    setOpen(false)
-    
-    // Clean up the URL if the parameter is present
-    if (searchParams.get("welcome") === "true") {
-      const newSearchParams = new URLSearchParams(searchParams.toString())
-      newSearchParams.delete("welcome")
-      const search = newSearchParams.toString()
-      const url = search ? `${pathname}?${search}` : pathname
-      router.replace(url, { scroll: false })
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) dismiss() }}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-3xl">
-            🎉
-          </div>
-          <DialogTitle className="text-center text-2xl font-bold font-heading">
-            Bem-vindo ao formularios!
-          </DialogTitle>
-          <DialogDescription className="text-center text-base mt-2">
-            Crie formulários inteligentes e colete dados com muito mais qualidade.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="mt-4 space-y-3">
-          {[
-            { icon: MessageCircle, label: "Formulários conversacionais", desc: "Experiência fluida como um chat, sem cansar o respondente" },
-            { icon: Sparkles, label: "Analytics com IA", desc: "Insights automáticos sobre suas respostas abertas" },
-            { icon: BarChart3, label: "Métricas em tempo real", desc: "Acompanhe taxa de conclusão, NPS e abandono por pergunta" },
-          ].map(({ icon: Icon, label, desc }) => (
-            <div key={label} className="flex items-start gap-3 rounded-xl bg-muted/50 p-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <Icon className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold">{label}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-6 flex flex-col gap-2">
-          <div onClick={dismiss}>
-            <CreateFormButton variant="hero" />
-          </div>
-          <Button variant="ghost" className="w-full text-muted-foreground" onClick={dismiss}>
-            Explorar depois
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
+import { InteractiveOnboardingModal } from "./interactive-onboarding-modal"
+import { getUserCreditsAction, claimMissionRewardAction } from "@/app/actions/credits"
 
 // ─── Onboarding Checklist ────────────────────────────────────────────────────
 
@@ -136,6 +62,8 @@ function OnboardingChecklist({ forms }: { forms: FormListItem[] }) {
   const [dismissed, setDismissed] = useState<boolean | null>(null)
   const [celebrating, setCelebrating] = useState(false)
   const [shareDone, setShareDone] = useState(false)
+  const [claimedMissions, setClaimedMissions] = useState<string[]>([])
+  const [isClaiming, setIsClaiming] = useState<string | null>(null)
 
   useEffect(() => {
     setDismissed(!!localStorage.getItem(CHECKLIST_KEY))
@@ -143,78 +71,104 @@ function OnboardingChecklist({ forms }: { forms: FormListItem[] }) {
     const refresh = () => setShareDone(readFlag(ONBOARDING_KEYS.SHARE_COMPLETED))
     document.addEventListener("visibilitychange", refresh)
     window.addEventListener("focus", refresh)
+
+    // Load claimed missions from backend
+    getUserCreditsAction().then((res) => {
+      if (res.success && res.data) {
+        setClaimedMissions(res.data.claimedMissions)
+      }
+    })
+
     return () => {
       document.removeEventListener("visibilitychange", refresh)
       window.removeEventListener("focus", refresh)
     }
   }, [])
 
+  async function handleClaimReward(missionId: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    e.preventDefault()
+    if (isClaiming) return
+
+    setIsClaiming(missionId)
+    try {
+      const res = await claimMissionRewardAction(missionId)
+      if (res.success) {
+        setClaimedMissions((prev) => [...prev, missionId])
+        // Notify header to refresh balance
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("credits_updated"))
+        }
+      } else {
+        alert(res.error?.message || "Erro ao resgatar recompensa.")
+      }
+    } catch {
+      alert("Erro ao resgatar créditos.")
+    } finally {
+      setIsClaiming(null)
+    }
+  }
+
   const firstForm = forms[0]
   const publishedForm = forms.find((f) => f.status === "published")
   const themeCustomizedForm = forms.find((f) => isThemeCustomized(f.theme))
   const notifyForm = forms.find((f) => hasEmailNotifications(f.settings))
 
-  const steps: { id: string; label: string; description: string; done: boolean; href: string | null }[] = [
+  const steps: { 
+    id: string
+    label: string
+    description: string
+    done: boolean
+    href: string | null
+    rewardCredits?: number 
+  }[] = [
     {
       id: "create",
-      label: "Criar formulário",
-      description: "Crie seu primeiro formulário do zero ou use um template",
+      label: "Criar 1º formulário",
+      description: "Crie ou gere seu formulário inteligente",
       done: forms.length > 0,
       href: firstForm ? `/builder/${firstForm.id}` : null,
-    },
-    {
-      id: "questions",
-      label: "Adicionar 3+ perguntas",
-      description: "Seu formulário precisa de pelo menos 3 perguntas",
-      done: forms.some((f) => f.questionCount >= 3),
-      href: firstForm ? `/builder/${firstForm.id}` : null,
+      rewardCredits: 10,
     },
     {
       id: "publish",
       label: "Publicar o formulário",
-      description: "Deixe seu formulário disponível para receber respostas",
+      description: "Deixe disponível para receber respostas",
       done: !!publishedForm,
       href: firstForm ? `/builder/${firstForm.id}` : null,
-    },
-    {
-      id: "response",
-      label: "Receber 1ª resposta",
-      description: "Compartilhe o link e veja os dados chegando",
-      done: forms.some((f) => f.responseCount > 0),
-      href: publishedForm
-        ? `/responses/${publishedForm.id}`
-        : firstForm
-        ? `/builder/${firstForm.id}`
-        : null,
+      rewardCredits: 10,
     },
     {
       id: "share",
       label: "Compartilhar formulário",
-      description: "Copie o link público ou o código de embed",
+      description: "Copie o link público ou código para envio",
       done: shareDone,
       href: publishedForm ? `/builder/${publishedForm.id}` : firstForm ? `/builder/${firstForm.id}` : null,
+      rewardCredits: 5,
     },
     {
       id: "theme",
       label: "Personalizar o tema",
-      description: "Escolha cores e fontes que combinam com sua marca",
+      description: "Escolha cores que combinam com sua marca",
       done: !!themeCustomizedForm,
       href: themeCustomizedForm
         ? `/builder/${themeCustomizedForm.id}?tab=theme`
         : firstForm
         ? `/builder/${firstForm.id}?tab=theme`
         : null,
+      rewardCredits: 5,
     },
     {
-      id: "notify",
-      label: "Receber respostas por e-mail",
-      description: "Seja notificado a cada nova resposta enviada",
-      done: !!notifyForm,
-      href: notifyForm
-        ? `/builder/${notifyForm.id}?tab=config`
+      id: "response",
+      label: "Receber 1ª resposta",
+      description: "Acompanhe dados e métricas em tempo real",
+      done: forms.some((f) => f.responseCount > 0),
+      href: publishedForm
+        ? `/responses/${publishedForm.id}`
         : firstForm
-        ? `/builder/${firstForm.id}?tab=config`
+        ? `/builder/${firstForm.id}`
         : null,
+      rewardCredits: 15,
     },
   ]
 
@@ -248,7 +202,7 @@ function OnboardingChecklist({ forms }: { forms: FormListItem[] }) {
           <p className="text-3xl mb-2">🎉</p>
           <p className="font-semibold text-green-700 dark:text-green-400 text-lg">Configuração completa!</p>
           <p className="text-sm text-green-600/80 dark:text-green-500 mt-1">
-            Você está pronto para coletar dados com o formularios.ia.
+            Você desbloqueou todos os créditos de boas-vindas do formularios.ia!
           </p>
         </div>
       </section>
@@ -257,14 +211,17 @@ function OnboardingChecklist({ forms }: { forms: FormListItem[] }) {
 
   return (
     <section className="container mb-6">
-      <div className="rounded-2xl border bg-card p-5">
+      <div className="rounded-2xl border bg-card p-5 shadow-xs">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-              <Rocket className="h-4 w-4 text-primary" />
+              <Sparkles className="h-4 w-4 text-primary" />
             </div>
-            <span className="text-sm font-semibold">Primeiros passos</span>
+            <span className="text-sm font-semibold">Missões de Boas-Vindas</span>
+            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[11px] font-semibold">
+              🎁 Ganhe até 45 créditos grátis
+            </Badge>
             <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
               {completedCount} de {steps.length}
             </span>
@@ -279,54 +236,89 @@ function OnboardingChecklist({ forms }: { forms: FormListItem[] }) {
         </div>
 
         {/* Progress bar */}
-        <div className="h-1.5 rounded-full bg-muted mb-5 overflow-hidden">
+        <div className="h-1.5 rounded-full bg-muted mb-4 overflow-hidden">
           <div
-            className="h-full rounded-full bg-primary transition-all duration-700"
+            className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-500 transition-all duration-700"
             style={{ width: `${(completedCount / steps.length) * 100}%` }}
           />
         </div>
 
         {/* Steps */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {steps.map((step, i) => {
+            const hasReward = !!step.rewardCredits
+            const isClaimed = claimedMissions.includes(step.id)
+
             const inner = (
               <div
-                className={`flex items-start gap-3 rounded-xl border p-3.5 h-full transition-colors ${
+                className={`flex flex-col justify-between rounded-xl border p-3 h-full transition-all ${
                   step.done
-                    ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
+                    ? "bg-green-50/50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
                     : step.href
-                    ? "hover:bg-muted/50 border-border cursor-pointer"
-                    : "border-border opacity-50"
+                    ? "hover:bg-muted/50 border-border cursor-pointer hover:border-foreground/20"
+                    : "border-border opacity-60"
                 }`}
               >
-                <div
-                  className={`shrink-0 h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 ${
-                    step.done
-                      ? "bg-green-500 text-white"
-                      : "bg-muted text-muted-foreground border border-border"
-                  }`}
-                >
-                  {step.done ? <Check className="h-3.5 w-3.5" /> : i + 1}
-                </div>
-                <div className="min-w-0">
-                  <p className={`text-sm font-semibold leading-tight ${step.done ? "text-green-700 dark:text-green-400" : ""}`}>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div
+                      className={`shrink-0 h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        step.done
+                          ? "bg-green-500 text-white"
+                          : "bg-muted text-muted-foreground border border-border"
+                      }`}
+                    >
+                      {step.done ? <Check className="h-3 w-3" /> : i + 1}
+                    </div>
+
+                    {hasReward && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                        +{step.rewardCredits} pts
+                      </span>
+                    )}
+                  </div>
+
+                  <p className={`text-xs font-semibold leading-tight ${step.done ? "text-green-700 dark:text-green-400" : ""}`}>
                     {step.label}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5 leading-tight">
+                  <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
                     {step.description}
                   </p>
                 </div>
+
+                {/* Claim reward button */}
+                {hasReward && step.done && (
+                  <div className="mt-2.5 pt-2 border-t border-border/40">
+                    {isClaimed ? (
+                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <Check className="h-3 w-3" />
+                        Crédito resgatado
+                      </span>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => handleClaimReward(step.id, e)}
+                        disabled={isClaiming === step.id}
+                        className="h-6 w-full text-[10px] font-bold rounded-md bg-gradient-to-r from-amber-500/15 to-primary/15 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20 gap-1 p-0"
+                      >
+                        <Sparkles className="h-2.5 w-2.5" />
+                        {isClaiming === step.id ? "Resgatando..." : `Resgatar +${step.rewardCredits} créditos`}
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             )
 
             if (!step.done && step.href) {
               return (
-                <Link key={step.id} href={step.href} className="block">
+                <Link key={step.id} href={step.href} className="block h-full">
                   {inner}
                 </Link>
               )
             }
-            return <div key={step.id}>{inner}</div>
+            return <div key={step.id} className="h-full">{inner}</div>
           })}
         </div>
       </div>
@@ -387,7 +379,7 @@ export function FormsSection({ forms }: FormsSectionProps) {
 
   return (
     <TooltipProvider delayDuration={400}>
-    <WelcomeModal />
+    <InteractiveOnboardingModal />
     <main className="flex-1 pb-24">
       <div className="absolute inset-0 -z-10 h-[600px] w-full bg-white [background:radial-gradient(125%_125%_at_50%_10%,#fff_40%,#f0f0f5_100%)]" />
 

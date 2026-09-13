@@ -285,7 +285,7 @@ function Solution() {
               </div>
               <h3 className="text-2xl md:text-3xl font-bold font-headline">CPF, CNPJ e WhatsApp nativos.</h3>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Campos com máscara e validação de verdade — chega de "digite seu CPF" em campo de texto livre. Seus leads chegam com telefone formatado, prontos pra você chamar no WhatsApp.
+                Campos com máscara e validação de verdade — chega de &quot;digite seu CPF&quot; em campo de texto livre. Seus leads chegam com telefone formatado, prontos pra você chamar no WhatsApp.
               </p>
               <Badge variant="secondary" className="rounded-full text-xs">Notificação por WhatsApp: em breve</Badge>
             </div>

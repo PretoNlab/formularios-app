@@ -38,7 +38,7 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-xl font-semibold text-foreground">1. Aceitação dos Termos</h2>
             <p>
-              Ao acessar ou usar o formularios.ia ("Serviço"), você concorda com estes Termos de Uso.
+              Ao acessar ou usar o formularios.ia (&quot;Serviço&quot;), você concorda com estes Termos de Uso.
               Se você não concordar, não utilize o Serviço. Estes termos constituem um contrato legal
               entre você e formularios.ia.
             </p>
@@ -109,7 +109,7 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-xl font-semibold text-foreground">8. Limitação de Responsabilidade</h2>
             <p>
-              O Serviço é fornecido "como está". O formularios.ia não se responsabiliza por danos
+              O Serviço é fornecido &quot;como está&quot;. O formularios.ia não se responsabiliza por danos
               indiretos, incidentais, especiais ou consequentes decorrentes do uso ou impossibilidade
               de uso do Serviço. Nossa responsabilidade total é limitada ao valor pago pelo Serviço
               nos 3 meses anteriores ao evento que originou o dano.
