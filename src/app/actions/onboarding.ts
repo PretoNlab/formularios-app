@@ -41,7 +41,8 @@ export async function completeSignupDraftAction(): Promise<{ formId?: string; cr
     revalidatePath("/dashboard")
     // Keep draft references for retries/back navigation; persistence is idempotent.
     return { formId, creditBalance: user.creditBalance }
-  } catch {
+  } catch (error) {
+    console.error("completeSignupDraftAction caught error:", error)
     return { error: "Não conseguimos concluir a preparação da sua conta e do formulário. Tente novamente; não é necessário criar outra conta." }
   }
 }
