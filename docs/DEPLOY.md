@@ -12,6 +12,9 @@ Guia de deploy para diferentes plataformas.
 - [ ] Domínio verificado no Resend para o `RESEND_FROM_EMAIL`
 - [ ] Supabase Auth: Site URL e Redirect URL atualizados para o domínio de produção
 - [ ] `NEXT_PUBLIC_APP_URL` aponta para o domínio de produção
+- [ ] `IP_HASH_SALT` definido — **obrigatório**: sem ele o servidor rejeita todas as respostas de formulário (LGPD)
+- [ ] `GOOGLE_GENERATIVE_AI_API_KEY` definido (Gemini — geração de forms e insights por IA)
+- [ ] Policies de RLS aplicadas no banco (ver seção "Migrações" abaixo)
 
 ---
 
@@ -40,8 +43,14 @@ vercel env add SUPABASE_SERVICE_ROLE_KEY
 vercel env add NEXT_PUBLIC_APP_URL
 vercel env add RESEND_API_KEY
 vercel env add RESEND_FROM_EMAIL
-vercel env add ANTHROPIC_API_KEY
+vercel env add GOOGLE_GENERATIVE_AI_API_KEY
+vercel env add GOOGLE_CLIENT_ID
+vercel env add GOOGLE_CLIENT_SECRET
+vercel env add GOOGLE_REDIRECT_URI
+vercel env add IP_HASH_SALT
 ```
+
+Lista canônica e descrição de cada variável em `.env.example`.
 
 Ou via dashboard em: [vercel.com/dashboard](https://vercel.com/dashboard) → Projeto → Settings → Environment Variables.
 
@@ -157,7 +166,11 @@ services:
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
       RESEND_API_KEY: ${RESEND_API_KEY}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+      IP_HASH_SALT: ${IP_HASH_SALT}
     restart: unless-stopped
 ```
 
@@ -189,3 +202,5 @@ npm run db:migrate
 ```
 
 Os arquivos de migration ficam em `/supabase/migrations/` e devem ser commitados no repositório.
+
+> **Atenção — RLS:** as migrations `0004_enable_rls.sql` e `0005_add_rls_policies.sql` são SQL puro e **não estão registradas** em `supabase/migrations/meta/_journal.json`, então `npm run db:migrate` não as aplica. Rode o conteúdo delas manualmente (SQL Editor do Supabase ou `psql`), nessa ordem, em cada ambiente novo.

@@ -104,6 +104,16 @@ export async function getSemanticInsightsAction(
       { formId, questionId }
     )
 
+    if (!deduction.success) {
+      return {
+        success: false,
+        error: {
+          code: "INSUFFICIENT_CREDITS",
+          message: deduction.error?.message || "Créditos insuficientes.",
+        },
+      }
+    }
+
     revalidatePath(`/responses/${formId}`)
 
     return {
