@@ -27,7 +27,7 @@ export function CompleteSignup() {
       setCreditBalance(result.creditBalance ?? 70)
       setCompleted(true)
       await new Promise(resolve => setTimeout(resolve, 900))
-      router.replace(`/builder/${result.formId}`)
+      router.replace(`/builder/${result.formId}?welcome=true`)
     } catch { setError("Não foi possível conectar. Tente novamente para recuperar seu formulário.") }
   }
   useEffect(() => {

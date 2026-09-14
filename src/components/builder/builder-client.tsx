@@ -12,7 +12,7 @@ import {
   Image as ImageIcon,
   Monitor, PanelRightClose, PanelRight, RefreshCw, Smartphone,
   Globe, Copy, PartyPopper,
-  X, Mail, Palette,
+  X, Mail, Palette, Sparkles,
 } from "lucide-react"
 import {
   DndContext,
@@ -540,6 +540,28 @@ export function BuilderClient({
 
         <ScrollArea className="flex-1 p-8 pt-24">
             <div className="mx-auto max-w-2xl space-y-4">
+              {searchParams.get("welcome") === "true" && form.status === "draft" && (
+                <OnboardingBanner
+                  storageKey={`welcome_signup_${form.id}`}
+                  icon={Sparkles}
+                  title="Parabéns! Seu formulário foi criado com sucesso 🎉"
+                  description="Seus créditos já estão disponíveis na conta. Revise as perguntas abaixo e clique em 'Publicar' para começar a coletar respostas!"
+                  className="mb-6 border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-primary/10"
+                  actions={[
+                    {
+                      label: "Publicar formulário",
+                      icon: Upload,
+                      onClick: () => handleSave(true),
+                    },
+                    {
+                      label: "Personalizar tema",
+                      icon: Palette,
+                      onClick: () => setSidebarTab("theme"),
+                    },
+                  ]}
+                />
+              )}
+
               {form.status === "published" && (
                 <OnboardingBanner
                   storageKey={ONBOARDING_KEYS.postPublish(form.id)}

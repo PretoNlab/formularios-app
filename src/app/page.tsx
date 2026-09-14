@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { HeroInteractiveDemo } from "@/components/landing/hero-interactive-demo"
 
 export const metadata: Metadata = {
   title: "formularios.ia — Formulários profissionais, do jeito brasileiro",
@@ -124,38 +125,8 @@ function Hero() {
           </div>
         </div>
 
-        {/* Product preview */}
-        <div className="relative w-full max-w-4xl mt-10">
-          <div className="rounded-3xl border bg-card shadow-xl overflow-hidden">
-            <div className="flex items-center gap-2 px-5 py-3 border-b bg-muted/30">
-              <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
-              <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
-              <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
-              <div className="mx-auto text-xs text-muted-foreground font-mono">formularios.ia/f/pesquisa-de-clientes</div>
-            </div>
-            <div className="flex items-center justify-center p-10 md:p-16 bg-background">
-              <div className="w-full max-w-md space-y-8 text-left">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Pergunta 3 de 5</span>
-                  <div className="w-28 h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div className="w-[60%] h-full bg-violet-600" />
-                  </div>
-                </div>
-                <h3 className="text-2xl md:text-3xl font-bold font-headline leading-tight">
-                  Qual o seu WhatsApp pra gente te enviar a proposta?
-                </h3>
-                <div className="rounded-2xl border-2 border-violet-600/30 bg-violet-50/50 px-5 py-4 flex items-center gap-3">
-                  <MessageCircle className="h-5 w-5 text-green-600 shrink-0" />
-                  <span className="text-lg font-medium text-foreground/70 tracking-wide">(11) 9 8765-43__</span>
-                  <span className="ml-auto text-[10px] font-bold text-violet-600 uppercase tracking-wider">máscara automática</span>
-                </div>
-                <Button className="bg-violet-600 hover:bg-violet-700 text-white px-10 rounded-full font-bold h-12 shadow-md">
-                  OK
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Interactive Product preview */}
+        <HeroInteractiveDemo />
       </div>
     </section>
   )
@@ -168,7 +139,7 @@ function ProofBar() {
     { icon: Globe, label: "Dados hospedados no Brasil" },
     { icon: ShieldCheck, label: "LGPD por padrão" },
     { icon: MessageCircle, label: "Suporte em português" },
-    { icon: Zap, label: "24 tipos de campo" },
+    { icon: Zap, label: "26 tipos de campo nativos" },
   ]
   return (
     <section className="border-y bg-muted/30">
@@ -510,7 +481,7 @@ function Pricing() {
                 "Até 3 formulários publicados",
                 "Rascunhos ilimitados",
                 "50 respostas pra testar",
-                "Todos os 24 tipos de campo (CPF e CNPJ incluídos)",
+                "Todos os 26 tipos de campo nativos (WhatsApp, CPF e CNPJ)",
                 "Formato conversacional",
               ].map((f) => (
                 <li key={f} className="flex items-start gap-2">

@@ -52,6 +52,7 @@ import { deleteFormAction, publishFormAction, createFormFromTemplateAction, dupl
 import type { FormListItem } from "@/lib/db/queries/forms"
 import { ONBOARDING_KEYS, isThemeCustomized, hasEmailNotifications, readFlag, setFlag } from "@/lib/utils/onboarding"
 import { InteractiveOnboardingModal } from "./interactive-onboarding-modal"
+import { DashboardKpis } from "./dashboard-kpis"
 import { getUserCreditsAction, claimMissionRewardAction } from "@/app/actions/credits"
 
 // ─── Onboarding Checklist ────────────────────────────────────────────────────
@@ -449,6 +450,13 @@ export function FormsSection({ forms }: FormsSectionProps) {
         <>
           {/* Onboarding checklist */}
           <OnboardingChecklist forms={forms} />
+
+          {/* Consolidated KPIs */}
+          {forms.length > 0 && (
+            <section className="container">
+              <DashboardKpis forms={forms} />
+            </section>
+          )}
 
           {/* Filters */}
           <section className="container mb-6">
