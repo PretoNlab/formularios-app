@@ -1,6 +1,6 @@
 # formularios.ia.br
 
-Form builder SaaS brasileiro (compete com Typeform, Tally, Google Forms). Diferenciais: WhatsApp, IA (Gemini para geração e análise), import de Google Forms/CSV/JSON, integração com Google Sheets/webhooks/e-mail.
+Form builder SaaS brasileiro (compete com Typeform, Tally, Google Forms). Diferenciais: campos BR validados (CPF, CNPJ, WhatsApp — notificação via WhatsApp ainda não existe), IA (Gemini para geração e análise), import de Google Forms/CSV/JSON, integração com Google Sheets/webhooks/e-mail.
 
 Produção: [formularios.ia.br](https://formularios.ia.br)
 

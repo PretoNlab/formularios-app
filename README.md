@@ -1,6 +1,6 @@
 # formularios.ia.br
 
-Form builder SaaS para o mercado brasileiro — alternativa ao Typeform/Tally com foco em WhatsApp, IA generativa, import de Google Forms e analytics avançados.
+Form builder SaaS para o mercado brasileiro — alternativa ao Typeform/Tally com campos brasileiros validados (CPF, CNPJ, WhatsApp), IA generativa, import de Google Forms e analytics avançados.
 
 **Produto ao vivo:** [formularios.ia.br](https://formularios.ia.br)
 

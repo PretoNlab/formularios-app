@@ -249,7 +249,7 @@ function TldrSection() {
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />Coleta leads, faz NPS, recebe inscrições ou faz pesquisas que importam.</li>
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />Quer um formulário com a sua marca, não com cabeçalho azul do Google.</li>
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />Precisa de lógica condicional de verdade (não só &quot;ir para seção X&quot;).</li>
-              <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />Quer notificação no WhatsApp quando alguém responde.</li>
+              <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />Precisa de WhatsApp validado e formatado, pronto pra usar na sua lista de contatos.</li>
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />Trabalha com público brasileiro e precisa de CPF/CNPJ válidos.</li>
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />Quer entender por que as pessoas abandonam o formulário.</li>
             </ul>
@@ -512,8 +512,8 @@ function MigrationSection() {
 const USE_CASES = [
   {
     title: "Captura de leads",
-    google: "Cabeçalho do Google reduz confiança. Sem lógica para qualificar. Sem WhatsApp.",
-    us: "Formulário com sua marca, lógica de qualificação, notificação no WhatsApp instantânea.",
+    google: "Cabeçalho do Google reduz confiança. Sem lógica para qualificar. Sem WhatsApp validado.",
+    us: "Formulário com sua marca, lógica de qualificação, WhatsApp validado e aviso por e-mail a cada lead.",
   },
   {
     title: "NPS e satisfação",
