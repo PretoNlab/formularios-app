@@ -41,4 +41,6 @@ next-env.d.ts
 
 # local test scripts
 test-db.ts
+test-query.ts
+preview.html
 docs/security-audit/venv/

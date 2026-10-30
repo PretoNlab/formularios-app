@@ -64,7 +64,7 @@ export function FormShareDialog({ form, open, onOpenChange }: FormShareDialogPro
   const shareLink = useMemo(() => {
     return typeof window !== "undefined"
       ? `${window.location.origin}/f/${form.slug}`
-      : `https://formularios.ia/f/${form.slug}`
+      : `https://formularios.ia.br/f/${form.slug}`
   }, [form.slug])
 
   // Questions suitable for interactive email survey

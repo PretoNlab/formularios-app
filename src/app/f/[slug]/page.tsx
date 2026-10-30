@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { after } from "next/server"
 import { getFormBySlug, incrementViewCount } from "@/lib/db/queries/forms"
+import { getUserByAuthId } from "@/lib/db/queries/users"
 import { FormRendererPage } from "@/components/renderer/form-renderer-page"
 import { mapDbForm } from "@/lib/utils/map-db-form"
 import { createClient } from "@/lib/supabase/server"
@@ -8,6 +9,15 @@ import type { Form } from "@/lib/types/form"
 import type { Metadata, ResolvingMetadata } from "next"
 
 export const dynamic = "force-dynamic"
+
+async function isDraftPreviewOwner(createdById: string): Promise<boolean> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+  if (user.id === createdById) return true
+  const { data: dbUser } = await getUserByAuthId(user.id)
+  return Boolean(dbUser && dbUser.id === createdById)
+}
 
 // ─── Metadata ──────────────────────────────────────────────────────────────────
 
@@ -26,9 +36,8 @@ export async function generateMetadata(
   // Preview mode is owner-only. For metadata we don't disclose the title to
   // non-owners viewing a draft — fall through to the generic title instead.
   if (isPreview && dbForm.status !== "published") {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user || user.id !== dbForm.createdById) {
+    const isOwner = await isDraftPreviewOwner(dbForm.createdById)
+    if (!isOwner) {
       return { title: "Formulário não encontrado" }
     }
   } else if (dbForm.status !== "published") {
@@ -90,9 +99,8 @@ export default async function PublicFormPage({
   // drafts the author has not published.
   if (isPreview) {
     if (dbForm.status !== "published") {
-      const supabase = await createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user || user.id !== dbForm.createdById) notFound()
+      const isOwner = await isDraftPreviewOwner(dbForm.createdById)
+      if (!isOwner) notFound()
     }
   } else if (dbForm.status !== "published") {
     notFound()

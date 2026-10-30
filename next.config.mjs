@@ -13,8 +13,8 @@ import { withSentryConfig } from "@sentry/nextjs"
 const CSP = [
     "default-src 'self'",
     `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""} https://www.clarity.ms https://*.clarity.ms`,
-    "style-src 'self' 'unsafe-inline'",
-    "font-src 'self' data:",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' data: https://fonts.gstatic.com",
     // Supabase storage (uploaded files/images), Google avatars, Clarity pixel
     "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com https://*.clarity.ms https://c.bing.com",
     // Supabase REST + realtime WS, Sentry error/replay ingestion, Microsoft Clarity

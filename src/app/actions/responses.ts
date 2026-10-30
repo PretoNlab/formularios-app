@@ -5,6 +5,7 @@ import { headers } from "next/headers"
 import { db } from "@/lib/db/client"
 import { questions, responses, answers, forms } from "@/lib/db/schema"
 import { submitResponseCore, submitBodySchema, hashIp } from "@/lib/submit-response-core"
+import { getClientIp } from "@/lib/utils/ip"
 import { requireFormOwner } from "@/lib/auth"
 import { getFormAnalytics, buildResponsesFilter, type ResponseFilters } from "@/lib/db/queries/responses"
 import { randomBytes } from "crypto"
@@ -27,10 +28,7 @@ export async function submitResponseAction(
 
   const headersList = await headers()
   const userAgent = headersList.get("user-agent")
-  const rawIp =
-    headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    headersList.get("x-real-ip") ??
-    "unknown"
+  const rawIp = getClientIp(headersList)
 
   await submitResponseCore({
     formId: parsed.data.formId,
@@ -38,6 +36,7 @@ export async function submitResponseAction(
     clientMeta: parsed.data.clientMeta,
     ipHash: hashIp(rawIp),
     userAgent,
+    honeypot: parsed.data.honeypot,
   })
 }
 

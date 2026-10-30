@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Loader2, ArrowRight, CheckCircle2, Sparkles } from "lucide-react"
+import { Loader2, ArrowRight, CheckCircle2, Sparkles, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,6 +15,7 @@ import type { SignupDraft } from "@/lib/onboarding/draft"
 export function SignupAccountForm({ draft }: { draft: SignupDraft }) {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [resendAt, setResendAt] = useState(0)
@@ -99,7 +100,29 @@ export function SignupAccountForm({ draft }: { draft: SignupDraft }) {
     <form onSubmit={handleSignup} className="space-y-4">
       <div className="space-y-2"><Label htmlFor="name">Seu nome</Label><Input id="name" name="name" required maxLength={100} autoComplete="name" placeholder="Como podemos chamar você?" className="h-12 bg-white" /></div>
       <div className="space-y-2"><Label htmlFor="email">E-mail</Label><Input id="email" name="email" type="email" required maxLength={254} autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="voce@empresa.com" className="h-12 bg-white" /></div>
-      <div className="space-y-2"><Label htmlFor="password">Crie uma senha</Label><Input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" placeholder="Pelo menos 8 caracteres" className="h-12 bg-white" /></div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Crie uma senha</Label>
+        <div className="relative">
+          <Input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            required
+            minLength={8}
+            autoComplete="new-password"
+            placeholder="Pelo menos 8 caracteres"
+            className="h-12 bg-white pr-11"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1 transition-colors"
+            aria-label={showPassword ? "Ocultar senha" : "Ver senha"}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       <Button type="submit" disabled={loading} className="h-12 w-full rounded-xl bg-stone-900 text-white hover:bg-stone-800">
         {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando sua conta…</> : <>Criar conta e salvar formulário <ArrowRight className="ml-2 h-4 w-4" /></>}

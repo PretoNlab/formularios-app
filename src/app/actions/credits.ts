@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/lib/db/client"
-import { users, creditTransactions } from "@/lib/db/schema"
+import { users, creditTransactions, forms } from "@/lib/db/schema"
 import { eq, and, sql } from "drizzle-orm"
 import { requireUser } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
@@ -150,6 +150,36 @@ export async function claimMissionRewardAction(missionId: string): Promise<{
 
     if (existing.length > 0) {
       return { success: false, error: { message: "Esta recompensa já foi resgatada!" } }
+    }
+
+    // Verify mission completion criteria
+    if (missionId === "create" || missionId === "theme" || missionId === "share") {
+      const userForms = await db
+        .select({ id: forms.id })
+        .from(forms)
+        .where(eq(forms.createdById, authUser.id))
+        .limit(1)
+      if (userForms.length === 0) {
+        return { success: false, error: { message: "Você precisa criar pelo menos um formulário para concluir esta missão." } }
+      }
+    } else if (missionId === "publish") {
+      const published = await db
+        .select({ id: forms.id })
+        .from(forms)
+        .where(and(eq(forms.createdById, authUser.id), eq(forms.status, "published")))
+        .limit(1)
+      if (published.length === 0) {
+        return { success: false, error: { message: "Você precisa publicar um formulário para concluir esta missão." } }
+      }
+    } else if (missionId === "response") {
+      const formWithResponse = await db
+        .select({ id: forms.id })
+        .from(forms)
+        .where(and(eq(forms.createdById, authUser.id), sql`${forms.responseCount} > 0`))
+        .limit(1)
+      if (formWithResponse.length === 0) {
+        return { success: false, error: { message: "Você precisa receber pelo menos uma resposta para concluir esta missão." } }
+      }
     }
 
     // Process reward transaction

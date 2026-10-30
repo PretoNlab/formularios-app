@@ -1,11 +1,29 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { randomBytes } from "crypto"
 import { db } from "@/lib/db/client"
 import { forms } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
+import { getClientIp } from "@/lib/utils/ip"
 
 const BUCKET = "form-responses"
 const MAX_SIZE_BYTES = 10 * 1024 * 1024 // 10MB
+
+// Rate limiting: max 20 uploads per 10 minutes per IP
+const uploadAttempts = new Map<string, { count: number; resetAt: number }>()
+const UPLOAD_MAX = 20
+const UPLOAD_WINDOW_MS = 10 * 60 * 1000
+
+function isUploadRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const rec = uploadAttempts.get(ip)
+  if (!rec || rec.resetAt < now) {
+    uploadAttempts.set(ip, { count: 1, resetAt: now + UPLOAD_WINDOW_MS })
+    return false
+  }
+  rec.count++
+  return rec.count > UPLOAD_MAX
+}
 
 const MIME_TO_EXT: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -23,6 +41,50 @@ const MIME_TO_EXT: Record<string, string> = {
   "application/zip": "zip",
 }
 
+function isValidFileSignature(buffer: Buffer, mimeType: string): boolean {
+  if (buffer.length < 4) return false
+
+  if (mimeType === "application/pdf") {
+    return buffer.subarray(0, 4).toString("ascii") === "%PDF"
+  }
+  if (mimeType === "image/png") {
+    return buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47
+  }
+  if (mimeType === "image/jpeg") {
+    return buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF
+  }
+  if (mimeType === "image/gif") {
+    const header = buffer.subarray(0, 6).toString("ascii")
+    return header === "GIF87a" || header === "GIF89a"
+  }
+  if (mimeType === "image/webp") {
+    return (
+      buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+      buffer.subarray(8, 12).toString("ascii") === "WEBP"
+    )
+  }
+  if (
+    mimeType === "application/zip" ||
+    mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ) {
+    return buffer[0] === 0x50 && buffer[1] === 0x4B
+  }
+  if (mimeType === "application/msword") {
+    return (
+      buffer[0] === 0xD0 &&
+      buffer[1] === 0xCF &&
+      buffer[2] === 0x11 &&
+      buffer[3] === 0xE0
+    )
+  }
+  if (mimeType === "video/mp4") {
+    if (buffer.length >= 8) {
+      return buffer.subarray(4, 8).toString("ascii") === "ftyp"
+    }
+  }
+  return true
+}
+
 function serviceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,6 +94,14 @@ function serviceClient() {
 }
 
 export async function POST(req: NextRequest) {
+  const clientIp = getClientIp(req.headers)
+  if (isUploadRateLimited(clientIp)) {
+    return NextResponse.json(
+      { error: "Muitos uploads recentes. Aguarde alguns instantes e tente novamente." },
+      { status: 429 }
+    )
+  }
+
   let formData: FormData
   try {
     formData = await req.formData()
@@ -55,11 +125,21 @@ export async function POST(req: NextRequest) {
   }
 
   // Remove os charsets para validação (ex: image/svg+xml;charset=utf-8)
-  const rawType = file.type.split(";")[0].trim();
-  const isAllowedType = rawType in MIME_TO_EXT;
+  const rawType = file.type.split(";")[0].trim().toLowerCase()
+  const isAllowedType = rawType in MIME_TO_EXT
 
   if (!isAllowedType) {
     return NextResponse.json({ error: "Tipo de arquivo não permitido." }, { status: 400 })
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer())
+
+  // Verify magic bytes (file signature) matches declared mime type
+  if (!isValidFileSignature(buffer, rawType)) {
+    return NextResponse.json(
+      { error: "O conteúdo do arquivo não corresponde ao formato declarado." },
+      { status: 400 }
+    )
   }
 
   // Ensure the form exists and is published
@@ -77,10 +157,9 @@ export async function POST(req: NextRequest) {
   }
 
   const ext = MIME_TO_EXT[rawType] ?? "bin"
-  const randomHex = Math.random().toString(16).slice(2, 10)
+  const randomHex = randomBytes(16).toString("hex")
   const path = `${formId}/${Date.now()}-${randomHex}.${ext}`
 
-  const buffer = Buffer.from(await file.arrayBuffer())
   const admin = serviceClient()
 
   const { error } = await admin.storage
@@ -89,8 +168,6 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     const msg = error.message ?? ""
-    // Supabase Storage devolve "Bucket not found" quando o bucket não existe e
-    // "new row violates row-level security policy" quando faltam as policies de INSERT.
     const isStorageNotConfigured =
       /bucket not found/i.test(msg) || /row-level security/i.test(msg)
     console.error("[upload/response-file] Falha Supabase Storage:", msg, { bucket: BUCKET, formId })

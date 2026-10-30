@@ -379,6 +379,7 @@ export function AiFormCreatorModal({ open, onOpenChange }: AiFormCreatorModalPro
 
                 <div className="flex flex-wrap gap-1.5">
                   {[
+                    "🪄 Humanizar (tom natural/anti-robô)",
                     "✨ Tornar mais curto e conciso",
                     "📱 Adicionar WhatsApp para contato",
                     "💬 Deixar as perguntas mais amigáveis",

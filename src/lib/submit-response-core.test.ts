@@ -294,4 +294,12 @@ describe("submitBodySchema", () => {
     })
     expect(result.success).toBe(true)
   })
+
+  it("accepts honeypot field in submitBodySchema", () => {
+    const result = submitBodySchema.safeParse({
+      ...validBody,
+      honeypot: "spam bot test",
+    })
+    expect(result.success).toBe(true)
+  })
 })

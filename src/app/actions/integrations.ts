@@ -9,6 +9,7 @@ import {
 } from "@/lib/db/queries/integrations"
 import { listSheetTabs, extractSpreadsheetId } from "@/lib/google-sheets"
 import { requireFormOwner } from "@/lib/auth"
+import { isAllowedWebhookUrl } from "@/lib/submit-response-core"
 import type { IntegrationConfig } from "@/lib/db/schema"
 
 export async function createWebhookAction(
@@ -17,10 +18,13 @@ export async function createWebhookAction(
   url: string
 ) {
   await requireFormOwner(formId)
+  if (!url || !isAllowedWebhookUrl(url)) {
+    throw new Error("URL de webhook inválida. Apenas URLs HTTPS públicas são permitidas.")
+  }
   const result = await createIntegration({
     formId,
     type: "webhook",
-    name,
+    name: name.trim() || "Webhook",
     enabled: true,
     config: { url },
   })

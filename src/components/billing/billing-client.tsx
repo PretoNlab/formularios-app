@@ -40,7 +40,12 @@ function daysRemaining(iso: string): number {
 }
 
 function txLabel(type: string, metadata: Record<string, unknown> | null) {
-  if (type === "welcome") return "Boas-vindas"
+  if (type === "welcome") return "Bônus de boas-vindas"
+  if (type === "signup_onboarding") return "Onboarding concluído"
+  if (type.startsWith("mission_")) {
+    const label = metadata?.label as string | undefined
+    return label ? `Missão concluída: ${label}` : "Recompensa de missão"
+  }
   if (type === "purchase") {
     const pack = metadata?.packId as string | undefined
     if (pack === "founder") return "Lote Fundador — 12 meses"
@@ -49,12 +54,20 @@ function txLabel(type: string, metadata: Record<string, unknown> | null) {
     if (pack === "forms_5") return "Recarga +5 formulários"
     return "Compra"
   }
-  return "Uso"
+  const feature = metadata?.feature as string | undefined
+  if (feature === "ai_create_form_draft") return "Criação de formulário com IA"
+  if (feature === "ai_refine_form_draft") return "Refinamento de rascunho com IA"
+  if (feature === "ai_semantic_insights") return "Análise de respostas com IA"
+  return "Uso de créditos"
 }
 
-function txIcon(type: string) {
-  if (type === "welcome") return <Gift className="h-4 w-4 text-violet-500" />
-  if (type === "purchase") return <ShoppingCart className="h-4 w-4 text-green-500" />
+function txIcon(type: string, amount: number) {
+  if (type === "welcome" || type === "signup_onboarding" || type.startsWith("mission_")) {
+    return <Gift className="h-4 w-4 text-violet-500" />
+  }
+  if (type === "purchase" || amount > 0) {
+    return <ShoppingCart className="h-4 w-4 text-green-500" />
+  }
   return <BarChart3 className="h-4 w-4 text-red-400" />
 }
 
@@ -217,11 +230,23 @@ export function BillingClient({
           <div className="rounded-xl border overflow-hidden">
             {transactions.map((tx, i) => (
               <div key={tx.id} className={cn("flex items-center gap-3 px-4 py-3", i > 0 && "border-t")}>
-                <div className="rounded-full bg-muted p-2">{txIcon(tx.type)}</div>
+                <div className="rounded-full bg-muted p-2">{txIcon(tx.type, tx.amount)}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{txLabel(tx.type, tx.metadata)}</p>
                   <p className="text-xs text-muted-foreground">{formatDate(tx.createdAt)}</p>
                 </div>
+                {tx.amount !== 0 && (
+                  <span
+                    className={cn(
+                      "text-xs font-semibold tabular-nums px-2 py-0.5 rounded-full",
+                      tx.amount > 0
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {tx.amount > 0 ? `+${tx.amount}` : tx.amount} créditos
+                  </span>
+                )}
               </div>
             ))}
           </div>

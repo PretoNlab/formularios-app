@@ -214,26 +214,37 @@ function OnboardingChecklist({ forms }: { forms: FormListItem[] }) {
     <section className="container mb-6">
       <div className="rounded-2xl border bg-card p-5 shadow-xs">
         {/* Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-              <Sparkles className="h-4 w-4 text-primary" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 mb-3">
+          <div className="flex items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+                <Sparkles className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-sm font-semibold">Missões de Boas-Vindas</span>
             </div>
-            <span className="text-sm font-semibold">Missões de Boas-Vindas</span>
+            <button
+              onClick={dismiss}
+              className="sm:hidden text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted shrink-0"
+              aria-label="Fechar guia de início"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
             <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[11px] font-semibold">
               🎁 Ganhe até 45 créditos grátis
             </Badge>
-            <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+            <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5 shrink-0">
               {completedCount} de {steps.length}
             </span>
+            <button
+              onClick={dismiss}
+              className="hidden sm:block text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted ml-1"
+              aria-label="Fechar guia de início"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <button
-            onClick={dismiss}
-            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
-            aria-label="Fechar guia de início"
-          >
-            <X className="h-4 w-4" />
-          </button>
         </div>
 
         {/* Progress bar */}
@@ -419,8 +430,8 @@ export function FormsSection({ forms }: FormsSectionProps) {
                 Crie formulários inteligentes, descubra insights automáticos e conecte com suas ferramentas favoritas.
               </p>
             )}
-            <div className="mx-auto mt-8 flex max-w-xl items-center rounded-full border bg-background p-2 shadow-lg transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-              <div className="flex flex-1 items-center px-4">
+            <div className="mx-auto mt-6 sm:mt-8 max-w-xl flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0 sm:rounded-full sm:border sm:bg-background sm:p-2 sm:shadow-lg sm:transition-all sm:focus-within:ring-2 sm:focus-within:ring-ring sm:focus-within:ring-offset-2">
+              <div className="flex items-center px-4 rounded-full border bg-background py-2 shadow-md sm:shadow-none sm:border-0 sm:py-0 flex-1">
                 <Search className="h-4 w-4 text-muted-foreground shrink-0" />
                 <Input
                   type="text"
@@ -430,8 +441,10 @@ export function FormsSection({ forms }: FormsSectionProps) {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <CreateFormButton variant="hero" />
-              <ImportFormDialog />
+              <div className="flex items-center justify-center gap-2 sm:gap-1 px-1 sm:px-0">
+                <CreateFormButton variant="hero" />
+                <ImportFormDialog />
+              </div>
             </div>
           </>
         ) : (

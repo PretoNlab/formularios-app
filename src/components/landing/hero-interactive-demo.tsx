@@ -47,7 +47,7 @@ export function HeroInteractiveDemo() {
           </div>
           <div className="mx-auto text-xs text-muted-foreground font-mono flex items-center gap-1.5 bg-background/60 px-3 py-1 rounded-full border border-border/50">
             <span className="text-emerald-500 font-bold">🔒</span>
-            formularios.ia/f/pesquisa-de-clientes
+            formularios.ia.br/f/pesquisa-de-clientes
           </div>
           <span className="text-[10px] font-semibold text-primary uppercase tracking-wider hidden sm:inline-block bg-primary/10 px-2 py-0.5 rounded-full">
             Demonstração Interativa

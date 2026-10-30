@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { submitResponseCore, submitBodySchema, hashIp } from "@/lib/submit-response-core"
+import { getClientIp } from "@/lib/utils/ip"
 import type { AnswerValue } from "@/lib/db/schema"
 
 export async function POST(req: NextRequest) {
@@ -16,10 +17,7 @@ export async function POST(req: NextRequest) {
   }
 
   const userAgent = req.headers.get("user-agent")
-  const rawIp =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
+  const rawIp = getClientIp(req.headers)
 
   try {
     await submitResponseCore({
@@ -29,6 +27,7 @@ export async function POST(req: NextRequest) {
       ipHash: hashIp(rawIp),
       userAgent,
       responseId: parsed.data.responseId,
+      honeypot: parsed.data.honeypot,
     })
     return NextResponse.json({ ok: true })
   } catch (error) {

@@ -31,6 +31,7 @@ export function FormRendererPage({ form, isPreview }: FormRendererPageProps) {
   const clientMetaRef = useRef<ClientMeta>({})
   const responseIdRef = useRef<string | null>(null)
   const [offlineQueued, setOfflineQueued] = useState(false)
+  const [honeypot, setHoneypot] = useState("")
 
   // Capture UTM params and device type once on mount
   useEffect(() => {
@@ -115,6 +116,7 @@ export function FormRendererPage({ form, isPreview }: FormRendererPageProps) {
         answers,
         clientMeta: clientMetaRef.current,
         responseId: responseIdRef.current ?? undefined,
+        honeypot: honeypot || undefined,
       }),
     })
 
@@ -183,13 +185,41 @@ export function FormRendererPage({ form, isPreview }: FormRendererPageProps) {
   }, [form.questions, searchParams])
 
   return (
-    <FormRenderer
-      form={form}
-      onSubmit={handleSubmit}
-      onProgress={handleProgress}
-      initialState={initialState}
-      pendingSync={offlineQueued}
-    />
+    <>
+      {/* Invisible honeypot for bot detection */}
+      <div
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          top: "-9999px",
+          width: "1px",
+          height: "1px",
+          overflow: "hidden",
+          opacity: 0,
+          pointerEvents: "none",
+        }}
+        aria-hidden="true"
+      >
+        <label htmlFor="_form_hp_lead">Não preencha este campo</label>
+        <input
+          id="_form_hp_lead"
+          type="text"
+          name="_form_hp_lead"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
+      </div>
+
+      <FormRenderer
+        form={form}
+        onSubmit={handleSubmit}
+        onProgress={handleProgress}
+        initialState={initialState}
+        pendingSync={offlineQueued}
+      />
+    </>
   )
 }
 

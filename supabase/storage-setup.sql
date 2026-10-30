@@ -13,7 +13,6 @@ VALUES (
     'image/png',
     'image/gif',
     'image/webp',
-    'image/svg+xml',
     'video/mp4',
     'video/webm',
     'audio/mpeg',

@@ -551,44 +551,44 @@ function Pricing() {
 
 const FAQ_ITEMS = [
   {
-    question: "O que é o formularios.ia?",
-    answer: "É uma plataforma de criação de formulários conversacionais — exibe uma pergunta por vez, como uma conversa. Diferente de planilhas de campos, o formato aumenta a taxa de conclusão e a qualidade das respostas."
+    question: "O que é o formularios.ia.br?",
+    answer: "É uma plataforma de formulários que mostra uma pergunta por vez, no estilo conversacional. Em vez de assustar o respondente com uma página longa de campos, ele responde aos poucos, o que aumenta muito a taxa de conclusão."
   },
   {
     question: "Posso trazer meu formulário do Google Forms?",
-    answer: "Sim — cole a URL no importador e a estrutura inteira (perguntas, opções, ordem, obrigatoriedade) é recriada em segundos. Você também pode importar de CSV ou JSON."
+    answer: "Sim. Basta colar o link no importador e toda a estrutura (perguntas, opções, ordem e obrigatoriedade) é recriada em poucos segundos. Você também pode importar arquivos CSV ou JSON."
   },
   {
     question: "Preciso instalar alguma coisa?",
-    answer: "Não. A plataforma roda inteiramente no navegador. Não há extensão, plugin ou app para instalar."
+    answer: "Não. A plataforma funciona 100% no navegador. Não precisa de plugin, extensão nem aplicativo."
   },
   {
     question: "O que acontece quando publico um formulário?",
-    answer: "O formulário fica acessível publicamente pela URL formularios.ia/f/seu-slug. Respostas começam a ser aceitas imediatamente."
+    answer: "Seu formulário ganha um link público (como formularios.ia.br/f/seu-slug) e já começa a receber respostas na hora."
   },
   {
     question: "O que são respostas parciais?",
-    answer: "São respostas de usuários que começaram a preencher o formulário mas não chegaram até o fim. Cada pergunta respondida é salva no banco à medida que o usuário avança — mesmo que ele feche o navegador."
+    answer: "São os dados de quem começou a responder, mas desistiu antes de chegar ao fim. O sistema salva cada resposta à medida que a pessoa avança, permitindo recuperar contatos mesmo se ela fechar a aba."
   },
   {
     question: "Por quanto tempo as respostas ficam disponíveis?",
-    answer: "Indefinidamente, enquanto sua conta estiver ativa. E você pode exportá-las para CSV ou JSON a qualquer momento."
+    answer: "Pelo tempo que sua conta estiver ativa. Você pode visualizar os dados no painel ou exportar para CSV e JSON quando quiser."
   },
   {
     question: "Como ofereço um arquivo ou PDF ao respondente?",
-    answer: "No builder, basta preencher o campo 'Arquivo para download' ou fazer upload do seu arquivo. Um botão de download aparecerá automaticamente na tela de conclusão do formulário."
+    answer: "No editor, preencha o campo 'Arquivo para download' com uma URL ou suba o arquivo direto na plataforma. O botão de download é exibido automaticamente na tela final."
   },
   {
     question: "Posso incorporar o formulário no meu site?",
-    answer: "Sim. No Builder, clique em Compartilhar e copie o código iframe gerado automaticamente. Cole em qualquer site, landing page ou portal — o formulário funciona perfeitamente embedado, sem configuração extra."
+    answer: "Sim. Na tela de compartilhamento, copie o código de iframe e cole no seu site, blog ou landing page. O formulário se adapta à página sem configurações complicadas."
   },
   {
     question: "Os dados dos respondentes são vendidos ou compartilhados?",
-    answer: "Não. Seus dados e os dados dos seus respondentes pertencem exclusivamente a você. Não vendemos dados em hipótese alguma."
+    answer: "Não. Seus dados e as respostas dos seus clientes pertencem exclusivamente a você. Não vendemos nem compartilhamos informações com terceiros."
   },
   {
-    question: "O formularios.ia é compatível com a LGPD?",
-    answer: "Sim. A plataforma foi desenvolvida com boas práticas de privacidade: IPs anonimizados, dados armazenados em servidores no Brasil com criptografia e controle total do criador sobre seus dados."
+    question: "O formularios.ia.br é compatível com a LGPD?",
+    answer: "Sim. Adotamos anonimização de IP por hash, armazenamento com criptografia em servidores seguros e total controle para você exportar ou apagar dados a qualquer momento."
   }
 ]
 

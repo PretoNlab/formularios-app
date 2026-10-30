@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { isSafeNextPath } from "@/lib/utils/safe-url"
+import { getClientIp } from "@/lib/utils/ip"
 
 /**
  * POST /api/auth/login
@@ -37,8 +38,7 @@ export async function POST(request: NextRequest) {
   const { origin } = new URL(request.url)
 
   // Rate limiting by IP
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown"
+  const ip = getClientIp(request.headers)
   if (isLoginRateLimited(ip)) {
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent("Muitas tentativas. Aguarde 15 minutos.")}`,

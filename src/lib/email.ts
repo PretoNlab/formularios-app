@@ -11,6 +11,10 @@ function escapeHtml(str: string): string {
     .replace(/'/g, "&#39;")
 }
 
+function cleanEmailSubject(str: string): string {
+  return str.replace(/[\r\n]+/g, " ").trim()
+}
+
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://formularios.ia"
 const from = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"
 
@@ -68,7 +72,7 @@ export async function sendWelcomeEmail({ toEmail, name }: { toEmail: string; nam
   await resend.emails.send({
     from,
     to: toEmail,
-    subject: `Bem-vindo ao formularios.ia, ${name}!`,
+    subject: cleanEmailSubject(`Bem-vindo ao formularios.ia, ${name}!`),
     html,
   })
 }
@@ -137,7 +141,7 @@ export async function sendFirstResponseEmail({
   await resend.emails.send({
     from,
     to: toEmail,
-    subject: `🎉 Primeira resposta recebida: ${formTitle}`,
+    subject: cleanEmailSubject(`🎉 Primeira resposta recebida: ${formTitle}`),
     html,
   })
 }
@@ -237,7 +241,7 @@ export async function sendResponseNotification({
       const response = await resend.emails.send({
         from,
         to: email,
-        subject: `Nova resposta: ${formTitle}`,
+        subject: cleanEmailSubject(`Nova resposta: ${formTitle}`),
         html,
       })
       
@@ -312,7 +316,7 @@ export async function sendAutoResponderEmail({
   await resend.emails.send({
     from,
     to: toEmail,
-    subject,
+    subject: cleanEmailSubject(subject),
     html,
   })
 }

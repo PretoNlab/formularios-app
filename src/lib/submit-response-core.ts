@@ -64,6 +64,7 @@ export const submitBodySchema = z.object({
     })
     .optional(),
   responseId: z.string().uuid().optional(),
+  honeypot: z.string().optional(),
 })
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -136,8 +137,14 @@ export async function submitResponseCore(params: {
   ipHash: string
   userAgent: string | null
   responseId?: string
+  honeypot?: string
 }): Promise<void> {
-  const { formId, answers: parsedAnswers, clientMeta = {}, ipHash, userAgent, responseId } = params
+  const { formId, answers: parsedAnswers, clientMeta = {}, ipHash, userAgent, responseId, honeypot } = params
+
+  // Bot protection: if honeypot was filled, quietly discard without database or quota impact
+  if (honeypot && honeypot.trim().length > 0) {
+    return
+  }
 
   // 1. Fetch form for status + settings validation
   const form = await db.query.forms.findFirst({
@@ -341,7 +348,7 @@ export async function submitResponseCore(params: {
       sendAutoResponderEmail({
         toEmail: leadEmail,
         formTitle: form.title,
-        subject: settings.autoResponderSubject || `Confirmação de Resposta: ${form.title}`,
+        subject: (settings.autoResponderSubject || `Confirmação de Resposta: ${form.title}`).replace(/[\r\n]+/g, " ").trim(),
         bodyRaw: settings.autoResponderBody || "Recebemos sua resposta com sucesso! Obrigado.",
       }).catch((err) => console.error("[auto-responder]", err))
     }
@@ -361,7 +368,13 @@ export async function submitResponseCore(params: {
       if (!wh.enabled) continue
       const url = (wh.config as { url?: string })?.url
       if (!url || !isAllowedWebhookUrl(url)) continue
-      fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload }).catch(() => { })
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        redirect: "error",
+        signal: AbortSignal.timeout(5000),
+      }).catch(() => { })
     }
   }
 

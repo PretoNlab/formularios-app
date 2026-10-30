@@ -77,7 +77,7 @@ export async function getSemanticInsightsAction(
       Seu objetivo é extrair inteligência qualitativa dessas respostas.
       Retorne APENAS um objeto JSON válido (sem markdown, sem blocos de código \`\`\`) com o seguinte formato:
       {
-        "summary": "Um parágrafo curto resumindo o sentimento geral e principais pontos.",
+        "summary": "Um parágrafo curto e direto sintetizando os padrões e pontos centrais apontados pelos respondentes.",
         "sentiment": "positive" | "neutral" | "negative",
         "themes": [
           { "theme": "Nome do Tema", "count": 10, "sentiment": "positive" | "neutral" | "negative" }
@@ -85,10 +85,12 @@ export async function getSemanticInsightsAction(
         "topQuotes": ["Uma ou duas frases curtas que representam bem o grupo"]
       }
       
-      Instruções:
-      - "themes" deve ter no máximo 5 itens.
-      - Responda em Português (PT-BR).
-      - Seja objetivo e profissional.
+      Instruções de Escrita e Tom (Diretrizes Humanizer):
+      - Responda em Português (PT-BR) natural e executivo.
+      - Vá direto ao ponto no "summary": informe o que os respondentes disseram sem introduções prolixas ou encenação.
+      - NUNCA use clichês de IA como: "não é apenas X, mas Y", "delve", "testamento/testemunho", "tapeçaria", "ecossistema", "panorama", "crucial", "momento decisivo" ou "o futuro parece brilhante".
+      - "themes" deve ter no máximo 5 itens com nomes objetivos e concisos.
+      - "topQuotes" devem ser fiéis às falas reais dos respondentes, sem embelezamento artificial.
     `
 
     const result = await model.generateContent(prompt)
@@ -207,10 +209,10 @@ export async function generateFormDraftWithAiAction(input: {
     const model = getGeminiModel("gemini-2.5-flash")
 
     const toneInstruction = input.tone === "casual"
-      ? "Tom de voz descontraído, humano e próximo."
+      ? "Tom de voz descontraído, humano, próximo e coloquial (como uma conversa no WhatsApp ou café)."
       : input.tone === "formal"
-      ? "Tom de voz executivo, corporativo e profissional."
-      : "Tom de voz claro, amigável e direto."
+      ? "Tom de voz executivo, polido e corporativo, porém direto e sem jargões inflados."
+      : "Tom de voz claro, amigável, acolhedor e direto ao ponto."
 
     const depthInstruction = input.depth === "short"
       ? "Crie entre 3 e 5 perguntas essenciais para máxima taxa de resposta (menos de 2 minutos)."
@@ -220,7 +222,7 @@ export async function generateFormDraftWithAiAction(input: {
 
     const systemPrompt = `
       Você é um especialista em CRO (Conversion Rate Optimization), UX Research e design de formulários de alta conversão.
-      Sua missão é criar a estrutura de um formulário altamente eficaz com base na necessidade do usuário.
+      Sua missão é criar a estrutura de um formulário altamente eficaz, com escrita humana e natural, com base na necessidade do usuário.
 
       Instrução do Usuário: "${input.prompt}"
       ${toneInstruction}
@@ -229,14 +231,28 @@ export async function generateFormDraftWithAiAction(input: {
       Tipos de perguntas permitidos para o campo "type":
       ${SUPPORTED_AI_QUESTION_TYPES.join(", ")}
 
-      Diretrizes de Especialista:
+      Diretrizes de Especialista & CRO:
       - Use "whatsapp" quando fizer sentido contato rápido no Brasil.
       - Use "nps" ou "rating" quando for pesquisa de satisfação.
       - Use "multiple_choice" com 3 a 5 opções claras para reduzir fadiga de decisão.
       - Crie no máximo 1 ou 2 regras de lógica condicional ("logicJumpToTempId" e "logicConditionValue") se fizer sentido estratégico (ex: desqualificar ou aprofundar feedback).
       - Indique "estimatedTimeMinutes" realista (1, 2, 3, etc.).
       - Dê 2 a 3 "conversionTips" práticas sobre por que essa estrutura foi escolhida para converter bem.
-      - Retorne APENAS um objeto JSON válido (sem markdown, sem blocos \`\`\`).
+
+      Diretrizes Anti-Robô (Princípios Humanizer para Formulários):
+      1. Título e Descrição:
+         - NUNCA use emojis decorativos exagerados no título (ex: proibir "🚀 FASE 1: O Despertar...", "🌟 Pesquisa Incrível").
+         - NUNCA use o clichê "Não X, mas Y" ou "Não se trata apenas de X, mas de Y" (ex: proibir "Sua opinião não é apenas bem-vinda, é fundamental").
+         - Foque o título e a descrição no benefício claro para quem responde ou no propósito real da interação.
+      2. Perguntas que soam humanas:
+         - Formule perguntas como uma pessoa real conversando com outra (reduz fricção psicológica e aumenta taxas de conclusão).
+         - Evite frieza burocrática e jargões inflados (ex: prefira "Como foi seu atendimento?" a "Qual sua percepção de conformidade dos serviços prestados?").
+         - Evite palavras clichês de IA ("ecossistema", "panorama", "testamento", "crucial", "mergulhe", "robusto").
+      3. Ritmo e Opções naturais:
+         - Não force tríades artificiais de adjetivos ("rápido, fácil e seguro").
+         - Nas opções de múltipla escolha, use opções realistas e linguagem coloquial autêntica que os respondentes realmente usariam.
+
+      Retorne APENAS um objeto JSON válido (sem markdown, sem blocos \`\`\`).
 
       Formato JSON estrito:
       {
@@ -345,8 +361,11 @@ export async function refineFormDraftWithAiAction(input: {
       "${input.instruction}"
 
       Retorne o rascunho completo atualizado aplicando a alteração solicitada de forma inteligente.
-      Mantenha a coerência dos IDs ("tempId"), títulos, estimativas de tempo e tipos de pergunta válidos.
-      Tipos permitidos: ${SUPPORTED_AI_QUESTION_TYPES.join(", ")}.
+      
+      Diretrizes de Qualidade e Humanização:
+      - Se o usuário pedir para humanizar, tornar mais amigável, direto ou informal, reescreva títulos, descrições e perguntas removendo termos burocráticos, prolixos e clichês de IA ("não apenas X mas Y", "ecossistema", emojis desnecessários), aproximando a linguagem do dia a dia do respondente.
+      - Mantenha a coerência dos IDs ("tempId"), títulos, estimativas de tempo e tipos de pergunta válidos.
+      - Tipos permitidos: ${SUPPORTED_AI_QUESTION_TYPES.join(", ")}.
 
       Retorne APENAS o JSON válido sem markdown ou tags adicionais.
     `

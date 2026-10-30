@@ -31,11 +31,12 @@ export function CreateFormButton({ variant = "hero" }: CreateFormButtonProps) {
         <div className="flex items-center gap-1.5">
           <Button 
             size="sm"
-            className="rounded-full px-4 gap-1.5 bg-gradient-to-r from-primary to-primary/80 hover:opacity-95 shadow-sm text-xs font-semibold" 
+            className="rounded-full px-3 sm:px-4 gap-1.5 bg-gradient-to-r from-primary to-primary/80 hover:opacity-95 shadow-sm text-xs font-semibold" 
             onClick={() => setAiModalOpen(true)}
           >
-            <Sparkles className="h-3.5 w-3.5" />
-            Criar com IA
+            <Sparkles className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden sm:inline">Criar com IA</span>
+            <span className="sm:hidden">Criar</span>
           </Button>
 
           <DropdownMenu>

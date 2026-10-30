@@ -89,13 +89,15 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-foreground">4. Compartilhamento de Dados</h2>
             <p>Compartilhamos dados apenas com:</p>
             <ul className="list-disc list-inside space-y-1 ml-2">
-              <li><strong>Supabase:</strong> infraestrutura de banco de dados e autenticação (dados armazenados no Brasil ou EUA com cláusulas contratuais padrão)</li>
-              <li><strong>Vercel:</strong> hospedagem da aplicação</li>
+              <li><strong>Supabase:</strong> infraestrutura de banco de dados, armazenamento e autenticação (com cláusulas contratuais padrão)</li>
+              <li><strong>Vercel:</strong> hospedagem e entrega da aplicação</li>
               <li><strong>Resend:</strong> envio de e-mails transacionais</li>
+              <li><strong>Google Cloud (Gemini AI e Google Sheets):</strong> geração/análise opcional por IA e integração com planilhas, quando acionadas pelo criador do formulário</li>
+              <li><strong>Sentry e Microsoft Clarity:</strong> monitoramento técnico de erros, estabilidade e análise agregada de usabilidade da plataforma</li>
               <li><strong>Autoridades competentes:</strong> quando exigido por lei</li>
             </ul>
             <p className="mt-2">
-              Não vendemos dados pessoais. Não compartilhamos dados com terceiros para fins de marketing.
+              Não vendemos dados pessoais. Não compartilhamos dados com terceiros para fins de publicidade comportamental.
             </p>
           </section>
 
@@ -144,10 +146,11 @@ export default function PrivacyPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-xl font-semibold text-foreground">8. Cookies</h2>
+            <h2 className="text-xl font-semibold text-foreground">8. Cookies e Telemetria</h2>
             <p>
-              Utilizamos cookies estritamente necessários para autenticação e funcionamento da plataforma.
-              Não utilizamos cookies de rastreamento ou publicidade de terceiros.
+              Utilizamos cookies essenciais para autenticação, sessão e funcionamento da plataforma, além de
+              telemetria analítica (Microsoft Clarity e Sentry) para identificar erros técnicos e melhorar a
+              usabilidade. Não comercializamos dados de navegação nem utilizamos cookies de redes de anúncios de terceiros.
             </p>
           </section>
 

@@ -74,7 +74,7 @@ export function SignupExperience() {
     <main className="min-h-screen bg-[#faf8f5] text-stone-900">
       <header className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 sm:py-6 lg:px-12">
         <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight transition-opacity hover:opacity-80">
-          <Sparkles className="h-5 w-5 text-amber-600" /> formularios.ia
+          <Sparkles className="h-5 w-5 text-amber-600" /> formularios.ia.br
         </Link>
         <Link href="/login" className="text-xs text-stone-600 underline underline-offset-4 hover:text-stone-900 sm:text-sm">
           Já tenho conta
@@ -117,8 +117,8 @@ export function SignupExperience() {
             <GamificationRewardsBadge step={rewardStep} goal={draft.goal} />
           </div>
 
-          <nav aria-label="Etapas do cadastro" className="mb-8">
-            <ol className="grid grid-cols-4 gap-2 text-xs sm:gap-4">
+          <nav aria-label="Etapas do cadastro" className="mb-6 sm:mb-8">
+            <ol className="grid grid-cols-4 gap-1.5 sm:gap-4 text-xs">
               {STEPS.map((s, i) => (
                 <li
                   key={s.id}
@@ -130,7 +130,7 @@ export function SignupExperience() {
                       i <= step ? "bg-amber-600" : "bg-stone-200"
                     }`}
                   />
-                  <div className="truncate text-[11px] sm:text-xs">
+                  <div className="truncate text-[10px] sm:text-xs">
                     <span className="font-semibold">{i < step ? "✓ " : `0${i + 1} `}</span>
                     <span className="hidden sm:inline">{s.label}</span>
                     <span className="sm:hidden">{s.shortLabel}</span>
@@ -151,13 +151,13 @@ export function SignupExperience() {
 
           <GamificationStepMilestone step={step} goal={draft.goal} />
 
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
+          <p className="mb-2 sm:mb-3 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
             Uma ideia. Seu primeiro formulário.
           </p>
-          <h1 ref={heading} tabIndex={-1} className="text-3xl font-semibold leading-tight tracking-tight outline-none sm:text-4xl">
+          <h1 ref={heading} tabIndex={-1} className="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight tracking-tight outline-none">
             {["O que vamos criar hoje?", "Vamos dar a sua cara.", "Já está tomando forma.", "Gostou? Agora é seu."][step]}
           </h1>
-          <p className="mb-7 mt-3 leading-relaxed text-stone-600 text-sm sm:text-base">
+          <p className="mb-6 sm:mb-7 mt-2 sm:mt-3 leading-relaxed text-stone-600 text-sm sm:text-base">
             {[
               "Você já tem 50 créditos garantidos. Escolha um objetivo e ganhe mais 5.",
               "Conte um pouco sobre sua ideia e avance para 10 créditos extras.",
@@ -183,16 +183,16 @@ export function SignupExperience() {
                       whileTap={{ scale: 0.988 }}
                       disabled={!ready}
                       onClick={() => chooseGoal(g.id)}
-                      className="group flex w-full items-center gap-3.5 rounded-2xl border border-stone-200 bg-white p-4 text-left transition-all hover:border-amber-600/50 hover:bg-amber-500/[0.03] hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
+                      className="group flex w-full items-center gap-3 sm:gap-3.5 rounded-2xl border border-stone-200 bg-white p-3.5 sm:p-4 text-left transition-all hover:border-amber-600/50 hover:bg-amber-500/[0.03] hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
                     >
-                      <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-stone-100 text-2xl transition-transform duration-200 group-hover:scale-110">
+                      <span aria-hidden="true" className="grid h-10 w-10 sm:h-11 sm:w-11 shrink-0 place-items-center rounded-xl bg-stone-100 text-xl sm:text-2xl transition-transform duration-200 group-hover:scale-110">
                         {g.icon}
                       </span>
                       <span className="flex-1 min-w-0">
-                        <span className="block font-medium text-stone-900">{g.label}</span>
-                        <span className="text-sm text-stone-500 truncate block">{g.detail}</span>
+                        <span className="block font-medium text-stone-900 text-sm sm:text-base leading-tight">{g.label}</span>
+                        <span className="text-xs sm:text-sm text-stone-500 line-clamp-1 sm:line-clamp-2 block mt-0.5">{g.detail}</span>
                       </span>
-                      <span className="inline-flex shrink-0 items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-500/20 mr-1">
+                      <span className="hidden sm:inline-flex shrink-0 items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-500/20 mr-1">
                         Escolher
                       </span>
                       <ArrowRight className="h-4 w-4 shrink-0 text-stone-400 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-stone-900" />
@@ -265,10 +265,10 @@ export function SignupExperience() {
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.97 }}
                               onClick={() => patch({ question: p })}
-                              className={`rounded-lg border px-2.5 py-1 text-left text-xs transition-colors ${
+                              className={`rounded-lg border px-3 py-1.5 text-left text-xs transition-colors ${
                                 draft.question === p
-                                  ? "border-amber-600 bg-amber-50 font-medium text-amber-950 ring-1 ring-amber-600"
-                                  : "border-stone-200 bg-white text-stone-600 hover:border-stone-400 hover:bg-stone-50"
+                                   ? "border-amber-600 bg-amber-50 font-medium text-amber-950 ring-1 ring-amber-600"
+                                   : "border-stone-200 bg-white text-stone-600 hover:border-stone-400 hover:bg-stone-50"
                               }`}
                             >
                               {p}
@@ -282,7 +282,7 @@ export function SignupExperience() {
 
                   <motion.div whileHover={{ scale: 1.008 }} whileTap={{ scale: 0.992 }}>
                     <Button className="h-12 w-full rounded-xl bg-stone-900 text-white hover:bg-stone-800 shadow-sm">
-                      Ver meu formulário <ArrowRight className="ml-2 h-4 w-4" />
+                      Continuar para o estilo <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </motion.div>
 
@@ -320,7 +320,7 @@ export function SignupExperience() {
                           key={s.id}
                           whileHover={{ scale: 1.025 }}
                           whileTap={{ scale: 0.975 }}
-                          className={`cursor-pointer rounded-xl border p-2.5 sm:p-3 text-center text-xs sm:text-sm transition-all ${
+                          className={`cursor-pointer rounded-xl border p-2 sm:p-3 text-center text-xs sm:text-sm transition-all ${
                             s.id === draft.style
                               ? "border-stone-900 bg-white shadow-sm ring-1 ring-stone-900"
                               : "border-stone-200 bg-white/70 hover:border-stone-300"
@@ -335,10 +335,10 @@ export function SignupExperience() {
                             className="sr-only peer"
                           />
                           <span
-                            className="mx-auto mb-2 block h-7 w-7 sm:h-8 sm:w-8 rounded-full shadow-inner ring-1 ring-black/10 peer-focus-visible:outline peer-focus-visible:outline-offset-4"
+                            className="mx-auto mb-1.5 sm:mb-2 block h-7 w-7 sm:h-8 sm:w-8 rounded-full shadow-inner ring-1 ring-black/10 peer-focus-visible:outline peer-focus-visible:outline-offset-4"
                             style={{ backgroundColor: s.color }}
                           />
-                          <span className="font-medium">{s.label}</span>
+                          <span className="font-medium block truncate text-[11px] sm:text-xs md:text-sm">{s.label}</span>
                         </motion.label>
                       ))}
                     </div>
@@ -470,6 +470,19 @@ export function SignupExperience() {
               </div>
             )}
           </div>
+
+          {/* Mobile action to return to editing at bottom of preview */}
+          <div className="mt-4 lg:hidden">
+            <Button
+              type="button"
+              onClick={() => setMobileTab("form")}
+              className="h-11 w-full rounded-xl bg-stone-900 text-white hover:bg-stone-800 text-xs font-semibold shadow-sm gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar e continuar configurando
+            </Button>
+          </div>
+
           <p className="mt-4 text-center text-xs sm:text-sm text-stone-500">
             Seu ponto de partida. Tudo pode ser editado depois no editor.
           </p>

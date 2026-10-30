@@ -111,7 +111,7 @@ export function MediaUrlEditor({ question }: { question: Question }) {
         ref={fileInputRef}
         className="hidden"
         onChange={handleUpload}
-        accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,video/mp4,video/webm"
+        accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm"
       />
     </div>
   )

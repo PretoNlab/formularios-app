@@ -1,4 +1,4 @@
-# Manual de Utilização — formularios.ia
+# Manual de Utilização · formularios.ia.br
 
 > Versão atual · Março 2026
 
@@ -23,15 +23,15 @@
 
 ## 1. Visão Geral
 
-formularios.ia é um criador de formulários conversacionais — uma pergunta por vez, como uma conversa. É voltado para o mercado brasileiro e inclui campos nativos de CPF, CNPJ e WhatsApp, suporte a temas visuais personalizados e analytics com IA.
+O formularios.ia.br é uma ferramenta brasileira para criação de formulários no formato conversacional, exibindo uma pergunta por vez. Conta com validação nativa de CPF, CNPJ e WhatsApp, personalização visual completa e análise qualitativa com inteligência artificial.
 
 **Diferenciais principais:**
-- Formulários no estilo conversacional (uma pergunta por vez)
-- Campos brasileiros nativos (CPF, CNPJ, WhatsApp)
+- Formulários no estilo conversacional (uma pergunta por vez para máxima conversão)
+- Campos brasileiros nativos com validação (CPF, CNPJ, WhatsApp)
 - Analytics com drop-off por pergunta, NPS automático e heatmap por hora
 - Captura de respostas parciais (dados de quem não terminou)
 - Arquivo para download na tela de conclusão (lead magnet)
-- Integrações com Google Sheets, Webhooks e automações
+- Integrações com Google Sheets, Webhooks e disparo interativo por e-mail
 
 ---
 
@@ -169,7 +169,7 @@ Acesse pela aba **Config** no painel esquerdo.
 |---|---|
 | **Título** | Nome interno do formulário (aparece no dashboard) |
 | **Descrição** | Texto de apoio opcional |
-| **Slug (URL)** | Parte da URL pública: `formularios.ia/f/seu-slug`. Editável, deve ser único. |
+| **Slug (URL)** | Parte da URL pública: `formularios.ia.br/f/seu-slug`. Editável, deve ser único. |
 
 ### Aparência no formulário
 
@@ -298,11 +298,13 @@ Clique em **Publicar** na barra superior. O formulário muda de status imediatam
 
 ### Compartilhar
 
-Após publicar, clique em **Compartilhar** para ver:
-- **Link direto** — `formularios.ia/f/seu-slug`
+Após publicar, clique em **Compartilhar** para acessar:
+- **Link direto:** `https://formularios.ia.br/f/seu-slug`
+- **Embed (iFrame):** código HTML pronto para embutir no seu site ou landing page
+- **Email Marketing:** HTML interativo para pesquisas dentro de campanhas de e-mail (Brevo, Mailchimp, RD Station)
 - **Preview** do formulário no painel de compartilhamento
 
-O link pode ser distribuído por WhatsApp, e-mail, redes sociais ou incorporado em sites.
+O link pode ser distribuído por WhatsApp, e-mail, redes sociais ou incorporado diretamente em páginas web.
 
 ### Encerrar o formulário
 

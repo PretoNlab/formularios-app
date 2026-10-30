@@ -45,22 +45,22 @@ export async function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container flex h-16 items-center justify-between px-4 sm:px-8">
 
         {/* Left section: Logo & Nav */}
-        <div className="flex items-center gap-8">
-          <Link href="/dashboard" className="flex items-center gap-2.5 transition-opacity hover:opacity-80 group">
+        <div className="flex items-center gap-3 sm:gap-8">
+          <Link href="/dashboard" className="flex items-center gap-2 sm:gap-2.5 transition-opacity hover:opacity-80 group">
             <div className="flex bg-gradient-to-br from-zinc-800 to-black dark:from-zinc-100 dark:to-zinc-300 text-white dark:text-black items-center justify-center p-1.5 rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300">
-              <Sparkles className="h-5 w-5" />
+              <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <span className="font-heading text-xl font-bold tracking-tight">formularios.ia</span>
+            <span className="font-heading text-lg sm:text-xl font-bold tracking-tight">formularios.ia</span>
           </Link>
 
           <MainNav />
         </div>
 
         {/* Right section: Profile & Actions */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {authUser ? (
             <>
               <CreditsBadge initialCredits={initialCredits} />

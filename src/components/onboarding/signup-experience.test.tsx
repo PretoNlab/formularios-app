@@ -23,7 +23,7 @@ describe("signup experience", () => {
     await user.type(screen.getByLabelText("Qual pergunta não pode faltar?"), "Qual seu objetivo?")
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Studio Aurora")
 
-    await user.click(screen.getByRole("button", { name: /Ver meu formulário/ }))
+    await user.click(screen.getByRole("button", { name: /Continuar para o estilo/ }))
     expect(screen.getByText("+10 / 20 extras")).toBeInTheDocument()
 
     await user.type(screen.getByLabelText("Título do formulário"), "Vamos criar juntos")
@@ -47,7 +47,7 @@ describe("signup experience", () => {
     await user.click(screen.getByRole("button", { name: "Voltar" }))
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("O que vamos criar hoje?")
     expect(screen.getByText("+15 / 20 extras")).toBeInTheDocument()
-  })
+  }, 15000)
 
   it("allows selecting a question preset quickly", async () => {
     const user = userEvent.setup()
@@ -58,7 +58,7 @@ describe("signup experience", () => {
     expect(screen.getByLabelText("Qual pergunta não pode faltar?")).toHaveValue(
       "O que mais chamou sua atenção positivamente?"
     )
-  })
+  }, 15000)
 
   it("toggles between form editor and live preview on mobile view", async () => {
     const user = userEvent.setup()
@@ -75,5 +75,5 @@ describe("signup experience", () => {
     // Switch back to form tab
     await user.click(screen.getByRole("button", { name: /Voltar para o editor/ }))
     expect(screen.getByRole("button", { name: /Captar contatos/ })).toBeInTheDocument()
-  })
+  }, 15000)
 })

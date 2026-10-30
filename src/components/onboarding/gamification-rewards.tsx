@@ -45,7 +45,7 @@ export function GamificationRewardsBadge({ step, goal }: GamificationRewardsProp
       layout
       role="status"
       aria-live="polite"
-      className="relative flex flex-wrap items-center justify-between gap-3 overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-primary/10 px-4 py-3 shadow-sm"
+      className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-primary/10 px-4 py-3 shadow-sm"
     >
       <motion.div
         aria-hidden="true"
@@ -54,17 +54,17 @@ export function GamificationRewardsBadge({ step, goal }: GamificationRewardsProp
         animate={{ width: `${(current / 20) * 100}%` }}
         transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 120, damping: 20 }}
       />
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2.5 min-w-0">
         <motion.div
           key={`gift-${current}`}
           animate={reduceMotion ? undefined : { rotate: [0, -8, 8, 0], scale: [1, 1.12, 1] }}
           transition={{ duration: 0.45 }}
-          className="relative z-10 grid h-9 w-9 place-items-center rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400"
+          className="relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400"
         >
           <Gift className="h-4 w-4" />
         </motion.div>
-        <div className="relative z-10">
-          <div className="flex items-center gap-1.5">
+        <div className="relative z-10 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-xs font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-300">
               Oferta para os 50 primeiros
             </span>
@@ -72,13 +72,13 @@ export function GamificationRewardsBadge({ step, goal }: GamificationRewardsProp
               GRÁTIS
             </span>
           </div>
-          <p className="text-xs text-stone-600 dark:text-stone-300">
+          <p className="text-xs text-stone-600 dark:text-stone-300 truncate">
             50 créditos garantidos + até 20 extras
           </p>
         </div>
       </div>
 
-      <div className="relative z-10 ml-auto flex items-center gap-2 sm:ml-0">
+      <div className="relative z-10 flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
         <AnimatePresence>
           {addedInStep > 0 && (
             <motion.span
@@ -99,10 +99,10 @@ export function GamificationRewardsBadge({ step, goal }: GamificationRewardsProp
           initial={{ scale: 0.92 }}
           animate={reduceMotion ? { scale: 1 } : { scale: [1, 1.08, 1] }}
           transition={{ duration: 0.45 }}
-          className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-white px-3 py-1.5 shadow-sm dark:bg-stone-900"
+          className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-white px-3 py-1.5 shadow-sm dark:bg-stone-900 ml-auto sm:ml-0"
         >
-          <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          <span className="text-sm font-bold text-amber-950 dark:text-amber-100">
+          <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+          <span className="text-sm font-bold text-amber-950 dark:text-amber-100 whitespace-nowrap">
             +{current} / 20 extras
           </span>
         </motion.div>
