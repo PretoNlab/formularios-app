@@ -57,7 +57,8 @@ function txLabel(type: string, metadata: Record<string, unknown> | null) {
   const feature = metadata?.feature as string | undefined
   if (feature === "ai_create_form_draft") return "Criação de formulário com IA"
   if (feature === "ai_refine_form_draft") return "Refinamento de rascunho com IA"
-  if (feature === "ai_semantic_insights") return "Análise de respostas com IA"
+  if (feature === "ai_semantic_insights") return "Análise de respostas com IA (SSR)"
+  if (feature === "ai_synthetic_panel") return "Simulação de consumidores sintéticos (SSR)"
   return "Uso de créditos"
 }
 

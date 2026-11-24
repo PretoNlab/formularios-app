@@ -7,7 +7,11 @@ export const AI_CREDIT_COSTS = {
   CREATE_FORM: 5,
   REFINE_FORM: 2,
   SEMANTIC_INSIGHTS: 3,
+  SYNTHETIC_PANEL_10: 5,
+  SYNTHETIC_PANEL_20: 8,
 } as const
+
+export const SYNTHETIC_SOURCE_LABEL = "IA Sintética (SSR)"
 
 export function getInitialCreditGrant(existingUserCount: number, completedSignupOnboarding: boolean) {
   const isEarlyAdopter = existingUserCount < EARLY_ADOPTER_LIMIT

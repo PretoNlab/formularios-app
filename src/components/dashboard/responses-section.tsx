@@ -7,7 +7,7 @@ import {
   ArrowLeft, Eye, Users, TrendingUp, Clock,
   CheckCircle2, Circle, Copy, ExternalLink, Download, PlayCircle, MessageSquare,
   Smartphone, Filter, X, ChevronLeft, ChevronRight, Monitor, Tablet, Printer, Share2,
-  Sparkles, Zap, Trash2, AlertCircle, Loader2, MoreHorizontal, FileDown, FileUp, Link2,
+  Sparkles, Zap, Trash2, AlertCircle, Loader2, MoreHorizontal, FileDown, FileUp, Link2, FlaskConical,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -40,6 +40,8 @@ import {
 } from "@/app/actions/responses"
 import { ImportResponsesDialog } from "@/components/responses/import-responses-dialog"
 import { PublicShareDialog } from "./public-share-dialog"
+import { SyntheticPanelModal } from "./synthetic-panel-modal"
+import { SYNTHETIC_SOURCE_LABEL } from "@/lib/credits"
 import { OnboardingBanner } from "@/components/shared/onboarding-banner"
 import { ONBOARDING_KEYS, setFlag } from "@/lib/utils/onboarding"
 import { StatCard } from "./analytics/stat-card"
@@ -221,7 +223,7 @@ function ResponseDetailPanel({
     : null
 
   const meta = r.metadata as {
-    deviceType?: string; utmSource?: string; referrer?: string
+    deviceType?: string; utmSource?: string; referrer?: string; userAgent?: string | null
   } | null
 
   const questionMap = new Map(questions.map((q) => [q.id, q]))
@@ -229,6 +231,7 @@ function ResponseDetailPanel({
 
   const source = meta?.utmSource
     ?? (meta?.referrer ? (() => { try { return new URL(meta.referrer!).hostname.replace(/^www\./, "") } catch { return meta.referrer! } })() : null)
+  const isSynthetic = meta?.utmSource === SYNTHETIC_SOURCE_LABEL
 
   const sortedAnswers = [...r.answers].sort((a, b) => {
     const qa = questionMap.get(a.questionId)
@@ -307,8 +310,17 @@ function ResponseDetailPanel({
               <DeviceIcon className="h-3 w-3" />{meta?.deviceType}
             </span>
           )}
-          {source && (
+          {isSynthetic ? (
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-violet-700 dark:text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-full print-hide">
+              <FlaskConical className="h-3 w-3" />Consumidor Sintético (SSR)
+            </span>
+          ) : source ? (
             <span className="text-xs text-muted-foreground print-hide">via {source}</span>
+          ) : null}
+          {isSynthetic && meta?.userAgent && (
+            <span className="w-full text-[11px] text-muted-foreground print-hide">
+              {meta.userAgent}
+            </span>
           )}
         </div>
 
@@ -393,6 +405,7 @@ function ResponsesTable({
   onToggleSelect,
   onToggleSelectAll,
   isAllSelected,
+  onOpenSyntheticModal,
 }: {
   responses: ResponseWithAnswers[]
   questions: QuestionSummary[]
@@ -401,15 +414,27 @@ function ResponsesTable({
   onToggleSelect: (id: string) => void
   onToggleSelectAll: () => void
   isAllSelected: boolean
+  onOpenSyntheticModal: () => void
 }) {
   if (responses.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground rounded-2xl border bg-card/50">
+      <div className="flex flex-col items-center justify-center py-24 text-center text-muted-foreground rounded-2xl border bg-card/50 px-4">
         <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mb-4">
           <Users className="h-6 w-6 opacity-40" />
         </div>
         <p className="font-semibold text-foreground">Nenhuma resposta ainda</p>
-        <p className="text-sm mt-1 max-w-xs">Compartilhe o link do formulário para começar a receber respostas.</p>
+        <p className="text-sm mt-1 max-w-sm">
+          Compartilhe o link com clientes reais ou rode um pré-teste com consumidores sintéticos (método SSR) para testar perguntas e objeções.
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onOpenSyntheticModal}
+          className="mt-5 gap-2 border-violet-500/30 text-violet-700 dark:text-violet-300 bg-violet-500/5 hover:bg-violet-500/10 font-semibold"
+        >
+          <FlaskConical className="h-4 w-4" />
+          Simular Consumidores Sintéticos (SSR)
+        </Button>
       </div>
     )
   }
@@ -471,15 +496,25 @@ function ResponsesTable({
                   )
                 })}
                 <td className="px-3 py-3.5">
-                  {r.completedAt ? (
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 whitespace-nowrap">
-                      <CheckCircle2 className="h-3 w-3" />Completa
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground whitespace-nowrap">
-                      <Circle className="h-3 w-3" />Parcial
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {r.completedAt ? (
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 whitespace-nowrap">
+                        <CheckCircle2 className="h-3 w-3" />Completa
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-muted text-muted-foreground whitespace-nowrap">
+                        <Circle className="h-3 w-3" />Parcial
+                      </span>
+                    )}
+                    {r.metadata?.utmSource === SYNTHETIC_SOURCE_LABEL && (
+                      <span
+                        title={r.metadata?.userAgent ?? "Consumidor Sintético (SSR)"}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-700 dark:text-violet-300 whitespace-nowrap"
+                      >
+                        <FlaskConical className="h-2.5 w-2.5" />SSR
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-3 py-3.5 pr-3">
                   <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-60 transition-opacity" />
@@ -617,7 +652,8 @@ export function ResponsesSection({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [deleteMode, setDeleteMode] = useState<"selected" | "filtered">("selected")
+  const [deleteMode, setDeleteMode] = useState<"selected" | "filtered" | "synthetic">("selected")
+  const [showSyntheticModal, setShowSyntheticModal] = useState(false)
 
   // ── Filter URL helpers ─────────────────────────────────────────────────────
   function buildUrl(updates: Record<string, string | undefined>): string {
@@ -696,11 +732,19 @@ export function ResponsesSection({
     }
   }
 
+  const syntheticSourceStats = useMemo(
+    () => (analytics?.sourceBreakdown ?? []).find((s) => s.source === SYNTHETIC_SOURCE_LABEL),
+    [analytics],
+  )
+  const syntheticCount = syntheticSourceStats?.count ?? 0
+
   async function handleDeleteResponses() {
     setIsDeleting(true)
     try {
       const res =
-        deleteMode === "filtered"
+        deleteMode === "synthetic"
+          ? await deleteResponsesByFilterAction(formId, { source: SYNTHETIC_SOURCE_LABEL })
+          : deleteMode === "filtered"
           ? await deleteResponsesByFilterAction(formId, filters)
           : await deleteResponsesAction(formId, Array.from(selectedIds))
       if (res.success) {
@@ -769,6 +813,17 @@ export function ResponsesSection({
 
         {/* Primary actions */}
         <div className="flex items-center gap-2">
+          {/* Synthetic Panel (SSR) */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSyntheticModal(true)}
+            className="gap-2 border-violet-500/30 text-violet-700 dark:text-violet-300 bg-violet-500/5 hover:bg-violet-500/10"
+          >
+            <FlaskConical className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Simular público (SSR)</span>
+          </Button>
+
           {/* Share public link */}
           <Button variant="outline" size="sm" className="gap-2" onClick={copyLink}>
             <Link2 className="h-3.5 w-3.5" />
@@ -887,6 +942,46 @@ export function ResponsesSection({
         </p>
       </div>
 
+      {syntheticCount > 0 && (
+        <div className="mb-6 rounded-xl border border-violet-500/25 bg-violet-500/5 px-4 py-3 flex flex-wrap items-center justify-between gap-3 print-hide">
+          <div className="flex items-center gap-2.5 text-xs">
+            <FlaskConical className="h-4 w-4 text-violet-600 dark:text-violet-400 shrink-0" />
+            <span className="text-foreground">
+              Este formulário contém <strong>{syntheticCount}</strong> resposta(s) de{" "}
+              <strong>Consumidores Sintéticos (SSR)</strong>.
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() =>
+                applyFilters(
+                  filters.source === SYNTHETIC_SOURCE_LABEL
+                    ? { ...filters, source: undefined }
+                    : { ...filters, source: SYNTHETIC_SOURCE_LABEL }
+                )
+              }
+            >
+              {filters.source === SYNTHETIC_SOURCE_LABEL ? "Mostrar todas" : "Filtrar sintéticas"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5 text-destructive border-destructive/25 hover:bg-destructive/10"
+              onClick={() => {
+                setDeleteMode("synthetic")
+                setShowDeleteConfirm(true)
+              }}
+            >
+              <Trash2 className="h-3 w-3" />
+              Limpar simulação
+            </Button>
+          </div>
+        </div>
+      )}
+
       {responses.length >= 1 && (
         <OnboardingBanner
           storageKey={ONBOARDING_KEYS.FIRST_RESPONSE_SEEN}
@@ -983,6 +1078,7 @@ export function ResponsesSection({
             onToggleSelect={handleToggleSelect}
             onToggleSelectAll={handleToggleSelectAll}
             isAllSelected={isAllSelected}
+            onOpenSyntheticModal={() => setShowSyntheticModal(true)}
           />
           {pagination && (pagination.totalPages > 1 || pagination.total > 50) && (
             <div className="flex items-center justify-between mt-4 px-1">
@@ -1033,7 +1129,12 @@ export function ResponsesSection({
                   Excluir Respostas
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  {deleteMode === "filtered" ? (
+                  {deleteMode === "synthetic" ? (
+                    <>
+                      Você está prestes a remover as <strong>{syntheticCount}</strong> respostas de{" "}
+                      <strong>Consumidores Sintéticos (SSR)</strong> deste formulário, mantendo intactas todas as respostas humanas reais.
+                    </>
+                  ) : deleteMode === "filtered" ? (
                     <>
                       Você está prestes a excluir <strong>{pagination?.total ?? 0}</strong>{" "}
                       {hasActiveFilters ? "respostas que correspondem aos filtros atuais" : "respostas (todas do formulário)"}.
@@ -1084,6 +1185,13 @@ export function ResponsesSection({
           answerFilter={filters.answerFilter}
         />
       )}
+
+      <SyntheticPanelModal
+        formId={formId}
+        formTitle={formTitle}
+        open={showSyntheticModal}
+        onOpenChange={setShowSyntheticModal}
+      />
     </div>
   )
 }

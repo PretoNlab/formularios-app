@@ -13,11 +13,19 @@ interface InsightTheme {
   sentiment: 'positive' | 'neutral' | 'negative'
 }
 
+interface SsrDistributionBucket {
+  anchor: number
+  count: number
+}
+
 interface AiInsights {
   summary: string
   sentiment: 'positive' | 'neutral' | 'negative'
   themes: InsightTheme[]
   topQuotes: string[]
+  ssrScore?: number
+  ssrLabel?: string
+  ssrDistribution?: SsrDistributionBucket[]
 }
 
 export function AiInsightsSection({ 
@@ -41,7 +49,7 @@ export function AiInsightsSection({
     try {
       const res = await getSemanticInsightsAction(formId, questionId, period)
       if (res.success && res.data) {
-        setInsights(res.data as AiInsights)
+        setInsights(res.data)
       } else {
         setError(res.error?.message || "Erro ao gerar insights.")
       }
@@ -74,12 +82,20 @@ export function AiInsightsSection({
 
   return (
     <div className="mt-4 pt-4 border-t border-dashed space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2 text-primary">
           <Sparkles className="h-4 w-4" />
           <h4 className="text-xs font-bold uppercase tracking-wider">Insights da IA</h4>
         </div>
-        <SentimentBadge sentiment={insights.sentiment} />
+        <div className="flex items-center gap-2">
+          {typeof insights.ssrScore === "number" && (
+            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/20 tabular-nums">
+              SSR {insights.ssrScore.toFixed(1)}/5.0
+              {insights.ssrLabel ? ` · ${insights.ssrLabel}` : ""}
+            </div>
+          )}
+          <SentimentBadge sentiment={insights.sentiment} />
+        </div>
       </div>
 
       <p className="text-sm text-muted-foreground leading-relaxed italic">

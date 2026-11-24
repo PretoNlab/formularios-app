@@ -3,14 +3,26 @@
 import { randomUUID } from "crypto"
 import { db } from "@/lib/db/client"
 import { answers, responses } from "@/lib/db/schema"
-import { eq, and, inArray, sql } from "drizzle-orm"
+import { eq, and, sql } from "drizzle-orm"
 import { requireUser, requireFormOwner } from "@/lib/auth"
 import { getGeminiModel } from "@/lib/ai/google-ai"
 import { AnalyticsPeriod, QuestionType } from "@/lib/types/form"
 import { createForm } from "@/lib/db/queries/forms"
 import { upsertQuestions, UpsertQuestionInput } from "@/lib/db/queries/questions"
+import { insertSyntheticResponses } from "@/lib/db/queries/responses"
 import { deductUserCredits } from "@/lib/db/queries/users"
-import { AI_CREDIT_COSTS } from "@/lib/credits"
+import { AI_CREDIT_COSTS, SYNTHETIC_SOURCE_LABEL } from "@/lib/credits"
+import { mapDbForm } from "@/lib/utils/map-db-form"
+import {
+  computeAggregateSsrScore,
+  describeSsrScore,
+  extractCleanJson,
+  normalizeSyntheticAnswers,
+  semanticInsightsSchema,
+  SSR_ANCHOR_LABELS,
+  syntheticSimulationRawSchema,
+  type AggregateSsrResult,
+} from "@/lib/ai/ssr-engine"
 import { revalidatePath } from "next/cache"
 
 const PERIOD_DAYS: Record<Exclude<AnalyticsPeriod, "all">, number> = {
@@ -68,17 +80,31 @@ export async function getSemanticInsightsAction(
     const model = getGeminiModel("gemini-2.5-flash")
     
     const prompt = `
-      Você é um analista de dados especialista em pesquisas e formulários.
+      Você é um analista de dados especialista em pesquisas e formulários usando o método Semantic Similarity Rating (SSR).
       Analise as seguintes respostas textuais para uma única pergunta de um formulário.
       
-      Respostas:
-      ${textList.map((t, i) => `${i+1}. ${t}`).join('\n')}
+      Respostas (${textList.length} no total):
+      ${textList.map((t, i) => `${i + 1}. ${t}`).join('\n')}
       
-      Seu objetivo é extrair inteligência qualitativa dessas respostas.
+      Seu objetivo é extrair inteligência qualitativa dessas respostas e aplicar ancoragem semântica (SSR) de 1 a 5 para cada resposta antes de agregar:
+      - Âncora 1 (${SSR_ANCHOR_LABELS[1]}): rejeição clara, frustração intensa ou recusa total.
+      - Âncora 2 (${SSR_ANCHOR_LABELS[2]}): insatisfação moderada, dúvida relevante ou crítica predominante.
+      - Âncora 3 (${SSR_ANCHOR_LABELS[3]}): posição neutra, mista ou puramente descritiva sem inclinação clara.
+      - Âncora 4 (${SSR_ANCHOR_LABELS[4]}): boa aceitação, elogio moderado ou interesse com ressalva pontual.
+      - Âncora 5 (${SSR_ANCHOR_LABELS[5]}): entusiasmo evidente, forte intenção ou aprovação sem reservas.
+
       Retorne APENAS um objeto JSON válido (sem markdown, sem blocos de código \`\`\`) com o seguinte formato:
       {
         "summary": "Um parágrafo curto e direto sintetizando os padrões e pontos centrais apontados pelos respondentes.",
         "sentiment": "positive" | "neutral" | "negative",
+        "ssrScore": 3.8,
+        "ssrDistribution": [
+          { "anchor": 1, "count": 0 },
+          { "anchor": 2, "count": 1 },
+          { "anchor": 3, "count": 2 },
+          { "anchor": 4, "count": 4 },
+          { "anchor": 5, "count": 3 }
+        ],
         "themes": [
           { "theme": "Nome do Tema", "count": 10, "sentiment": "positive" | "neutral" | "negative" }
         ],
@@ -95,8 +121,25 @@ export async function getSemanticInsightsAction(
 
     const result = await model.generateContent(prompt)
     const responseText = result.response.text()
-    const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim()
-    const insights = JSON.parse(cleanJson)
+    const cleanJson = extractCleanJson(responseText)
+    const parsed = semanticInsightsSchema.parse(JSON.parse(cleanJson))
+
+    let ssrScore = parsed.ssrScore
+    if (parsed.ssrDistribution && parsed.ssrDistribution.length > 0) {
+      const expanded: number[] = []
+      for (const bucket of parsed.ssrDistribution) {
+        for (let k = 0; k < bucket.count; k++) expanded.push(bucket.anchor)
+      }
+      if (expanded.length > 0) {
+        ssrScore = computeAggregateSsrScore(expanded).score
+      }
+    }
+
+    const insights = {
+      ...parsed,
+      ssrScore,
+      ssrLabel: ssrScore !== undefined ? describeSsrScore(ssrScore) : undefined,
+    }
 
     // Deduct credits after successful AI generation
     const deduction = await deductUserCredits(
@@ -524,5 +567,273 @@ export async function generateFormFromTextAction(promptText: string) {
     return { success: false, error: { code: "AI_GENERATION_ERROR", message: saveResult.error?.message || "Erro desconhecido" } }
   }
   return { success: true, data: saveResult.data }
+}
+
+// ─── Synthetic Respondents Simulator (Semantic Similarity Rating — SSR) ──────
+
+export interface SimulatedPersonaView {
+  name: string
+  age: number
+  region: string
+  profile: string
+  archetype: "entusiasta" | "pragmatico" | "cetico"
+  innerThought: string
+  ssrAnchor: number
+  frictionPoint?: string
+  answeredCount: number
+}
+
+export interface SyntheticSimulationResult {
+  executiveSummary: string
+  ssr: AggregateSsrResult
+  frictionAlerts: {
+    questionTitle: string
+    issue: string
+    suggestion: string
+  }[]
+  personas: SimulatedPersonaView[]
+  savedCount: number
+}
+
+const NON_SIMULATED_TYPES = new Set([
+  "welcome",
+  "statement",
+  "thank_you",
+  "download",
+  "file_upload",
+  "signature",
+])
+
+export async function simulateSyntheticRespondentsAction(input: {
+  formId: string
+  audienceDescription?: string
+  count: 10 | 20
+  saveToDashboard: boolean
+}): Promise<{
+  success: boolean
+  data?: SyntheticSimulationResult
+  error?: { code?: string; message: string }
+  remainingCredits?: number
+}> {
+  try {
+    const { user, form: dbForm } = await requireFormOwner(input.formId)
+    const sampleSize = input.count === 20 ? 20 : 10
+    const creditCost =
+      sampleSize === 20
+        ? AI_CREDIT_COSTS.SYNTHETIC_PANEL_20
+        : AI_CREDIT_COSTS.SYNTHETIC_PANEL_10
+
+    if (user.creditBalance < creditCost) {
+      return {
+        success: false,
+        error: {
+          code: "INSUFFICIENT_CREDITS",
+          message: `Você precisa de ${creditCost} créditos para simular ${sampleSize} consumidores sintéticos (seu saldo: ${user.creditBalance}).`,
+        },
+      }
+    }
+
+    const mappedForm = mapDbForm(dbForm)
+    const answerableQuestions = [...mappedForm.questions]
+      .sort((a, b) => a.order - b.order)
+      .filter((q) => !NON_SIMULATED_TYPES.has(q.type))
+
+    if (answerableQuestions.length === 0) {
+      return {
+        success: false,
+        error: {
+          code: "EMPTY_FORM",
+          message: "Adicione pelo menos uma pergunta respondível ao formulário antes de rodar a simulação.",
+        },
+      }
+    }
+
+    const questionsSpec = answerableQuestions.map((q, idx) => {
+      const options = (q.properties.options ?? []).map((o) => o.label)
+      const spec: Record<string, unknown> = {
+        id: q.id,
+        order: idx + 1,
+        type: q.type,
+        title: q.title,
+        required: q.required,
+      }
+      if (q.description) spec.description = q.description
+      if (options.length > 0) spec.options = options
+      if (q.type === "rating") spec.range = `inteiro de 1 a ${q.properties.ratingMax ?? 5}`
+      if (q.type === "nps") spec.range = "inteiro de 0 a 10"
+      if (q.type === "scale" || q.type === "opinion_scale") {
+        spec.range = `inteiro de ${q.properties.scaleMin ?? 1} a ${q.properties.scaleMax ?? 5}`
+        if (q.properties.scaleMinLabel) spec.minLabel = q.properties.scaleMinLabel
+        if (q.properties.scaleMaxLabel) spec.maxLabel = q.properties.scaleMaxLabel
+      }
+      if (q.type === "matrix") {
+        spec.matrixRows = q.properties.matrixRows ?? []
+        spec.matrixColumns = q.properties.matrixColumns ?? []
+      }
+      return spec
+    })
+
+    const audienceContext = input.audienceDescription?.trim()
+      ? `Público-alvo especificado pelo criador: "${input.audienceDescription.trim()}"`
+      : "Público-alvo: infira um público brasileiro realista a partir do título e das perguntas do formulário."
+
+    const prompt = `
+      Você é um motor de pesquisa de mercado baseado no método científico Semantic Similarity Rating (SSR — arXiv:2510.08338).
+      Sua tarefa é simular ${sampleSize} consumidores brasileiros distintos respondendo ao formulário abaixo para testar a aceitação da proposta e identificar falhas nas perguntas antes do lançamento com humanos reais.
+
+      FORMULÁRIO:
+      Título: "${mappedForm.title}"
+      Descrição: "${mappedForm.description ?? ""}"
+      ${audienceContext}
+
+      PERGUNTAS DO FORMULÁRIO (use exatamente o "id" como chave em "answers"):
+      ${JSON.stringify(questionsSpec, null, 2)}
+
+      REGRAS OBRIGATÓRIAS DO MÉTODO SSR (EVITAR VIÉS DE CENTRALIDADE):
+      1. Diversidade real de arquétipos: distribua as ${sampleSize} personas aproximadamente em:
+         - ~25% "entusiasta" (têm a dor latente e veem alto valor)
+         - ~45% "pragmatico" (comparam preço, têm dúvidas práticas, ponderam custo-benefício)
+         - ~30% "cetico" (desconfiados, orçamento apertado, usam concorrente ou rejeitam perguntas confusas)
+      2. Elicitação em texto livre ANTES de qualquer número:
+         Para cada persona, preencha PRIMEIRO "innerThought" em 1ª pessoa (2 a 3 frases francas, coloquiais e sem filtro, como um consumidor real pensando alto ao ler o formulário e os preços/opções).
+      3. Ancoragem Semântica ("ssrAnchor" de 1 a 5):
+         Só DEPOIS de escrever "innerThought", classifique a reação da persona na escala semântica:
+         - 1 = ${SSR_ANCHOR_LABELS[1]} (rejeita a proposta, acha caro/inútil ou desistiria)
+         - 2 = ${SSR_ANCHOR_LABELS[2]} (vê mais problemas/atritos do que benefícios)
+         - 3 = ${SSR_ANCHOR_LABELS[3]} (indeciso, depende de condições não explicadas)
+         - 4 = ${SSR_ANCHOR_LABELS[4]} (inclinado a aceitar/comprar, com 1 ressalva pontual)
+         - 5 = ${SSR_ANCHOR_LABELS[5]} (compraria/aderiria imediatamente)
+      4. Coerência estrita nas respostas ("answers"):
+         As notas de NPS/rating/escala, escolhas de múltipla escolha e textos abertos de cada persona DEVEM refletir fielmente seu "innerThought" e seu "ssrAnchor" (céticos dão notas baixas e críticas diretas; entusiastas dão notas altas).
+         Formato exigido em "answers" por tipo:
+         - multiple_choice / dropdown: string idêntica a uma das opções em "options"
+         - checkbox: array de strings escolhidas de "options"
+         - ranking: array com todas as opções de "options" na ordem preferida pela persona
+         - yes_no: boolean (true ou false)
+         - nps / rating / scale / opinion_scale / number: número inteiro dentro do range
+         - matrix: objeto { "[linha]": "[coluna]" }
+         - email / whatsapp / cpf / cnpj / short_text / long_text: dados fictícios brasileiros verossímeis e variados (ex: "(11) 98765-4321", textos naturais de tamanhos variados, sem linguagem robótica).
+      5. Auditoria de Fricção ("frictionAlerts"):
+         Liste de 2 a 4 problemas práticos nas perguntas atuais do formulário percebidos pelas personas (ex: falta opção "Outro/Nenhum", pergunta ambígua, ordem que gera abandono) com sugestão direta de melhoria.
+      6. Diretrizes anti-clichê: escreva em PT-BR natural e direto. Proibido usar "ecossistema", "crucial", "panorama", "não apenas X mas Y".
+
+      Retorne APENAS um JSON válido (sem blocos \`\`\`) neste formato exato:
+      {
+        "executiveSummary": "Síntese executiva direta de 2 a 3 frases sobre como o público reagiu e o principal gargalo encontrado.",
+        "frictionAlerts": [
+          {
+            "questionTitle": "Título da pergunta com atrito",
+            "issue": "O que confundiu ou travou os respondentes",
+            "suggestion": "Como reescrever ou ajustar opções"
+          }
+        ],
+        "personas": [
+          {
+            "name": " Mariana Costa",
+            "age": 34,
+            "region": "Belo Horizonte, MG",
+            "profile": "Sócia de clínica odontológica, faturamento médio",
+            "archetype": "pragmatico",
+            "innerThought": "Gostei da proposta, mas fiquei na dúvida se integra com minha agenda atual e achei a pergunta de orçamento meio engessada.",
+            "ssrAnchor": 4,
+            "frictionPoint": "Sentiu falta de opção intermediária de orçamento",
+            "durationSeconds": 95,
+            "deviceType": "mobile",
+            "answers": {
+              "id-da-pergunta": "valor"
+            }
+          }
+        ]
+      }
+    `
+
+    const model = getGeminiModel("gemini-2.5-flash")
+    const result = await model.generateContent(prompt)
+    const cleanJson = extractCleanJson(result.response.text())
+    const parsed = syntheticSimulationRawSchema.parse(JSON.parse(cleanJson))
+
+    const ssr = computeAggregateSsrScore(parsed.personas.map((p) => p.ssrAnchor))
+
+    const preparedInserts = parsed.personas.map((p) => {
+      const normalizedAnswers = normalizeSyntheticAnswers(mappedForm.questions, p.answers)
+      return {
+        persona: p,
+        normalizedAnswers,
+      }
+    })
+
+    let savedCount = 0
+    if (input.saveToDashboard) {
+      const insertRes = await insertSyntheticResponses(
+        input.formId,
+        SYNTHETIC_SOURCE_LABEL,
+        preparedInserts.map(({ persona, normalizedAnswers }) => ({
+          personaSummary: `${persona.name.trim()}, ${persona.age}a (${persona.region}) — ${persona.profile}`,
+          archetype: persona.archetype,
+          deviceType: persona.deviceType ?? "mobile",
+          durationSeconds: persona.durationSeconds ?? 75,
+          answers: normalizedAnswers,
+        }))
+      )
+      if (!insertRes.success) {
+        throw new Error(insertRes.error?.message || "Erro ao salvar respostas sintéticas.")
+      }
+      savedCount = insertRes.data?.inserted ?? 0
+    }
+
+    const deduction = await deductUserCredits(
+      user.id,
+      creditCost,
+      "ai_synthetic_panel",
+      { formId: input.formId, sampleSize, savedCount }
+    )
+
+    if (!deduction.success) {
+      return {
+        success: false,
+        error: {
+          code: "INSUFFICIENT_CREDITS",
+          message: deduction.error?.message || "Créditos insuficientes.",
+        },
+      }
+    }
+
+    revalidatePath(`/responses/${input.formId}`)
+    revalidatePath("/dashboard")
+
+    return {
+      success: true,
+      remainingCredits: deduction.newBalance,
+      data: {
+        executiveSummary: parsed.executiveSummary,
+        ssr,
+        frictionAlerts: parsed.frictionAlerts,
+        savedCount,
+        personas: preparedInserts.map(({ persona, normalizedAnswers }) => ({
+          name: persona.name.trim(),
+          age: persona.age,
+          region: persona.region,
+          profile: persona.profile,
+          archetype: persona.archetype,
+          innerThought: persona.innerThought,
+          ssrAnchor: persona.ssrAnchor,
+          frictionPoint: persona.frictionPoint,
+          answeredCount: normalizedAnswers.length,
+        })),
+      },
+    }
+  } catch (error) {
+    console.error("[simulateSyntheticRespondentsAction] Error:", error)
+    return {
+      success: false,
+      error: {
+        code: "AI_SIMULATION_ERROR",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível concluir a simulação com consumidores sintéticos.",
+      },
+    }
+  }
 }
 

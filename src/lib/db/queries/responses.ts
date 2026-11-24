@@ -787,3 +787,83 @@ export async function bulkImportResponses(
     }
   }
 }
+
+// ─── Synthetic Respondents (SSR) Bulk Insert ────────────────────────────────
+
+export interface SyntheticResponseInsert {
+  personaSummary: string
+  archetype: string
+  deviceType: "desktop" | "mobile" | "tablet"
+  durationSeconds: number
+  answers: { questionId: string; value: AnswerValue }[]
+}
+
+export async function insertSyntheticResponses(
+  formId: string,
+  sourceLabel: string,
+  items: SyntheticResponseInsert[]
+): Promise<ApiResponse<{ inserted: number }>> {
+  if (items.length === 0) {
+    return { success: true, data: { inserted: 0 } }
+  }
+
+  try {
+    let inserted = 0
+    await db.transaction(async (tx) => {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        const completedAt = new Date(Date.now() - (items.length - i) * 1000)
+        const startedAt = new Date(
+          completedAt.getTime() - Math.max(15, item.durationSeconds) * 1000
+        )
+
+        const [created] = await tx
+          .insert(responses)
+          .values({
+            formId,
+            startedAt,
+            completedAt,
+            lastActiveAt: completedAt,
+            metadata: {
+              userAgent: `Persona SSR: ${item.personaSummary}`,
+              ipHash: null,
+              utmSource: sourceLabel,
+              utmMedium: "synthetic_ssr",
+              utmCampaign: item.archetype,
+              referrer: null,
+              deviceType: item.deviceType,
+            },
+          })
+          .returning({ id: responses.id })
+
+        if (item.answers.length > 0) {
+          await tx.insert(answers).values(
+            item.answers.map((a) => ({
+              responseId: created.id,
+              questionId: a.questionId,
+              value: a.value,
+            }))
+          )
+        }
+        inserted++
+      }
+
+      if (inserted > 0) {
+        await tx
+          .update(forms)
+          .set({ responseCount: sql`${forms.responseCount} + ${inserted}` })
+          .where(eq(forms.id, formId))
+      }
+    })
+
+    return { success: true, data: { inserted } }
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: "DB_ERROR",
+        message: error instanceof Error ? error.message : "Database error",
+      },
+    }
+  }
+}

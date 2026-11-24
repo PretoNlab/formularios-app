@@ -12,7 +12,7 @@ import {
   Image as ImageIcon,
   Monitor, PanelRightClose, PanelRight, RefreshCw, Smartphone,
   Globe, Copy, PartyPopper,
-  X, Mail, Palette, Sparkles,
+  X, Mail, Palette, Sparkles, FlaskConical,
 } from "lucide-react"
 import {
   DndContext,
@@ -38,6 +38,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { FormRenderer } from "@/components/renderer/form-renderer"
 import { FormShareDialog } from "@/components/dashboard/form-share-dialog"
+import { SyntheticPanelModal } from "@/components/dashboard/synthetic-panel-modal"
 
 import { useBuilderStore } from "@/stores/builder-store"
 import { useShallow } from "zustand/react/shallow"
@@ -124,6 +125,7 @@ export function BuilderClient({
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop")
   const [previewKey, setPreviewKey] = useState<number>(Date.now())
   const [showShareDialog, setShowShareDialog] = useState(false)
+  const [showSyntheticModal, setShowSyntheticModal] = useState(false)
   const [copied, setCopied] = useState(false)
   const [copiedEmbed, setCopiedEmbed] = useState(false)
   const [isPersisting, startPersistTransition] = useTransition()
@@ -490,6 +492,18 @@ export function BuilderClient({
           >
             <BarChart3 className="h-4 w-4" />
           </Link>
+          <button
+            type="button"
+            onClick={() => {
+              if (hasUnsavedChanges) handleSave(false)
+              setShowSyntheticModal(true)
+            }}
+            className="flex h-8 items-center gap-1.5 px-2.5 rounded-full text-xs font-medium text-violet-700 dark:text-violet-300 hover:bg-violet-500/10 transition-colors"
+            title="Simular Consumidores Sintéticos (Método SSR)"
+          >
+            <FlaskConical className="h-3.5 w-3.5" />
+            <span className="hidden xl:inline">Simular SSR</span>
+          </button>
           <Separator orientation="vertical" className="h-4" />
           {/* Save / Publish / Update Actions */}
           <div className="flex items-center gap-2 pl-2">
@@ -796,6 +810,14 @@ export function BuilderClient({
         form={form}
         open={showShareDialog}
         onOpenChange={setShowShareDialog}
+      />
+
+      {/* ── SYNTHETIC PANEL (SSR) ───────────────────────────────────── */}
+      <SyntheticPanelModal
+        formId={form.id}
+        formTitle={form.title}
+        open={showSyntheticModal}
+        onOpenChange={setShowSyntheticModal}
       />
     </div>
   )
