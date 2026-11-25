@@ -68,7 +68,7 @@ function Nav() {
 
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
           <Link href="#recursos" className="text-muted-foreground hover:text-foreground transition-colors">Recursos</Link>
-          <Link href="#templates" className="text-muted-foreground hover:text-foreground transition-colors">Templates</Link>
+          <Link href="/consumidores-sinteticos" className="text-violet-600 dark:text-violet-400 hover:opacity-80 transition-opacity font-semibold">Consumidores Sintéticos</Link>
           <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Preços</Link>
           <Link href="/vs/google-forms" className="text-muted-foreground hover:text-foreground transition-colors">vs Google Forms</Link>
         </nav>
@@ -680,6 +680,7 @@ const FOOTER_COLUMNS = [
     title: "Produto",
     links: [
       { label: "Recursos", href: "#recursos" },
+      { label: "Consumidores Sintéticos (SSR)", href: "/consumidores-sinteticos" },
       { label: "Preços", href: "#pricing" },
       { label: "Criar conta", href: "/signup" },
       { label: "Entrar", href: "/login" },
